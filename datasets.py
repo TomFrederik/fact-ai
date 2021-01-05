@@ -7,7 +7,7 @@ import json
 
 class dataset(Dataset):
 
-    def __init__(self, path, columns, target_variable, target_value, vocab_path, sensitive_column_names, sensitive_column_values, hide_sensitive_columns):
+    def __init__(self, path, columns, target_variable, target_value, vocab_path, sensitive_column_names, sensitive_column_values, hide_sensitive_columns=True):
         '''
         path - str, path to the data csv file
         columns - list, names of all columns in the file
@@ -20,6 +20,8 @@ class dataset(Dataset):
         '''
         super().__init__()
 
+        self.hide_sensitive_columns = hide_sensitive_columns
+
         # load data
         self.features = pd.read_csv(path, ',', names=columns)
         
@@ -31,6 +33,7 @@ class dataset(Dataset):
         # remove target variable from features
         columns.remove(target_variable)
         if hide_sensitive_columns: # remove sensitive columns
+            self.sensitives = self.features[sensitive_column_names]
             for c in sensitive_column_names:
                 columns.remove(c)
         self.features = self.features[columns]
@@ -42,20 +45,37 @@ class dataset(Dataset):
         
         # we already mapped target var values to 0 and 1 before
         del vocab[target_variable]
+        
+        for c in columns:
+            if c in vocab:
+                vals = list(vocab[c])
+                val2int = {vals[i]:i for i in range(len(vals))} # map possible value to integer
+                self.features[c] = self.features[c].apply(lambda x: nn.functional.one_hot(torch.Tensor([val2int[x]]).long(), num_classes=len(vals)))
 
-        for c in vocab:
-            vals = list(vocab[c])
-            val2int = {vals[i]:i for i in range(len(vals))} # map possible value to integer
-            self.features[c] = self.features[c].apply(lambda x: nn.functional.one_hot(torch.Tensor([val2int[x]]).long(), num_classes=len(vals)))
+        
+        # deleted - makes no sense to encode the hidden features
+        '''
+        if self.hide_sensitive_columns:
+            for c in sensitive_column_names:
+                if c in vocab:
+                    vals = list(vocab[c])
+                    val2int = {vals[i]:i for i in range(len(vals))} # map possible value to integer
+                    self.sensitives[c] = self.sensitives[c].apply(lambda x: nn.functional.one_hot(torch.Tensor([val2int[x]]).long(), num_classes=len(vals)))
+        '''
 
-    
     def __len__(self):
         return len(self.df)
     
     def __getitem__(self, index):
         x = self.features.iloc[index].to_numpy()
         y = self.labels[index]
-        return x, y
+
+        if not self.hide_sensitive_columns:
+            s = None
+        else:
+            s = self.sensitives.iloc[index].to_numpy()
+
+        return x, y, s
 
 
 if __name__ == '__main__':
@@ -69,9 +89,12 @@ if __name__ == '__main__':
     "capital-gain", "capital-loss", "hours-per-week", "native-country", "income"
     ]
 
+    sensitive_column_names = ['race','sex']
+    sensitive_column_values = ['black','female']
+
     target_variable = "income"
     target_value = " >50K"
 
-    dataset = dataset(path, columns, target_variable, target_value, vocab_path)
+    dataset = dataset(path, columns, target_variable, target_value, vocab_path, sensitive_column_names, sensitive_column_values)
 
     print(dataset[1])
