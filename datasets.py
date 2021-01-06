@@ -6,21 +6,32 @@ import json
 
 
 DATASET_SETTINGS = {"Adult": {
-    "path": "./data/uci_adult/train.csv",
-    "vocab_path": "./data/uci_adult/vocabulary.json",
-    "columns": ["age", "workclass", "fnlwgt", "education", "education-num",
-                "marital-status", "occupation", "relationship", "race",
-                "sex", "capital-gain", "capital-loss", "hours-per-week",
-                "native-country", "income"],
-    "sensitive_column_names": ['race','sex'],
-    "sensitive_column_values": ['black','female'],
-    "target_variable": "income",
-    "target_value": " >50K"}}
+        "vocab_path": "./data/uci_adult/vocabulary.json",
+        "columns": ["age", "workclass", "fnlwgt", "education", "education-num",
+                    "marital-status", "occupation", "relationship", "race",
+                    "sex", "capital-gain", "capital-loss", "hours-per-week",
+                    "native-country", "income"],
+        "sensitive_column_names": ['race','sex'],
+        "sensitive_column_values": ['black','female'],
+        "target_variable": "income",
+        "target_value": " >50K"},
+    "LSAC":{},
+    "COMPAS":{
+        'vocab_path':"./data/compas/vocabulary.json", 
+        'columns':["juv_fel_count", "juv_misd_count", "juv_other_count", "priors_count",
+                    "age", "c_charge_degree", "c_charge_desc", "age_cat", "sex", "race",
+                    "is_recid"],
+        "sensitive_column_names": ['race','sex'],
+        "sensitive_column_values": ['black','female'],
+        "target_variable": "is_recid",
+        "target_value": " Yes"
+        }
+    }
 
 
 class Dataset(Dataset):
 
-    def __init__(self, dataset_name, hide_sensitive_columns=True):
+    def __init__(self, dataset_name, path, hide_sensitive_columns=True):
         '''
         path - str, path to the data csv file
         columns - list, names of all columns in the file
@@ -33,7 +44,6 @@ class Dataset(Dataset):
         '''
         super().__init__()
 
-        path = DATASET_SETTINGS[dataset_name]["path"]
         vocab_path = DATASET_SETTINGS[dataset_name]["vocab_path"]
         columns = DATASET_SETTINGS[dataset_name]["columns"]
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"]
@@ -67,31 +77,25 @@ class Dataset(Dataset):
         # we already mapped target var values to 0 and 1 before
         del vocab[target_variable]
         
+        if dataset_name == 'COMPAS':
+            self.features['c_charge_desc'].fillna('nan', inplace=True)
+
         for c in columns:
             if c in vocab:
                 vals = list(vocab[c])
+                print(c)
                 val2int = {vals[i]:i for i in range(len(vals))} # map possible value to integer
                 self.features[c] = self.features[c].apply(lambda x: nn.functional.one_hot(torch.Tensor([val2int[x]]).long(), num_classes=len(vals)).flatten())
             else: # feature is a scalar
                 self.features[c] = self.features[c].apply(lambda x: torch.Tensor([x]))
 
         
-        # deleted - makes no sense to encode the hidden features
-        '''
-        if self.hide_sensitive_columns:
-            for c in sensitive_column_names:
-                if c in vocab:
-                    vals = list(vocab[c])
-                    val2int = {vals[i]:i for i in range(len(vals))} # map possible value to integer
-                    self.sensitives[c] = self.sensitives[c].apply(lambda x: nn.functional.one_hot(torch.Tensor([val2int[x]]).long(), num_classes=len(vals)))
-        '''
 
     def __len__(self):
         return len(self.df)
     
     def __getitem__(self, index):
         x = list(self.features.iloc[index].to_numpy())
-        print(x)
         x = torch.cat(x, dim=0)
 
         y = self.labels[index]
@@ -106,6 +110,7 @@ class Dataset(Dataset):
 
 if __name__ == '__main__':
 
-    dataset = Dataset("Adult")
-
-    print(dataset[1])
+    adult_dataset = Dataset("Adult", path="./data/uci_adult/train.csv")
+    print('Example 1 of Adult set: \n',adult_dataset[1])
+    compas_dataset = Dataset('COMPAS', path="./data/compas/train.csv")
+    print('Example 1 of COMPAS set: \n',compas_dataset[1])
