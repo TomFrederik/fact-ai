@@ -12,7 +12,6 @@ class ARL(pl.LightningModule):
         adv_hidden=[],
         prim_lr=0.01,
         adv_lr=0.01,
-        batch_size=256,
         optimizer=torch.optim.Adagrad,
         opt_kwargs={},
         ):
