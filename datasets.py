@@ -16,7 +16,25 @@ DATASET_SETTINGS = {"Adult": {
         "sensitive_column_values": ['black','female'],
         "target_variable": "income",
         "target_value": " >50K"},
-    "LSAC":{},
+    "LSAC":{'vocab_path':"./data/law_school/vocabulary.json", 
+        'columns':["zfygpa",  # numerical feature: standardized 1st year GPA
+                    "zgpa",  # numerical feature: standardized overall GPA
+                    "DOB_yr",  # numerical feature: year of birth
+                    "weighted_lsat_ugpa",  # numerical feature: weighted index using 60% of LSAT and 40% UGPA
+                    "cluster_tier",  # numerical feature: prestige ranking of cluster
+                    "family_income",  # numerical feature: family income
+                    "lsat",  # numerical feature: LSAT score
+                    "ugpa",  # numerical feature: undegraduate GPA
+                    "isPartTime",  # categorical feature: is part-time status
+                    "sex",  # categorical feature: sex
+                    "race",  # categorical feature: race
+                    "pass_bar"  # binary target variable: has passed bar
+                ],
+        "sensitive_column_names": ['race','sex'],
+        "sensitive_column_values": ['black','female'],
+        "target_variable": "pass_bar",
+        "target_value": "Passed"
+        },
     "COMPAS":{
         'vocab_path':"./data/compas/vocabulary.json", 
         'columns':["juv_fel_count", "juv_misd_count", "juv_other_count", "priors_count",
@@ -131,10 +149,12 @@ class Dataset(Dataset):
 
 if __name__ == '__main__':
 
-    adult_dataset = Dataset("Adult", path="./data/uci_adult/train.csv")
-    print('Example 1 of Adult set: \n',adult_dataset[1])
+    #adult_dataset = Dataset("Adult", path="./data/uci_adult/train.csv")
+    #print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
 
-    compas_dataset = Dataset('COMPAS', path="./data/compas/train.csv")
-    print('Example 1 of COMPAS set: \n',compas_dataset[1])
+    #compas_dataset = Dataset('COMPAS', path="./data/compas/train.csv")
+    #print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
 
     #TODO: Add LSAC dataset
+    lsac_dataset = Dataset('LSAC', path='./data/law_school/train.csv')
+    print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
