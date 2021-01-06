@@ -8,6 +8,8 @@ import itertools
 
 DATASET_SETTINGS = {"Adult": {
         "vocab_path": "./data/uci_adult/vocabulary.json",
+        "train_path": "./data/uci_adult/train.csv",
+        "test_path": "./data/uci_adult/test.csv",
         "columns": ["age", "workclass", "fnlwgt", "education", "education-num",
                     "marital-status", "occupation", "relationship", "race",
                     "sex", "capital-gain", "capital-loss", "hours-per-week",
@@ -16,7 +18,10 @@ DATASET_SETTINGS = {"Adult": {
         "sensitive_column_values": ['black','female'],
         "target_variable": "income",
         "target_value": " >50K"},
-    "LSAC":{'vocab_path':"./data/law_school/vocabulary.json", 
+    "LSAC": {
+        'vocab_path':"./data/law_school/vocabulary.json",
+        "train_path": "./data/law_school/train.csv",
+        "test_path": "./data/law_school/test.csv",
         'columns':["zfygpa",
                     "zgpa", 
                     "DOB_yr",
@@ -36,7 +41,9 @@ DATASET_SETTINGS = {"Adult": {
         "target_value": "Passed"
         },
     "COMPAS":{
-        'vocab_path':"./data/compas/vocabulary.json", 
+        'vocab_path':"./data/compas/vocabulary.json",
+        "train_path": "./data/compas/train.csv",
+        "test_path": "./data/compas/test.csv",
         'columns':["juv_fel_count", "juv_misd_count", "juv_other_count", "priors_count",
                     "age", "c_charge_degree", "c_charge_desc", "age_cat", "sex", "race",
                     "is_recid"],
@@ -50,7 +57,7 @@ DATASET_SETTINGS = {"Adult": {
 
 class Dataset(Dataset):
 
-    def __init__(self, dataset_name, path, hide_sensitive_columns=True):
+    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True):
         '''
         path - str, path to the data csv file
         columns - list, names of all columns in the file
@@ -64,6 +71,7 @@ class Dataset(Dataset):
         super().__init__()
 
         vocab_path = DATASET_SETTINGS[dataset_name]["vocab_path"]
+        path = DATASET_SETTINGS[dataset_name]["test_path"] if test else DATASET_SETTINGS[dataset_name]["train_path"]
         columns = DATASET_SETTINGS[dataset_name]["columns"]
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"]
         sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"]
@@ -149,11 +157,11 @@ class Dataset(Dataset):
 
 if __name__ == '__main__':
 
-    adult_dataset = Dataset("Adult", path="./data/uci_adult/train.csv")
+    adult_dataset = Dataset("Adult")
     print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
 
-    compas_dataset = Dataset('COMPAS', path="./data/compas/train.csv")
+    compas_dataset = Dataset('COMPAS')
     print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
 
-    lsac_dataset = Dataset('LSAC', path='./data/law_school/train.csv')
+    lsac_dataset = Dataset('LSAC')
     print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
