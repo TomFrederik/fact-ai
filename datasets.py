@@ -103,7 +103,7 @@ class Dataset(Dataset):
         
 
     def __len__(self):
-        return len(self.df)
+        return len(self.features)
     
     def __getitem__(self, index):
         x = list(self.features.iloc[index].to_numpy())
