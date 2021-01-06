@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 import pandas as pd
 import json
+import itertools
 
 
 DATASET_SETTINGS = {"Adult": {
@@ -61,10 +62,19 @@ class Dataset(Dataset):
         self.labels[self.labels == target_value] = 1
         self.labels[self.labels != target_value] = 0
 
+        # turn protected group memberships into a single index
+        # first create lists of all the values the sensitive columns can take:
+        uniques = [tuple(self.features[col].unique()) for col in sensitive_column_names]
+        # create a list of tuples of such values. This corresponds to a list of all protected groups
+        self.index2values = itertools.product(*uniques)
+        # create the inverse dictionary:
+        self.values2index = {vals: index for index, vals in enumerate(self.index2values)}
+
+
         # remove target variable from features
         columns.remove(target_variable)
+        self.sensitives = self.features[sensitive_column_names]
         if hide_sensitive_columns: # remove sensitive columns
-            self.sensitives = self.features[sensitive_column_names]
             for c in sensitive_column_names:
                 columns.remove(c)
         self.features = self.features[columns]
@@ -101,12 +111,22 @@ class Dataset(Dataset):
 
         y = self.labels[index]
 
-        if not self.hide_sensitive_columns:
-            s = None
-        else:
-            s = self.sensitives.iloc[index].to_numpy()
+        s = tuple(self.sensitives.iloc[index])
+        s = self.values2index[s]
 
         return x, y, s
+
+    @property
+    def protected_index2value(self):
+        """List that turns the index of a protected group into meaningful values.
+
+        Dataset.__getitem__() returns three values, the third of which is an integer
+        index that specifies the protected group the item belongs to.
+        With Dataset.protected_index2value[index] you can turn this into a tuple
+        such as ("White", "Male") that specifies the values of the underlying
+        sensitive attributes. The order of attributes is the same as in the
+        `sensitive_column_names` argument from `DATASET_SETTINGS`."""
+        return self.index2values
 
 
 if __name__ == '__main__':
