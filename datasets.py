@@ -77,13 +77,14 @@ class Dataset(Dataset):
         # we already mapped target var values to 0 and 1 before
         del vocab[target_variable]
         
+
+        # fill nan values in COMPAS dataset
         if dataset_name == 'COMPAS':
             self.features['c_charge_desc'].fillna('nan', inplace=True)
 
         for c in columns:
             if c in vocab:
                 vals = list(vocab[c])
-                print(c)
                 val2int = {vals[i]:i for i in range(len(vals))} # map possible value to integer
                 self.features[c] = self.features[c].apply(lambda x: nn.functional.one_hot(torch.Tensor([val2int[x]]).long(), num_classes=len(vals)).flatten())
             else: # feature is a scalar
@@ -112,5 +113,8 @@ if __name__ == '__main__':
 
     adult_dataset = Dataset("Adult", path="./data/uci_adult/train.csv")
     print('Example 1 of Adult set: \n',adult_dataset[1])
+
     compas_dataset = Dataset('COMPAS', path="./data/compas/train.csv")
     print('Example 1 of COMPAS set: \n',compas_dataset[1])
+
+    #TODO: Add LSAC dataset
