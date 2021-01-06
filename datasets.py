@@ -17,18 +17,18 @@ DATASET_SETTINGS = {"Adult": {
         "target_variable": "income",
         "target_value": " >50K"},
     "LSAC":{'vocab_path':"./data/law_school/vocabulary.json", 
-        'columns':["zfygpa",  # numerical feature: standardized 1st year GPA
-                    "zgpa",  # numerical feature: standardized overall GPA
-                    "DOB_yr",  # numerical feature: year of birth
-                    "weighted_lsat_ugpa",  # numerical feature: weighted index using 60% of LSAT and 40% UGPA
-                    "cluster_tier",  # numerical feature: prestige ranking of cluster
-                    "family_income",  # numerical feature: family income
-                    "lsat",  # numerical feature: LSAT score
-                    "ugpa",  # numerical feature: undegraduate GPA
-                    "isPartTime",  # categorical feature: is part-time status
-                    "sex",  # categorical feature: sex
-                    "race",  # categorical feature: race
-                    "pass_bar"  # binary target variable: has passed bar
+        'columns':["zfygpa",
+                    "zgpa", 
+                    "DOB_yr",
+                    "isPartTime",
+                    "sex",  
+                    "race", 
+                    "cluster_tier", 
+                    "family_income", 
+                    "lsat",
+                    "ugpa",
+                    "pass_bar",
+                    "weighted_lsat_gpu"  # binary target variable: has passed bar
                 ],
         "sensitive_column_names": ['race','sex'],
         "sensitive_column_values": ['black','female'],
@@ -74,7 +74,7 @@ class Dataset(Dataset):
 
         # load data
         self.features = pd.read_csv(path, ',', names=columns)
-        #print(self.features)
+
         # create labels
         self.labels = self.features[target_variable].to_numpy()
         self.labels[self.labels == target_value] = 1
@@ -109,7 +109,7 @@ class Dataset(Dataset):
         # fill nan values in COMPAS dataset
         if dataset_name == 'COMPAS':
             self.features['c_charge_desc'].fillna('nan', inplace=True)
-        #print(self.features.columns)
+
         for c in columns:
             if c in vocab:
                 vals = list(vocab[c])
@@ -149,12 +149,11 @@ class Dataset(Dataset):
 
 if __name__ == '__main__':
 
-    #adult_dataset = Dataset("Adult", path="./data/uci_adult/train.csv")
-    #print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
+    adult_dataset = Dataset("Adult", path="./data/uci_adult/train.csv")
+    print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
 
-    #compas_dataset = Dataset('COMPAS', path="./data/compas/train.csv")
-    #print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
+    compas_dataset = Dataset('COMPAS', path="./data/compas/train.csv")
+    print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
 
-    #TODO: Add LSAC dataset
-    #lsac_dataset = Dataset('LSAC', path='./data/law_school/train.csv')
-    #print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
+    lsac_dataset = Dataset('LSAC', path='./data/law_school/train.csv')
+    print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
