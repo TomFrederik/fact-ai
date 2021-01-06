@@ -5,9 +5,22 @@ import pandas as pd
 import json
 
 
-class dataset(Dataset):
+DATASET_SETTINGS = {"Adult": {
+    "path": "./data/uci_adult/train.csv",
+    "vocab_path": "./data/uci_adult/vocabulary.json",
+    "columns": ["age", "workclass", "fnlwgt", "education", "education-num",
+                "marital-status", "occupation", "relationship", "race",
+                "sex", "capital-gain", "capital-loss", "hours-per-week",
+                "native-country", "income"],
+    "sensitive_column_names": ['race','sex'],
+    "sensitive_column_values": ['black','female'],
+    "target_variable": "income",
+    "target_value": " >50K"}}
 
-    def __init__(self, path, columns, target_variable, target_value, vocab_path, sensitive_column_names, sensitive_column_values, hide_sensitive_columns=True):
+
+class Dataset(Dataset):
+
+    def __init__(self, dataset_name, hide_sensitive_columns=True):
         '''
         path - str, path to the data csv file
         columns - list, names of all columns in the file
@@ -19,6 +32,14 @@ class dataset(Dataset):
         hide_sensitive_columns - bool, whether to hide (delete) sensitive columns
         '''
         super().__init__()
+
+        path = DATASET_SETTINGS[dataset_name]["path"]
+        vocab_path = DATASET_SETTINGS[dataset_name]["vocab_path"]
+        columns = DATASET_SETTINGS[dataset_name]["columns"]
+        sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"]
+        sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"]
+        target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
+        target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
         self.hide_sensitive_columns = hide_sensitive_columns
 
@@ -80,21 +101,6 @@ class dataset(Dataset):
 
 if __name__ == '__main__':
 
-    path = './data/uci_adult/train.csv'
-    vocab_path = './data/uci_adult/vocabulary.json'
-
-    columns = [
-    "age", "workclass", "fnlwgt", "education", "education-num",
-    "marital-status", "occupation", "relationship", "race", "sex",
-    "capital-gain", "capital-loss", "hours-per-week", "native-country", "income"
-    ]
-
-    sensitive_column_names = ['race','sex']
-    sensitive_column_values = ['black','female']
-
-    target_variable = "income"
-    target_value = " >50K"
-
-    dataset = dataset(path, columns, target_variable, target_value, vocab_path, sensitive_column_names, sensitive_column_values)
+    dataset = Dataset("Adult")
 
     print(dataset[1])
