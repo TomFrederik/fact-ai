@@ -71,7 +71,7 @@ class Dataset(Dataset):
         super().__init__()
 
         vocab_path = DATASET_SETTINGS[dataset_name]["vocab_path"]
-        path = DATASET_SETTINGS[dataset_name]["test_path"] if test else DATASET_SETTINGS[dataset_name]["train_path"]
+        path = DATASET_SETTINGS[dataset_name]["test_path" if test else "train_path"]
         columns = DATASET_SETTINGS[dataset_name]["columns"]
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"]
         sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"]
