@@ -105,6 +105,12 @@ class Dataset(Dataset):
                 columns.remove(c)
         self.features = self.features[columns]
 
+        # Create a tensor with protected group membership indices for easier access
+        self.memberships = torch.empty(len(self.features), dtype=int)
+        for i in range(len(self.memberships)):
+            s = tuple(self.sensitives.iloc[i])
+            self.memberships[i] = self.values2index[s]
+
         ## convert categorical data into onehot
         # load vocab
         with open(vocab_path) as json_file:
@@ -137,8 +143,7 @@ class Dataset(Dataset):
 
         y = self.labels[index]
 
-        s = tuple(self.sensitives.iloc[index])
-        s = self.values2index[s]
+        s = self.memberships[index].item()
 
         return x, y, s
 
