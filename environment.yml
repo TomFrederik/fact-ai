@@ -1,0 +1,11 @@
+name: fact-ai
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - cudatoolkit=10.2.89
+  - numpy=1.19.5
+  - pandas=1.2.0
+  - python=3.9.1
+  - pytorch=1.7.1
+  - pytorch-lightning=1.1.3
