@@ -71,7 +71,9 @@ class Dataset(Dataset):
             if c in vocab:
                 vals = list(vocab[c])
                 val2int = {vals[i]:i for i in range(len(vals))} # map possible value to integer
-                self.features[c] = self.features[c].apply(lambda x: nn.functional.one_hot(torch.Tensor([val2int[x]]).long(), num_classes=len(vals)))
+                self.features[c] = self.features[c].apply(lambda x: nn.functional.one_hot(torch.Tensor([val2int[x]]).long(), num_classes=len(vals)).flatten())
+            else: # feature is a scalar
+                self.features[c] = self.features[c].apply(lambda x: torch.Tensor([x]))
 
         
         # deleted - makes no sense to encode the hidden features
@@ -88,7 +90,10 @@ class Dataset(Dataset):
         return len(self.df)
     
     def __getitem__(self, index):
-        x = self.features.iloc[index].to_numpy()
+        x = list(self.features.iloc[index].to_numpy())
+        print(x)
+        x = torch.cat(x, dim=0)
+
         y = self.labels[index]
 
         if not self.hide_sensitive_columns:
