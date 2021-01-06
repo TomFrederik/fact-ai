@@ -74,7 +74,7 @@ class Dataset(Dataset):
 
         # load data
         self.features = pd.read_csv(path, ',', names=columns)
-        
+        #print(self.features)
         # create labels
         self.labels = self.features[target_variable].to_numpy()
         self.labels[self.labels == target_value] = 1
@@ -109,7 +109,7 @@ class Dataset(Dataset):
         # fill nan values in COMPAS dataset
         if dataset_name == 'COMPAS':
             self.features['c_charge_desc'].fillna('nan', inplace=True)
-
+        #print(self.features.columns)
         for c in columns:
             if c in vocab:
                 vals = list(vocab[c])
@@ -156,5 +156,5 @@ if __name__ == '__main__':
     #print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
 
     #TODO: Add LSAC dataset
-    lsac_dataset = Dataset('LSAC', path='./data/law_school/train.csv')
-    print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
+    #lsac_dataset = Dataset('LSAC', path='./data/law_school/train.csv')
+    #print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
