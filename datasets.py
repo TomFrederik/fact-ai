@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 import pandas as pd
+import numpy as np
 import json
 import itertools
 
@@ -10,6 +11,7 @@ DATASET_SETTINGS = {"Adult": {
         "vocab_path": "./data/uci_adult/vocabulary.json",
         "train_path": "./data/uci_adult/train.csv",
         "test_path": "./data/uci_adult/test.csv",
+        'mean_std_path':'./data/uci_adult/mean_std.json',
         "columns": ["age", "workclass", "fnlwgt", "education", "education-num",
                     "marital-status", "occupation", "relationship", "race",
                     "sex", "capital-gain", "capital-loss", "hours-per-week",
@@ -22,6 +24,7 @@ DATASET_SETTINGS = {"Adult": {
         'vocab_path':"./data/law_school/vocabulary.json",
         "train_path": "./data/law_school/train.csv",
         "test_path": "./data/law_school/test.csv",
+        'mean_std_path':'./data/law_school/mean_std.json',
         'columns':["zfygpa",
                     "zgpa", 
                     "DOB_yr",
@@ -33,7 +36,7 @@ DATASET_SETTINGS = {"Adult": {
                     "lsat",
                     "ugpa",
                     "pass_bar",
-                    "weighted_lsat_gpu"  # binary target variable: has passed bar
+                    "weighted_lsat_ugpa"
                 ],
         "sensitive_column_names": ['race','sex'],
         "sensitive_column_values": ['black','female'],
@@ -44,6 +47,7 @@ DATASET_SETTINGS = {"Adult": {
         'vocab_path':"./data/compas/vocabulary.json",
         "train_path": "./data/compas/train.csv",
         "test_path": "./data/compas/test.csv",
+        'mean_std_path':'./data/compas/mean_std.json',
         'columns':["juv_fel_count", "juv_misd_count", "juv_other_count", "priors_count",
                     "age", "c_charge_degree", "c_charge_desc", "age_cat", "sex", "race",
                     "is_recid"],
@@ -69,6 +73,7 @@ class Dataset(Dataset):
 
         vocab_path = DATASET_SETTINGS[dataset_name]["vocab_path"]
         path = DATASET_SETTINGS[dataset_name]["test_path" if test else "train_path"]
+        mean_std_path = DATASET_SETTINGS[dataset_name]['mean_std_path']
         columns = DATASET_SETTINGS[dataset_name]["columns"].copy()
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"].copy()
         sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"].copy()
@@ -79,6 +84,18 @@ class Dataset(Dataset):
 
         # load data
         self.features = pd.read_csv(path, ',', names=columns)
+
+        # load mean and std
+        with open(mean_std_path) as json_file:
+            mean_std = json.load(json_file)
+
+        # center and normalize numerical features
+        for key in mean_std:
+            self.features[key] -= mean_std[key][0]
+            self.features[key] /= mean_std[key][1]
+
+            assert np.abs(np.mean(self.features[key])) < 1e-10
+            assert np.abs(np.std(self.features[key]) - 1) < 1e-4
 
         # create labels
         self.labels = self.features[target_variable].to_numpy()
