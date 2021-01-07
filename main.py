@@ -41,6 +41,7 @@ def train(args):
     # Select model and instantiate
     if args.model == 'ARL':
         model = ARL(num_features=train_dataset.dimensionality,
+                    pretrain_steps = args.pretrain_steps,
                     prim_hidden=args.prim_hidden,
                     adv_hidden=args.adv_hidden,
                     prim_lr=args.prim_lr,
@@ -67,7 +68,7 @@ def train(args):
     trainer = pl.Trainer(default_root_dir=args.log_dir,
                          checkpoint_callback=ModelCheckpoint(save_weights_only=True),
                          gpus=1 if torch.cuda.is_available() else 0,
-                         max_steps=args.train_steps,
+                         max_steps=args.train_steps+args.pretrain_steps,
                          callbacks=[auc_callback],
                          progress_bar_refresh_rate=1 if args.p_bar else 0)
 

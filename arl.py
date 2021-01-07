@@ -8,6 +8,7 @@ class ARL(pl.LightningModule):
 
     def __init__(self, 
         num_features,
+        pretrain_steps,
         prim_hidden=[64,32],
         adv_hidden=[],
         prim_lr=0.01,
@@ -63,7 +64,7 @@ class ARL(pl.LightningModule):
             # TODO: add AUC metric
             self.log("train_reweighted_loss_learner", loss, on_step=True, on_epoch=False)
             
-        elif optimizer_idx == 1:
+        elif optimizer_idx == 1 and self.global_step > self.hparams.pretrain_steps:
             loss = self.adversary_step(x, y)
             
 
