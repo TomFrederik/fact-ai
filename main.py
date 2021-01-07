@@ -15,44 +15,6 @@ import os
 # dict to access optimizers by name, if we need to use different opts.
 OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad}
 
-#TODO could be replaced by calculating the metrics in the validation steps of the models
-class MetricCallback(pl.Callback):
-    """
-    The MetricCallback class calculates relevant metrics
-    and saves them to the PyTorch Lightning training session
-    """
-
-    def __init__(self, test_loader):
-        """
-        Initializes the metric callback instance
-        :param test_loader: dataloader used for evaluation on test set
-        """
-
-        super().__init__()
-        self.test_loader = test_loader
-
-    def on_epoch_end(self, trainer, pl_module):
-        """
-        Called after every epoch
-        :param trainer: the pl trainer instance
-        :param pl_module: the model
-        :return: not implemented
-        """
-
-        self.evaluate_metric(trainer, pl_module, trainer.current_epoch+1)
-
-    def evaluate_metric(self, trainer, pl_module, step):
-        """
-        #TODO
-        :param trainer: the pl trainer instance
-        :param pl_module: the model
-        :param step: the current train step number
-        :return: not implemented
-        """
-
-        # TODO calculate metric here or call corresponding function
-        trainer.logger.experiment.add_scalar(placeholder_name, placeholder_var, step)
-
 
 def train(args):
     """
@@ -102,18 +64,15 @@ def train(args):
 
 
     # Create a PyTorch Lightning trainer
-    metric_callback = MetricCallback(test_loader)
     auc_callback = AUCLogger(test_dataset)
     trainer = pl.Trainer(default_root_dir=args.log_dir,
                          checkpoint_callback=ModelCheckpoint(save_weights_only=True),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps,
-                         #callbacks=[metric_callback],  #TODO enable?
                          callbacks=[auc_callback],
                          progress_bar_refresh_rate=1 if args.p_bar else 0)
 
     # Training
-    #metric_callback.evaluate_metric(trainer, model, step=0)  #TODO enable?
     trainer.fit(model, train_loader, test_loader)
 
     # Testing
