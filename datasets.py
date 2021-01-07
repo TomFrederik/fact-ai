@@ -69,9 +69,9 @@ class Dataset(Dataset):
 
         vocab_path = DATASET_SETTINGS[dataset_name]["vocab_path"]
         path = DATASET_SETTINGS[dataset_name]["test_path" if test else "train_path"]
-        columns = DATASET_SETTINGS[dataset_name]["columns"]
-        sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"]
-        sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"]
+        columns = DATASET_SETTINGS[dataset_name]["columns"].copy()
+        sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"].copy()
+        sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"].copy()
         target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
