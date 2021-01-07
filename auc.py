@@ -1,3 +1,5 @@
+from statistics import mean
+
 from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.callbacks import Callback
 
@@ -16,6 +18,8 @@ class AUCLogger(Callback):
         scores = pl_module(self.dataset.features)
         aucs = aucs_from_dataset(scores, self.dataset)
         pl_module.log("validation/min_auc", min(aucs.values))
+        pl_module.log("validation/avg_auc", mean(aucs.values))
+        pl_module.log("validation/minority_auc", aucs[dataset.minority])
 
 
 def group_aucs(predictions, targets, memberships):

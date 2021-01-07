@@ -132,6 +132,10 @@ class Dataset(Dataset):
             s = tuple(self.sensitives.iloc[i])
             self.memberships[i] = self.values2index[s]
 
+        # compute the minority group (the one with the fewest members)
+        vals, counts = self.memberships.uniques(return_counts=True)
+        self.minority = vals[counts.argmin().item()]
+
         ## convert categorical data into onehot
         # load vocab
         with open(vocab_path) as json_file:
