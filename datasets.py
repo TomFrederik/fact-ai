@@ -57,16 +57,13 @@ DATASET_SETTINGS = {"Adult": {
 
 class Dataset(Dataset):
 
-    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True):
+    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True):
         '''
-        path - str, path to the data csv file
-        columns - list, names of all columns in the file
-        target_variable - str, column which is the target
-        target_value - ?, value which is considered as success (1)
-        vocab_path - str, path to the vocab file which stores all possible values for each categorical column
-        sensitive_column_names - list, names of protected attributes
-        sensitive_column_values - list, values of attributes which are to be protected
+        dataset_name - str, identifier of the dataset
+        test - bool, whether to use the test set
         hide_sensitive_columns - bool, whether to hide (delete) sensitive columns
+        binarize_prot_group - bool, whether to binarize the protected group. If true, all races other than black will be mapped to 0.
+                                    If false, a unique index for each combination of sensitive column values is created.
         '''
         super().__init__()
 
@@ -89,6 +86,11 @@ class Dataset(Dataset):
         one_idcs = self.labels == target_value
         self.labels[one_idcs] = 1
         self.labels[zero_idcs] = 0
+        
+        # if set, will binarize/group values in the sensitive columns
+        if binarize_prot_group:
+            for col, val in zip(sensitive_column_names, sensitive_column_values):
+                self.features[col] = self.features[col].apply(lambda x: float(x == val))
         
         # turn protected group memberships into a single index
         # first create lists of all the values the sensitive columns can take:
