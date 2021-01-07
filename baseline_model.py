@@ -56,6 +56,10 @@ class BaselineModel(pl.LightningModule):
         # compute loss
         loss = self.loss(logits, y)
 
+        # logging
+        #TODO: add other metrics
+        self.log('train_loss', loss)
+
         return loss        
         
     def validation_step(self, batch, batch_idx):
@@ -68,10 +72,24 @@ class BaselineModel(pl.LightningModule):
         # compute loss
         loss = self.loss(logits, y)
 
-        return loss        
+        # logging
+        #TODO: add other metrics
+        self.log('val_loss', loss)        
         
     def test_step(self, batch, batch_idx):
-        pass
+        # get features and labels
+        x, y = batch
+        
+        # compute logits
+        logits = self(x)
+
+        # compute loss
+        loss = self.loss(logits, y)
+
+        # logging
+        #TODO: add other metrics
+        self.log('test_loss', loss)        
+
     
     def configure_optimizers(self):
         return self.optimizer(self.parameters(), lr=self.hparams.lr, **self.hparams.opt_kwargs)
