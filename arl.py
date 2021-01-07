@@ -22,7 +22,6 @@ class ARL(pl.LightningModule):
         adv_hidden - list, number of hidden units in each layer of the adversary network
         prim_lr - float, learning rate for updating the learner
         adv_lr - float, learning rate for updating the adversary
-        batch_size - int, batch size that is used to iterate through the dataset
         optimizer - torch.optim.Optimizer constructor function, optimizer to adjust the model's parameters
         opt_kwargs - dict, optimizer keywords (other than learning rate)
         '''
@@ -62,7 +61,7 @@ class ARL(pl.LightningModule):
             
             # logging
             # TODO: add AUC metric
-            self.log("train_reweighted_loss_learner", loss, on_step=True, on_epoch=False)
+            self.log("train_reweighted_loss_learner", loss)
             
             return loss
             
@@ -92,7 +91,7 @@ class ARL(pl.LightningModule):
         lambdas = self.adversary(x)
         
         # compute reweighted loss  
-        loss = torch.dot(lambdas, bce)
+        loss = torch.mean(lambdas * bce)
         
         return loss
      
@@ -116,7 +115,7 @@ class ARL(pl.LightningModule):
         lambdas = self.adversary(x)
         
         # compute reweighted loss
-        loss = -torch.dot(lambdas, bce)
+        loss = -torch.mean(lambdas * bce)
         
         return loss        
         
