@@ -1,7 +1,6 @@
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
-import baseline_model
 from torch.utils.data import DataLoader
 
 from datasets import Dataset
@@ -31,11 +30,11 @@ def train(args):
     test_dataset = Dataset(args.dataset, test=True)
 
     train_loader = DataLoader(train_dataset,
-                              batch_size=args.train_batch_size,
+                              batch_size=args.batch_size,
                               shuffle=True,
                               num_workers=args.num_workers)
     test_loader = DataLoader(test_dataset,
-                             batch_size=args.test_batch_size,
+                             batch_size=args.batch_size,
                              shuffle=False,
                              num_workers=args.num_workers)
 
@@ -46,7 +45,7 @@ def train(args):
                     adv_hidden=args.adv_hidden,
                     prim_lr=args.prim_lr,
                     adv_lr=args.adv_lr,
-                    batch_size=args.train_batch_size,
+                    batch_size=args.batch_size,
                     optimizer=OPT_BY_NAME[args.opt],
                     opt_kwargs={})
 
@@ -74,7 +73,7 @@ def train(args):
                          progress_bar_refresh_rate=1 if args.p_bar else 0)
 
     # Training
-    trainer.fit(model, train_loader, test_loader)
+    trainer.fit(model, train_loader)
 
     # Testing
     model = model.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
@@ -94,8 +93,7 @@ if __name__ == "__main__":
     parser.add_argument('--adv_hidden', default=[32], help='Number of hidden units in adversarial network')
 
     # Training settings
-    parser.add_argument('--train_batch_size', default=256, type=int)
-    parser.add_argument('--test_batch_size', default=100, type=int)
+    parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--train_steps', default=20, type=int)
     parser.add_argument('--pretrain_steps', default=250, type=int)
     parser.add_argument('--test_steps', default=5, type=int)
