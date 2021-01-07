@@ -64,11 +64,12 @@ class ARL(pl.LightningModule):
             # TODO: add AUC metric
             self.log("train_reweighted_loss_learner", loss, on_step=True, on_epoch=False)
             
+            return loss
+            
         elif optimizer_idx == 1 and self.global_step > self.hparams.pretrain_steps:
             loss = self.adversary_step(x, y)
             
-
-        return loss   
+            return loss
     
     
     def learner_step(self, x, y):
