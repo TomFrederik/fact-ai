@@ -171,7 +171,7 @@ class Dataset(Dataset):
         x = list(self.features.iloc[index].to_numpy())  #TODO potential bottleneck? let's check in the future
         x = torch.cat(x, dim=0)
 
-        y = self.labels[index]
+        y = float(self.labels[index])
 
         s = self.memberships[index].item()
 
