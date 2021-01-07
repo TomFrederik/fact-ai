@@ -41,7 +41,7 @@ def train(args):
     # Select model and instantiate
     if args.model == 'ARL':
         model = ARL(num_features=train_dataset.dimensionality,
-                    pretrain_steps = args.pretrain_steps,
+                    pretrain_steps=args.pretrain_steps,
                     prim_hidden=args.prim_hidden,
                     adv_hidden=args.adv_hidden,
                     prim_lr=args.prim_lr,
