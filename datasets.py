@@ -94,8 +94,11 @@ class Dataset(Dataset):
             self.features[key] -= mean_std[key][0]
             self.features[key] /= mean_std[key][1]
 
-            assert np.abs(np.mean(self.features[key])) < 1e-10
-            assert np.abs(np.std(self.features[key]) - 1) < 1e-4
+            if not test:
+                # in the training set, features should be precisely normalized
+                # in the test set, we expect slight deviations
+                assert np.abs(np.mean(self.features[key])) < 1e-10
+                assert np.abs(np.std(self.features[key]) - 1) < 1e-4
 
         # create labels
         self.labels = self.features[target_variable].to_numpy()
@@ -191,6 +194,7 @@ if __name__ == '__main__':
 
     adult_dataset = Dataset("Adult")
     print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
+    print(adult_dataset.features["age"].unique())
 
     compas_dataset = Dataset('COMPAS')
     print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
