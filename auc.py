@@ -17,9 +17,9 @@ class AUCLogger(Callback):
         super().on_validation_epoch_end(trainer, pl_module)
         scores = pl_module(self.dataset.features)
         aucs = aucs_from_dataset(scores, self.dataset)
-        pl_module.log("validation/min_auc", min(aucs.values))
-        pl_module.log("validation/avg_auc", mean(aucs.values))
-        pl_module.log("validation/minority_auc", aucs[dataset.minority])
+        pl_module.log("validation/min_auc", min(aucs.values()))
+        pl_module.log("validation/avg_auc", mean(aucs.values()))
+        pl_module.log("validation/minority_auc", aucs[self.dataset.minority])
 
 
 def group_aucs(predictions, targets, memberships):
@@ -36,7 +36,7 @@ def group_aucs(predictions, targets, memberships):
     aucs = {}
     for group in groups:
         indices = (memberships == group)
-        aucs[group] = auroc(predictions[indices], targets[indices])
+        aucs[group.item()] = auroc(predictions[indices], targets[indices]).item()
 
     return aucs
 
