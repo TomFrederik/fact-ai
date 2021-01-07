@@ -133,7 +133,7 @@ class Dataset(Dataset):
             self.memberships[i] = self.values2index[s]
 
         # compute the minority group (the one with the fewest members)
-        vals, counts = self.memberships.uniques(return_counts=True)
+        vals, counts = self.memberships.unique(return_counts=True)
         self.minority = vals[counts.argmin().item()]
 
         ## convert categorical data into onehot
