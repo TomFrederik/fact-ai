@@ -12,7 +12,6 @@ class ARL(pl.LightningModule):
         adv_hidden=[],
         prim_lr=0.01,
         adv_lr=0.01,
-        batch_size=256,
         optimizer=torch.optim.Adagrad,
         opt_kwargs={},
         ):
@@ -35,13 +34,6 @@ class ARL(pl.LightningModule):
         # init networks
         self.learner = Learner(num_features=num_features, hidden_units=prim_hidden)
         self.adversary = Adversary(num_features=num_features, hidden_units=adv_hidden)
-        
-        # init lambdas
-        self.lambdas = torch.ones(self.hparams.batch_size, device=self.device)
-        
-        # init unweighted binary cross entropy loss
-        # TODO: change initialization? shouldn't matter as long as learner is called first
-        self.bce = torch.zeros(self.hparams.batch_size, device=self.device)
 
         # init loss function
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
@@ -61,7 +53,8 @@ class ARL(pl.LightningModule):
         loss - scalar, minimization objective
         '''
         
-        x, y = batch
+        x, y, _ = batch         
+        y = y.float()   # TODO: fix in datasets.py?
 
         if optimizer_idx == 0:
             loss = self.learner_step(x, y)
@@ -90,11 +83,14 @@ class ARL(pl.LightningModule):
         '''
         
         # compute unweighted bce
-        logits = self.learner(x)
-        self.bce = self.loss_fct(logits, y)
+        logits = self.learner(x)        
+        bce = self.loss_fct(logits, y)
         
-        # compute reweighted loss        
-        loss = torch.dot(self.lambdas, self.bce)
+        # compute lambdas
+        lambdas = self.adversary(x)
+        
+        # compute reweighted loss  
+        loss = torch.dot(lambdas, bce)
         
         return loss
      
@@ -110,18 +106,22 @@ class ARL(pl.LightningModule):
         -------
         loss - scalar, minimization objective for the adversary        
         '''
+        # compute unweighted bce
+        logits = self.learner(x)        
+        bce = self.loss_fct(logits, y)
         
         # compute lambdas
-        self.lambdas = self.adversary(x)
+        lambdas = self.adversary(x)
         
         # compute reweighted loss
-        loss = -torch.dot(self.lambdas, self.bce)
+        loss = -torch.dot(lambdas, bce)
         
         return loss        
         
         
     def validation_step(self, batch, batch_idx):
-        x, y = batch        
+        x, y, _ = batch        
+        y = y.float()   # TODO: fix in datasets.py?
         loss = self.learner_step(x, y)
         
         # logging
@@ -130,7 +130,8 @@ class ARL(pl.LightningModule):
 
         
     def test_step(self, batch, batch_idx):
-        x, y = batch        
+        x, y, _ = batch 
+        y = y.float()   # TODO: fix in datasets.py?
         loss = self.learner_step(x, y)
         
         # logging
@@ -147,8 +148,8 @@ class ARL(pl.LightningModule):
         '''
         
         # Create optimizers for learner and adversary
-        optimizer_learn = self.optimizer(self.learner.parameters(), lr=self.hparams.prim_lr, **self.hparams.opt_kwargs)
-        optimizer_adv = self.optimizer(self.adversary.parameters(), lr=self.hparams.adv_lr, **self.hparams.opt_kwargs)
+        optimizer_learn = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.prim_lr, **self.hparams.opt_kwargs)
+        optimizer_adv = self.hparams.optimizer(self.adversary.parameters(), lr=self.hparams.adv_lr, **self.hparams.opt_kwargs)
 
         return [optimizer_learn, optimizer_adv], []
 
@@ -191,7 +192,7 @@ class Learner(nn.Module):
         
         out = self.net(x)
         
-        return out
+        return torch.squeeze(out)
 
     
 class Adversary(nn.Module):
@@ -239,7 +240,7 @@ class Adversary(nn.Module):
         # scale and shift
         out = x.shape[0] * adv_norm + torch.ones_like(adv_norm)        
         
-        return out
+        return torch.squeeze(out)
     
     
     
