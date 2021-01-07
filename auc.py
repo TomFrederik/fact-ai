@@ -2,6 +2,7 @@ from statistics import mean
 
 from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.callbacks import Callback
+import torch
 
 
 class AUCLogger(Callback):
@@ -15,7 +16,7 @@ class AUCLogger(Callback):
 
     def on_epoch_end(self, trainer, pl_module):
         super().on_validation_epoch_end(trainer, pl_module)
-        scores = pl_module(self.dataset.features)
+        scores = torch.sigmoid(pl_module(self.dataset.features))
         aucs = aucs_from_dataset(scores, self.dataset)
         pl_module.log("validation/min_auc", min(aucs.values()))
         pl_module.log("validation/avg_auc", mean(aucs.values()))
@@ -36,7 +37,10 @@ def group_aucs(predictions, targets, memberships):
     aucs = {}
     for group in groups:
         indices = (memberships == group)
-        aucs[group.item()] = auroc(predictions[indices], targets[indices]).item()
+        if torch.sum(targets[indices]) == 0 or torch.sum(1-targets[indices]) == 0:
+            aucs[group.item()] = 0 
+        else:
+            aucs[group.item()] = auroc(predictions[indices], targets[indices]).item()
 
     return aucs
 

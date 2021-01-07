@@ -22,6 +22,10 @@ def train(args):
     :return: Results from testing the model
     """
 
+    # create logdir
+    logdir = os.path.join(args.log_dir, args.dataset, args.model)
+    os.makedirs(logdir, exist_ok=True)
+
     # Seed for reproducability
     pl.seed_everything(args.seed)
 
@@ -59,18 +63,18 @@ def train(args):
                               optimizer=OPT_BY_NAME[args.opt],
                               opt_kwargs={})
 
-
-    os.makedirs(args.log_dir, exist_ok=True)
-
+    
 
     # Create a PyTorch Lightning trainer
     auc_callback = AUCLogger(test_dataset)
-    trainer = pl.Trainer(default_root_dir=args.log_dir,
+    trainer = pl.Trainer(default_root_dir=logdir,
                          checkpoint_callback=ModelCheckpoint(save_weights_only=True),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps+args.pretrain_steps,
                          callbacks=[auc_callback],
-                         progress_bar_refresh_rate=1 if args.p_bar else 0)
+                         progress_bar_refresh_rate=1 if args.p_bar else 0#,
+                         #fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
+                         )
 
     # Training
     trainer.fit(model, train_loader)
