@@ -42,19 +42,19 @@ class BaselineModel(pl.LightningModule):
         self.loss_fct = nn.BCEWithLogitsLoss()
 
     def forward(self, input):
-        out = self.net(input)
+        out = self.net(input).squeeze_()
         return out
     
     def training_step(self, batch, batch_idx):
         
         # get features and labels
-        x, y = batch
+        x, y, s = batch
         
         # compute logits
         logits = self(x)
 
         # compute loss
-        loss = self.loss(logits, y)
+        loss = self.loss_fct(logits, y)
 
         # logging
         #TODO: add other metrics
@@ -64,13 +64,13 @@ class BaselineModel(pl.LightningModule):
         
     def validation_step(self, batch, batch_idx):
         # get features and labels
-        x, y = batch
+        x, y, s = batch
         
         # compute logits
         logits = self(x)
 
         # compute loss
-        loss = self.loss(logits, y)
+        loss = self.loss_fct(logits, y)
 
         # logging
         #TODO: add other metrics
@@ -78,13 +78,13 @@ class BaselineModel(pl.LightningModule):
         
     def test_step(self, batch, batch_idx):
         # get features and labels
-        x, y = batch
+        x, y, s = batch
         
         # compute logits
         logits = self(x)
 
         # compute loss
-        loss = self.loss(logits, y)
+        loss = self.loss_fct(logits, y)
 
         # logging
         #TODO: add other metrics
