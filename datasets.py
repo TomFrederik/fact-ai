@@ -83,7 +83,7 @@ class Dataset(Dataset):
         self.hide_sensitive_columns = hide_sensitive_columns
 
         # load data
-        self.features = pd.read_csv(path, ',', names=columns)
+        features = pd.read_csv(path, ',', names=columns)
 
         # load mean and std
         with open(mean_std_path) as json_file:
@@ -91,30 +91,27 @@ class Dataset(Dataset):
 
         # center and normalize numerical features
         for key in mean_std:
-            self.features[key] -= mean_std[key][0]
-            self.features[key] /= mean_std[key][1]
+            features[key] -= mean_std[key][0]
+            features[key] /= mean_std[key][1]
 
             if not test:
                 # in the training set, features should be precisely normalized
                 # in the test set, we expect slight deviations
-                assert np.abs(np.mean(self.features[key])) < 1e-10
-                assert np.abs(np.std(self.features[key]) - 1) < 1e-4
+                assert np.abs(np.mean(features[key])) < 1e-10
+                assert np.abs(np.std(features[key]) - 1) < 1e-4
 
         # create labels
-        self.labels = self.features[target_variable].to_numpy()
-        zero_idcs = self.labels != target_value
-        one_idcs = self.labels == target_value
-        self.labels[one_idcs] = 1
-        self.labels[zero_idcs] = 0
+        self.labels = (features[target_variable].to_numpy() == target_value).astype(int)
+        self.labels = torch.from_numpy(self.labels)
         
         # if set, will binarize/group values in the sensitive columns
         if binarize_prot_group:
             for col, val in zip(sensitive_column_names, sensitive_column_values):
-                self.features[col] = self.features[col].apply(lambda x: float(x == val))
+                features[col] = features[col].apply(lambda x: float(x == val))
         
         # turn protected group memberships into a single index
         # first create lists of all the values the sensitive columns can take:
-        uniques = [tuple(self.features[col].unique()) for col in sensitive_column_names]
+        uniques = [tuple(features[col].unique()) for col in sensitive_column_names]
         # create a list of tuples of such values. This corresponds to a list of all protected groups
         self.index2values = itertools.product(*uniques)
         # create the inverse dictionary:
@@ -123,21 +120,21 @@ class Dataset(Dataset):
 
         # remove target variable from features
         columns.remove(target_variable)
-        self.sensitives = self.features[sensitive_column_names]
+        self.sensitives = features[sensitive_column_names]
         if hide_sensitive_columns: # remove sensitive columns
             for c in sensitive_column_names:
                 columns.remove(c)
-        self.features = self.features[columns]
+        features = features[columns]
 
         # Create a tensor with protected group membership indices for easier access
-        self.memberships = torch.empty(len(self.features), dtype=int)
+        self.memberships = torch.empty(len(features), dtype=int)
         for i in range(len(self.memberships)):
             s = tuple(self.sensitives.iloc[i])
             self.memberships[i] = self.values2index[s]
 
         # compute the minority group (the one with the fewest members)
         vals, counts = self.memberships.unique(return_counts=True)
-        self.minority = vals[counts.argmin().item()]
+        self.minority = vals[counts.argmin().item()].item()
 
         ## convert categorical data into onehot
         # load vocab
@@ -150,26 +147,37 @@ class Dataset(Dataset):
 
         # fill nan values in COMPAS dataset
         if dataset_name == 'COMPAS':
-            self.features['c_charge_desc'].fillna('nan', inplace=True)
+            features['c_charge_desc'].fillna('nan', inplace=True)
 
+        class_columns = []
+        num_classes = []
+        tensors = []
         for c in columns:
             if c in vocab:
                 vals = list(vocab[c])
                 val2int = {vals[i]:i for i in range(len(vals))} # map possible value to integer
-                self.features[c] = self.features[c].apply(lambda x: nn.functional.one_hot(torch.Tensor([val2int[x]]).long(), num_classes=len(vals)).flatten())
-            else: # feature is a scalar
-                self.features[c] = self.features[c].apply(lambda x: torch.Tensor([x]))
+                features[c] = features[c].apply(lambda x: val2int[x])
+                one_hot = nn.functional.one_hot(
+                    torch.tensor(features[c].values).long(),
+                    len(vals))
+                for i in range(one_hot.size(-1)):
+                    tensors.append(one_hot[:, i])
+            else:
+                tensors.append(torch.tensor(features[c].values))
+
+        self.features = torch.stack(tensors, dim=1).float()
+        self.dimensionality = self.features.size(1)
+
 
         # store dimensionality of x
-        x_ = list(self.features.iloc[0].to_numpy())
-        self.dimensionality = torch.flatten(torch.cat(x_, dim=0)).shape[0]
+        #x_ = list(features.iloc[0].to_numpy())
+        #self.dimensionality = torch.flatten(torch.cat(x_, dim=0)).shape[0]
 
     def __len__(self):
-        return len(self.features)
+        return self.features.size(0)
     
     def __getitem__(self, index):
-        x = list(self.features.iloc[index].to_numpy())  #TODO potential bottleneck? let's check in the future
-        x = torch.cat(x, dim=0)
+        x = self.features[index]
 
         y = float(self.labels[index])
 
@@ -192,12 +200,12 @@ class Dataset(Dataset):
 
 if __name__ == '__main__':
 
-    adult_dataset = Dataset("Adult")
-    print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
-    print(adult_dataset.features["age"].unique())
+    # adult_dataset = Dataset("Adult")
+    # print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
+    # print(adult_dataset.features["age"].unique())
 
-    compas_dataset = Dataset('COMPAS')
-    print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
+    # compas_dataset = Dataset('COMPAS')
+    # print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
 
     lsac_dataset = Dataset('LSAC')
     print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
