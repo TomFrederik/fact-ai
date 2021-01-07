@@ -50,7 +50,7 @@ DATASET_SETTINGS = {"Adult": {
         "sensitive_column_names": ['race','sex'],
         "sensitive_column_values": ['black','female'],
         "target_variable": "is_recid",
-        "target_value": " Yes"
+        "target_value": "Yes"
         }
     }
 
@@ -85,9 +85,11 @@ class Dataset(Dataset):
 
         # create labels
         self.labels = self.features[target_variable].to_numpy()
-        self.labels[self.labels == target_value] = 1
-        self.labels[self.labels != target_value] = 0
-
+        zero_idcs = self.labels != target_value
+        one_idcs = self.labels == target_value
+        self.labels[one_idcs] = 1
+        self.labels[zero_idcs] = 0
+        
         # turn protected group memberships into a single index
         # first create lists of all the values the sensitive columns can take:
         uniques = [tuple(self.features[col].unique()) for col in sensitive_column_names]
