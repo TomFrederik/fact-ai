@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from datasets import Dataset
 from arl import ARL
 from baseline_model import BaselineModel
+from auc import AUCLogger
 
 import argparse
 import os
@@ -102,11 +103,13 @@ def train(args):
 
     # Create a PyTorch Lightning trainer
     metric_callback = MetricCallback(test_loader)
+    auc_callback = AUCLogger(test_dataset)
     trainer = pl.Trainer(default_root_dir=args.log_dir,
                          checkpoint_callback=ModelCheckpoint(save_weights_only=True),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps,
                          #callbacks=[metric_callback],  #TODO enable?
+                         callbacks=[auc_callback],
                          progress_bar_refresh_rate=1 if args.p_bar else 0)
 
     # Training

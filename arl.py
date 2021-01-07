@@ -150,6 +150,9 @@ class ARL(pl.LightningModule):
         optimizer_adv = self.optimizer(self.adversary.parameters(), lr=self.hparams.adv_lr, **self.hparams.opt_kwargs)
 
         return [optimizer_learn, optimizer_adv], []
+
+    def forward(self, x):
+        return self.learner(x)
     
     
 class Learner(nn.Module):
