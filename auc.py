@@ -5,7 +5,7 @@ from pytorch_lightning.callbacks import Callback
 
 
 class AUCLogger(Callback):
-    def __init__(self, dataloader):
+    def __init__(self, dataset):
         """Callback that logs various AUC metrics.
 
         Args:
