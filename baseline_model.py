@@ -24,11 +24,13 @@ class BaselineModel(pl.LightningModule):
         super().__init__()
 
         # save params
-        self.save_hyperparams()
+        self.save_hyperparameters()
+
+        self.optimizer = optimizer
 
         # construct network
         net_list = []
-        num_units = [self.hparams.num_featuers] + self.hparams.hidden_units
+        num_units = [self.hparams.num_features] + self.hparams.hidden_units
         for i in range(len(num_units)-1):
             net_list.append(nn.Linear(num_units[i],num_units[i+1]))
             net_list.append(nn.ReLU())
