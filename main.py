@@ -46,6 +46,7 @@ def train(args):
                     adv_hidden=args.adv_hidden,
                     prim_lr=args.prim_lr,
                     adv_lr=args.adv_lr,
+                    batch_size=args.train_batch_size,
                     optimizer=OPT_BY_NAME[args.opt],
                     opt_kwargs={})
 
