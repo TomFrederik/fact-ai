@@ -136,13 +136,15 @@ class Dataset(Dataset):
             else: # feature is a scalar
                 self.features[c] = self.features[c].apply(lambda x: torch.Tensor([x]))
 
-        
+        # store dimensionality of x
+        x_ = list(self.features.iloc[0].to_numpy())
+        self.dimensionality = torch.flatten(torch.cat(x_, dim=0)).shape[0]
 
     def __len__(self):
         return len(self.features)
     
     def __getitem__(self, index):
-        x = list(self.features.iloc[index].to_numpy())
+        x = list(self.features.iloc[index].to_numpy())  #TODO potential bottleneck? let's check in the future
         x = torch.cat(x, dim=0)
 
         y = self.labels[index]
