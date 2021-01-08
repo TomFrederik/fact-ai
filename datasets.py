@@ -61,13 +61,14 @@ DATASET_SETTINGS = {"Adult": {
 
 class Dataset(Dataset):
 
-    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True):
+    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True, idcs=None):
         '''
         dataset_name - str, identifier of the dataset
         test - bool, whether to use the test set
         hide_sensitive_columns - bool, whether to hide (delete) sensitive columns
         binarize_prot_group - bool, whether to binarize the protected group. If true, all races other than black will be mapped to 0.
                                     If false, a unique index for each combination of sensitive column values is created.
+        idcs - list, indices indicating which elements to take
         '''
         super().__init__()
 
@@ -85,6 +86,10 @@ class Dataset(Dataset):
         # load data
         features = pd.read_csv(path, ',', names=columns)
 
+        # drop indices not specified
+        if idcs is not None:
+            features = features.iloc[idcs]
+
         # load mean and std
         with open(mean_std_path) as json_file:
             mean_std = json.load(json_file)
@@ -97,8 +102,14 @@ class Dataset(Dataset):
             if not test:
                 # in the training set, features should be precisely normalized
                 # in the test set, we expect slight deviations
-                assert np.abs(np.mean(features[key])) < 1e-10
-                assert np.abs(np.std(features[key]) - 1) < 1e-4
+                mean = np.abs(np.mean(features[key]))
+                delta_std = np.abs(np.std(features[key]) - 1)
+                if mean > 1e-10:
+                    print(f'WARNING: mean is {mean}')
+                if delta_std > 1e-4:
+                    print(f'WARNING: delta std is {delta_std}')
+                #assert mean < 1e-10, f'mean is {mean}'
+                #assert delta_std < 1e-4, f'delta std is {delta_std}'
 
         # create labels
         self.labels = (features[target_variable].to_numpy() == target_value).astype(int)
