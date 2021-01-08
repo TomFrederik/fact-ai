@@ -17,7 +17,7 @@ DATASET_SETTINGS = {"Adult": {
                     "sex", "capital-gain", "capital-loss", "hours-per-week",
                     "native-country", "income"],
         "sensitive_column_names": ['race','sex'],
-        "sensitive_column_values": ['black','female'],
+        "sensitive_column_values": ['Black','Female'],
         "target_variable": "income",
         "target_value": " >50K"},
     "LSAC": {
@@ -39,7 +39,7 @@ DATASET_SETTINGS = {"Adult": {
                     "weighted_lsat_ugpa"
                 ],
         "sensitive_column_names": ['race','sex'],
-        "sensitive_column_values": ['black','female'],
+        "sensitive_column_values": ['Black','Female'],
         "target_variable": "pass_bar",
         "target_value": "Passed"
         },
@@ -52,7 +52,7 @@ DATASET_SETTINGS = {"Adult": {
                     "age", "c_charge_degree", "c_charge_desc", "age_cat", "sex", "race",
                     "is_recid"],
         "sensitive_column_names": ['race','sex'],
-        "sensitive_column_values": ['black','female'],
+        "sensitive_column_values": ['Black','Female'],
         "target_variable": "is_recid",
         "target_value": "Yes"
         }
@@ -108,6 +108,7 @@ class Dataset(Dataset):
         if binarize_prot_group:
             for col, val in zip(sensitive_column_names, sensitive_column_values):
                 features[col] = features[col].apply(lambda x: float(x == val))
+                
         
         # turn protected group memberships into a single index
         # first create lists of all the values the sensitive columns can take:
@@ -116,7 +117,7 @@ class Dataset(Dataset):
         self.index2values = itertools.product(*uniques)
         # create the inverse dictionary:
         self.values2index = {vals: index for index, vals in enumerate(self.index2values)}
-
+        print(self.values2index)
 
         # remove target variable from features
         columns.remove(target_variable)

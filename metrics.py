@@ -1,26 +1,33 @@
 from statistics import mean
 
-from pytorch_lightning.metrics.functional.classification import auroc
+from pytorch_lightning.metrics.functional.classification import auroc, accuracy
 from pytorch_lightning.callbacks import Callback
 import torch
 
 
-class AUCLogger(Callback):
-    def __init__(self, dataset):
+class Logger(Callback):
+    def __init__(self, dataset, name):
         """Callback that logs various AUC metrics.
 
         Args:
-            dataset: Dataset instance to use"""
+            dataset: Dataset instance to use
+            name: directory of the logged metrics, e.g. test or training
+        """
         super().__init__()
         self.dataset = dataset
+        self.name = name
 
     def on_epoch_end(self, trainer, pl_module):
         super().on_validation_epoch_end(trainer, pl_module)
         scores = torch.sigmoid(pl_module(self.dataset.features))
         aucs = aucs_from_dataset(scores, self.dataset)
-        pl_module.log("validation/min_auc", min(aucs.values()))
-        pl_module.log("validation/avg_auc", mean(aucs.values()))
-        pl_module.log("validation/minority_auc", aucs[self.dataset.minority])
+        acc = accuracy(scores, self.dataset.labels).item()
+
+        pl_module.log(f"{self.name}/min_auc", min(aucs.values()))
+        pl_module.log(f"{self.name}/avg_auc", mean(aucs.values()))
+        pl_module.log(f"{self.name}/avg_auc_total", auroc(scores, self.dataset.labels).item())
+        pl_module.log(f"{self.name}/minority_auc", aucs[self.dataset.minority])
+        pl_module.log(f"{self.name}/accuracy", acc)
 
 
 def group_aucs(predictions, targets, memberships):

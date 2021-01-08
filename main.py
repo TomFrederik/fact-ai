@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from datasets import Dataset
 from arl import ARL
 from baseline_model import BaselineModel
-from auc import AUCLogger
+from metrics import Logger
 
 import argparse
 import os
@@ -62,17 +62,19 @@ def train(args):
                               lr=args.prim_lr,
                               optimizer=OPT_BY_NAME[args.opt],
                               opt_kwargs={})
+        args.pretrain_steps = 0 # NO PRETRAINING
 
     
 
     # Create a PyTorch Lightning trainer
-    auc_callback = AUCLogger(test_dataset)
+    test_callback = Logger(test_dataset, 'test')
+    train_callback = Logger(train_dataset, 'training')
     trainer = pl.Trainer(default_root_dir=logdir,
                          checkpoint_callback=ModelCheckpoint(save_weights_only=True),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps+args.pretrain_steps,
-                         callbacks=[auc_callback],
-                         progress_bar_refresh_rate=1 if args.p_bar else 0#,
+                         callbacks=[train_callback, test_callback],
+                         progress_bar_refresh_rate=1 if args.p_bar else 0
                          #fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
                          )
 

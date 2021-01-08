@@ -3,7 +3,6 @@ import torch.nn as nn
 import pytorch_lightning as pl
 
 
-
 class BaselineModel(pl.LightningModule):
 
     def __init__(self, 
