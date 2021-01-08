@@ -1,6 +1,7 @@
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.metrics.functional.classification import auroc
 from torch.utils.data import DataLoader
 
 from datasets import Dataset
@@ -10,6 +11,10 @@ from metrics import Logger
 
 import argparse
 import os
+
+import numpy as np
+
+from sklearn.model_selection import KFold
 
 # dict to access optimizers by name, if we need to use different opts.
 OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad}
@@ -42,51 +47,71 @@ def train(args):
                              shuffle=False,
                              num_workers=args.num_workers)
 
-    # Select model and instantiate
-    if args.model == 'ARL':
-        model = ARL(num_features=train_dataset.dimensionality,
-                    pretrain_steps=args.pretrain_steps,
-                    prim_hidden=args.prim_hidden,
-                    adv_hidden=args.adv_hidden,
-                    prim_lr=args.prim_lr,
-                    adv_lr=args.adv_lr,
-                    optimizer=OPT_BY_NAME[args.opt],
-                    opt_kwargs={})
-
-    elif args.model == 'DRO':
-        raise NotImplementedError
     
-    elif args.model == 'baseline':
-        model = BaselineModel(num_features=train_dataset.dimensionality,
-                              hidden_units=args.prim_hidden,
-                              lr=args.prim_lr,
-                              optimizer=OPT_BY_NAME[args.opt],
-                              opt_kwargs={})
-        args.pretrain_steps = 0 # NO PRETRAINING
 
     
 
-    # Create a PyTorch Lightning trainer
     test_callback = Logger(test_dataset, 'test')
-    train_callback = Logger(train_dataset, 'training')
-    trainer = pl.Trainer(default_root_dir=logdir,
-                         checkpoint_callback=ModelCheckpoint(save_weights_only=True),
-                         gpus=1 if torch.cuda.is_available() else 0,
-                         max_steps=args.train_steps+args.pretrain_steps,
-                         callbacks=[train_callback, test_callback],
-                         progress_bar_refresh_rate=1 if args.p_bar else 0
-                         #fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
-                         )
+    
+    # perform 5-fold crossvalidation
+    kf = KFold(n_splits=5)
+    fold_nbr = 0
+    aucs = []
+    for train, val in kf.split(train_dataset):
+        fold_nbr += 1
 
-    # Training
-    trainer.fit(model, train_loader)
+        train_callback = Logger(train, 'training')
+        val_callback = Logger(val, 'validation')
+
+        # Select model and instantiate
+        if args.model == 'ARL':
+            model = ARL(num_features=train_dataset.dimensionality,
+                        pretrain_steps=args.pretrain_steps,
+                        prim_hidden=args.prim_hidden,
+                        adv_hidden=args.adv_hidden,
+                        prim_lr=args.prim_lr,
+                        adv_lr=args.adv_lr,
+                        optimizer=OPT_BY_NAME[args.opt],
+                        opt_kwargs={})
+
+        elif args.model == 'DRO':
+            raise NotImplementedError
+        
+        elif args.model == 'baseline':
+            model = BaselineModel(num_features=train_dataset.dimensionality,
+                                hidden_units=args.prim_hidden,
+                                lr=args.prim_lr,
+                                optimizer=OPT_BY_NAME[args.opt],
+                                opt_kwargs={})
+            args.pretrain_steps = 0 # NO PRETRAINING
+
+
+        # Create a PyTorch Lightning trainer
+        trainer = pl.Trainer(default_root_dir=os.path.join(logdir,f'fold_{fold_nbr}'),
+                            checkpoint_callback=ModelCheckpoint(save_weights_only=True),
+                            gpus=1 if torch.cuda.is_available() else 0,
+                            max_steps=args.train_steps+args.pretrain_steps,
+                            callbacks=[train_callback, val_callback], # test callback?
+                            progress_bar_refresh_rate=1 if args.p_bar else 0
+                            #fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
+                            )
+
+        # Training
+        trainer.fit(model, train_loader)
+
+        # Evaluate on val set to get an estimate of performance
+        scores = torch.sigmoid(model(val))
+        aucs.append(auroc(scores, val.labels).item())
+    
+    mean_auc = np.mean(aucs)
+        
 
     # Testing
-    model = model.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
-    test_result = trainer.test(model, test_dataloaders=test_loader, verbose=True)
+    #model = model.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+    #test_result = trainer.test(model, test_dataloaders=test_loader, verbose=True)
 
-    return test_result
-
+    #return test_result
+    return mean_auc
 
 if __name__ == "__main__":
     
