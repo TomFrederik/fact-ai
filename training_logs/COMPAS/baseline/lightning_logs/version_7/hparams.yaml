@@ -1,0 +1,7 @@
+hidden_units:
+- 64
+- 32
+lr: 0.1
+num_features: 448
+opt_kwargs: {}
+optimizer: !!python/name:torch.optim.adagrad.Adagrad ''
