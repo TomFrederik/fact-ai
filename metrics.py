@@ -20,7 +20,7 @@ class Logger(Callback):
         self.accuracy = Accuracy()
 
     def on_epoch_end(self, trainer, pl_module):
-        super().on_validation_epoch_end(trainer, pl_module)
+        super().on_epoch_end(trainer, pl_module)
         scores = torch.sigmoid(pl_module(self.dataset.features))
         aucs = aucs_from_dataset(scores, self.dataset)
         acc = self.accuracy(scores, self.dataset.labels)
