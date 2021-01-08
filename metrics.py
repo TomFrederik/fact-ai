@@ -1,6 +1,7 @@
 from statistics import mean
 
-from pytorch_lightning.metrics.functional.classification import auroc, accuracy
+from pytorch_lightning.metrics.functional.classification import auroc
+from pytorch_lightning.metrics.classification import Accuracy
 from pytorch_lightning.callbacks import Callback
 import torch
 
@@ -16,12 +17,13 @@ class Logger(Callback):
         super().__init__()
         self.dataset = dataset
         self.name = name
+        self.accuracy = Accuracy()
 
     def on_epoch_end(self, trainer, pl_module):
         super().on_validation_epoch_end(trainer, pl_module)
         scores = torch.sigmoid(pl_module(self.dataset.features))
         aucs = aucs_from_dataset(scores, self.dataset)
-        acc = accuracy(scores, self.dataset.labels).item()
+        acc = self.accuracy(scores, self.dataset.labels)
 
         pl_module.log(f"{self.name}/min_auc", min(aucs.values()))
         pl_module.log(f"{self.name}/macro_avg_auc", mean(aucs.values()))
