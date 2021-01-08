@@ -24,8 +24,8 @@ class Logger(Callback):
         acc = accuracy(scores, self.dataset.labels).item()
 
         pl_module.log(f"{self.name}/min_auc", min(aucs.values()))
-        pl_module.log(f"{self.name}/avg_auc", mean(aucs.values()))
-        pl_module.log(f"{self.name}/avg_auc_total", auroc(scores, self.dataset.labels).item())
+        pl_module.log(f"{self.name}/macro_avg_auc", mean(aucs.values()))
+        pl_module.log(f"{self.name}/micro_avg_auc", auroc(scores, self.dataset.labels).item())
         pl_module.log(f"{self.name}/minority_auc", aucs[self.dataset.minority])
         pl_module.log(f"{self.name}/accuracy", acc)
 
