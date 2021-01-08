@@ -61,7 +61,7 @@ class ARL(pl.LightningModule):
             
             # logging
             # TODO: add AUC metric
-            self.log("train_reweighted_loss_learner", loss)
+            self.log("training/reweighted_loss_learner", loss)
             
             return loss
             
@@ -127,7 +127,7 @@ class ARL(pl.LightningModule):
         
         # logging
         # TODO: add AUC metric
-        self.log("val_reweighted_loss_learner", loss)
+        self.log("validation/reweighted_loss_learner", loss)
 
         
     def test_step(self, batch, batch_idx):
@@ -137,7 +137,7 @@ class ARL(pl.LightningModule):
         
         # logging
         # TODO: add AUC metric
-        self.log("test_reweighted_loss_learner", loss)
+        self.log("test/reweighted_loss_learner", loss)
  
     
     def configure_optimizers(self):
