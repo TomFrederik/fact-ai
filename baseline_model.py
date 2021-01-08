@@ -57,7 +57,7 @@ class BaselineModel(pl.LightningModule):
 
         # logging
         #TODO: add other metrics
-        self.log('train_loss', loss)
+        self.log('training/loss', loss)
 
         return loss        
         
@@ -73,7 +73,7 @@ class BaselineModel(pl.LightningModule):
 
         # logging
         #TODO: add other metrics
-        self.log('val_loss', loss)        
+        self.log('validation/loss', loss)        
         
     def test_step(self, batch, batch_idx):
         # get features and labels
@@ -87,7 +87,7 @@ class BaselineModel(pl.LightningModule):
 
         # logging
         #TODO: add other metrics
-        self.log('test_loss', loss)        
+        self.log('test/loss', loss)        
 
     
     def configure_optimizers(self):
