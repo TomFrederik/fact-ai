@@ -35,13 +35,10 @@ def train(args):
     pl.seed_everything(args.seed)
 
     # Create datasets
-    train_dataset = Dataset(args.dataset)
+    dummy_train_dataset = Dataset(args.dataset)
+    
     test_dataset = Dataset(args.dataset, test=True)
 
-    train_loader = DataLoader(train_dataset,
-                              batch_size=args.batch_size,
-                              shuffle=True,
-                              num_workers=args.num_workers)
     test_loader = DataLoader(test_dataset,
                              batch_size=args.batch_size,
                              shuffle=False,
@@ -57,11 +54,25 @@ def train(args):
     kf = KFold(n_splits=5)
     fold_nbr = 0
     aucs = []
-    for train, val in kf.split(train_dataset):
+    for train_idcs, val_idcs in kf.split(dummy_train_dataset):
         fold_nbr += 1
+        
+        # create fold datasets, loaders and callbacks
+        train_dataset = Dataset(args.dataset, idcs=train_idcs)
+        val_dataset = Dataset(args.dataset, idcs=val_idcs)
 
-        train_callback = Logger(train, 'training')
-        val_callback = Logger(val, 'validation')
+        train_loader = DataLoader(train_dataset,
+                              batch_size=args.batch_size,
+                              shuffle=True,
+                              num_workers=args.num_workers)
+
+        validation_loader = DataLoader(val_dataset,
+                              batch_size=args.batch_size,
+                              shuffle=True,
+                              num_workers=args.num_workers)
+        
+        train_callback = Logger(train_dataset, 'training')
+        val_callback = Logger(val_dataset, 'validation')
 
         # Select model and instantiate
         if args.model == 'ARL':
@@ -100,17 +111,18 @@ def train(args):
         trainer.fit(model, train_loader)
 
         # Evaluate on val set to get an estimate of performance
-        scores = torch.sigmoid(model(val))
-        aucs.append(auroc(scores, val.labels).item())
+        scores = torch.sigmoid(model(val_dataset.features))
+        aucs.append(auroc(scores, val_dataset.labels).item())
+        print(f'{fold_nbr} val auc: {aucs[-1]}')
     
     mean_auc = np.mean(aucs)
-        
+    print(f'mean val auc: {mean_auc}')
 
     # Testing
     #model = model.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
     #test_result = trainer.test(model, test_dataloaders=test_loader, verbose=True)
 
-    #return test_result
+    #return mean_auc
     return mean_auc
 
 if __name__ == "__main__":

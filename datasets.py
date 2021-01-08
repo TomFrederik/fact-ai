@@ -128,7 +128,6 @@ class Dataset(Dataset):
         self.index2values = itertools.product(*uniques)
         # create the inverse dictionary:
         self.values2index = {vals: index for index, vals in enumerate(self.index2values)}
-        print(self.values2index)
 
         # remove target variable from features
         columns.remove(target_variable)
