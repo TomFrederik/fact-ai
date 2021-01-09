@@ -15,6 +15,8 @@ import os
 
 import numpy as np
 from time import time
+import itertools
+import json
 
 from sklearn.model_selection import KFold
 
@@ -22,17 +24,50 @@ from sklearn.model_selection import KFold
 OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad}
 
 
-def train(args):
+def grid_search(args):
+    '''
+    runs gridsearch
+    '''
+    # set run version
+    version = str(int(time()))
+
+    # specify search space 
+    # TODO: pull this outside this function for more flexible search space?
+    lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
+    batch_size_list = [32, 64, 128, 256, 512]
+
+    # find best hparams
+    best_mean_auc = 0
+    
+    for lr, bs in itertools.product(lr_list, batch_size_list):
+        args.lr = lr
+        args.batch_size = bs
+        mean_auc = train(args, version)
+        if mean_auc > best_mean_auc:
+            best_mean_auc = mean_auc
+            best_bs = bs
+            best_lr = lr
+    
+    best_params = {'learning_rate': best_lr, 'batch_size': best_bs}
+    # write best params to file
+    with open('best_params.json', 'w') as f:
+        json.dump(best_params, f)
+    
+    print(f'Best hyperparameters: {best_params}')
+    
+def train(args, version=None):
     """
     Function to train a model
     :param args: object from the argument parser
+    :version: used to group runs from a single grid search into the same directory
     :return: Results from testing the model
     """
 
     # create logdir
     logdir = os.path.join(args.log_dir, args.dataset, args.model)
     os.makedirs(logdir, exist_ok=True)
-    version = str(int(time()))
+    if version is None:
+        version = str(int(time()))
 
     # Seed for reproducability
     pl.seed_everything(args.seed)
@@ -105,7 +140,7 @@ def train(args):
             args.pretrain_steps = 0 # NO PRETRAINING
 
         # create logger
-        logger = TensorBoardLogger(save_dir='./', name=logdir, version=f'version_{version}/fold_{fold_nbr}')
+        logger = TensorBoardLogger(save_dir='./', name=logdir, version=f'version_{version}/lr_{args.lr}_bs_{args.batch_size}/fold_{fold_nbr}')
 
         #raise ValueError
         # Create a PyTorch Lightning trainer
@@ -157,6 +192,7 @@ if __name__ == "__main__":
     parser.add_argument('--log_dir', default='training_logs', type=str)
     parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
+    parser.add_argument('--grid_search', default=False, type=bool, help='Whether to optimize batch size and lr via gridsearch')
 
     # Dataset settings
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
@@ -164,5 +200,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # run training loop
-    train(args)
+    if args.grid_search:
+        grid_search(args)
+    else:
+        # run training loop
+        train(args)
