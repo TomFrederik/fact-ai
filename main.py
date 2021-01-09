@@ -93,8 +93,8 @@ def train(args, version=None):
         fold_nbr += 1
 
         # create fold datasets, loaders and callbacks
-        train_dataset = Dataset(args.dataset, idcs=train_idcs)
-        val_dataset = Dataset(args.dataset, idcs=val_idcs)
+        train_dataset = Dataset(args.dataset, idcs=train_idcs, disable_warnings=args.disable_warnings)
+        val_dataset = Dataset(args.dataset, idcs=val_idcs, disable_warnings=args.disable_warnings)
 
         train_loader = DataLoader(train_dataset,
                               batch_size=args.batch_size,
@@ -197,6 +197,7 @@ if __name__ == "__main__":
     # Dataset settings
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
+    parser.add_argument('--disable_warnings', default=False, type=bool, help='Whether to disable warnings about mean and std in the dataset')
 
     args = parser.parse_args()
 

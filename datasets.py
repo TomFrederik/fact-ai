@@ -61,7 +61,7 @@ DATASET_SETTINGS = {"Adult": {
 
 class Dataset(Dataset):
 
-    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True, idcs=None):
+    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True, idcs=None, disable_warnings=False):
         '''
         dataset_name - str, identifier of the dataset
         test - bool, whether to use the test set
@@ -69,6 +69,7 @@ class Dataset(Dataset):
         binarize_prot_group - bool, whether to binarize the protected group. If true, all races other than black will be mapped to 0.
                                     If false, a unique index for each combination of sensitive column values is created.
         idcs - list, indices indicating which elements to take
+        disable_warnings - bool, whether to show warnings regarding mean and std of the dataset
         '''
         super().__init__()
 
@@ -104,10 +105,11 @@ class Dataset(Dataset):
                 # in the test set, we expect slight deviations
                 mean = np.abs(np.mean(features[key]))
                 delta_std = np.abs(np.std(features[key]) - 1)
-                if mean > 1e-10:
-                    print(f'WARNING: mean is {mean}')
-                if delta_std > 1e-4:
-                    print(f'WARNING: delta std is {delta_std}')
+                if not disable_warnings:
+                    if mean > 1e-10:
+                        print(f'WARNING: mean is {mean}')
+                    if delta_std > 1e-4:
+                        print(f'WARNING: delta std is {delta_std}')
                 #assert mean < 1e-10, f'mean is {mean}'
                 #assert delta_std < 1e-4, f'delta std is {delta_std}'
 
