@@ -47,13 +47,10 @@ def train(args):
                              shuffle=False,
                              num_workers=args.num_workers)
 
-    
-
-    
 
     test_callback = Logger(test_dataset, 'test')
     
-    # perform 5-fold crossvalidation
+    # perform n-fold crossvalidation
     kf = KFold(n_splits=args.num_folds)
     fold_nbr = 0
     aucs = []
@@ -99,11 +96,9 @@ def train(args):
                                 opt_kwargs={})
             args.pretrain_steps = 0 # NO PRETRAINING
 
-
+        # create logger
         logger = TensorBoardLogger(save_dir='./', name=logdir, version=f'version_{version}/fold_{fold_nbr}')
-        print(logger.log_dir)
-        print(logger.root_dir)
-        print(logger.save_dir)
+
         #raise ValueError
         # Create a PyTorch Lightning trainer
         trainer = pl.Trainer(logger=logger,
