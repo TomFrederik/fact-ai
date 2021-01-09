@@ -100,14 +100,14 @@ def train(args):
             args.pretrain_steps = 0 # NO PRETRAINING
 
 
-        logger = TensorBoardLogger(save_dir='./', name=logdir, version=f'version_{version}')
+        logger = TensorBoardLogger(save_dir='./', name=logdir, version=f'version_{version}/fold_{fold_nbr}')
         print(logger.log_dir)
         print(logger.root_dir)
         print(logger.save_dir)
         #raise ValueError
         # Create a PyTorch Lightning trainer
         trainer = pl.Trainer(logger=logger,
-                            checkpoint_callback=ModelCheckpoint(save_weights_only=True, dirpath=logger.log_dir, filename=f'fold_{fold_nbr}'),
+                            checkpoint_callback=ModelCheckpoint(save_weights_only=True, dirpath=logger.log_dir),
                             gpus=1 if torch.cuda.is_available() else 0,
                             max_steps=args.train_steps+args.pretrain_steps,
                             callbacks=[train_callback, val_callback], # test callback?
