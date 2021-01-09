@@ -1,6 +1,6 @@
 import torch
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
@@ -39,7 +39,7 @@ def train(args):
 
     # Create datasets
     dummy_train_dataset = Dataset(args.dataset)
-    
+
     test_dataset = Dataset(args.dataset, test=True)
 
     test_loader = DataLoader(test_dataset,
@@ -47,7 +47,7 @@ def train(args):
                              shuffle=False,
                              num_workers=args.num_workers)
 
-
+    # set up callbacks which stay constant
     test_callback = Logger(test_dataset, 'test')
     
     # perform n-fold crossvalidation
@@ -56,7 +56,7 @@ def train(args):
     aucs = []
     for train_idcs, val_idcs in kf.split(dummy_train_dataset):
         fold_nbr += 1
-        
+
         # create fold datasets, loaders and callbacks
         train_dataset = Dataset(args.dataset, idcs=train_idcs)
         val_dataset = Dataset(args.dataset, idcs=val_idcs)
@@ -73,6 +73,14 @@ def train(args):
         
         train_callback = Logger(train_dataset, 'training')
         val_callback = Logger(val_dataset, 'validation')
+        early_stop_callback = EarlyStopping(
+            monitor='validation/micro_avg_auc',
+            min_delta=0.00,
+            patience=3,
+            verbose=True,
+            mode='max'
+        )
+    
 
         # Select model and instantiate
         if args.model == 'ARL':
@@ -105,7 +113,7 @@ def train(args):
                             checkpoint_callback=ModelCheckpoint(save_weights_only=True, dirpath=logger.log_dir),
                             gpus=1 if torch.cuda.is_available() else 0,
                             max_steps=args.train_steps+args.pretrain_steps,
-                            callbacks=[train_callback, val_callback], # test callback?
+                            callbacks=[train_callback, val_callback, early_stop_callback], # test callback?
                             progress_bar_refresh_rate=1 if args.p_bar else 0
                             #fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
                             )
