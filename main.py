@@ -40,7 +40,10 @@ def grid_search(args):
     best_mean_auc = 0
     
     for lr, bs in itertools.product(lr_list, batch_size_list):
-        args.lr = lr
+        args.prim_lr = lr
+        if args.model == 'ARL':
+            args.adv_lr = lr
+        
         args.batch_size = bs
         mean_auc = train(args, version)
         if mean_auc > best_mean_auc:
@@ -140,7 +143,7 @@ def train(args, version=None):
             args.pretrain_steps = 0 # NO PRETRAINING
 
         # create logger
-        logger = TensorBoardLogger(save_dir='./', name=logdir, version=f'version_{version}/lr_{args.lr}_bs_{args.batch_size}/fold_{fold_nbr}')
+        logger = TensorBoardLogger(save_dir='./', name=logdir, version=f'version_{version}/lr_{args.prim_lr}_bs_{args.batch_size}/fold_{fold_nbr}')
 
         #raise ValueError
         # Create a PyTorch Lightning trainer
