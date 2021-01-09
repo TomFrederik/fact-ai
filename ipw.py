@@ -60,7 +60,7 @@ class IPW(pl.LightningModule):
         loss = self.learner_step(x, y, s)
 
         # logging
-        self.log("training/IPW", loss)
+        self.log("training/loss", loss)
 
         return loss
 
@@ -98,7 +98,7 @@ class IPW(pl.LightningModule):
         loss = self.learner_step(x, y)
         
         # logging
-        self.log("validation/IPW", loss)
+        self.log("validation/loss", loss)
 
     def test_step(self, batch, batch_idx):
         x, y, _ = batch 
@@ -106,7 +106,7 @@ class IPW(pl.LightningModule):
         loss = self.learner_step(x, y)
         
         # logging
-        self.log("test/IPW", loss)
+        self.log("test/loss", loss)
 
     def configure_optimizers(self):
         '''
