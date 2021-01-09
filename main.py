@@ -148,7 +148,7 @@ if __name__ == "__main__":
     parser.add_argument('--adv_lr', default=0.1, type=float, help='Learning rate for adversarial network')
     parser.add_argument('--seed', default=0, type=int)
     parser.add_argument('--log_dir', default='training_logs', type=str)
-    parser.add_argument('--p_bar', action='store_true')
+    parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
 
     # Dataset settings
