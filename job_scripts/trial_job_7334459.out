@@ -1,0 +1,99 @@
+GPU available: False, used: False
+TPU available: None, using: 0 TPU cores
+/home/lgpu0133/.conda/envs/fact-ai/lib/python3.7/site-packages/pytorch_lightning/utilities/distributed.py:49: UserWarning: you defined a validation_step but have no val_dataloader. Skipping validation loop
+  warnings.warn(*args, **kwargs)
+Set SLURM handle signals.
+
+  | Name     | Type              | Params
+-----------------------------------------------
+0 | net      | Sequential        | 2.8 K 
+1 | loss_fct | BCEWithLogitsLoss | 0     
+-----------------------------------------------
+2.8 K     Trainable params
+0         Non-trainable params
+2.8 K     Total params
+GPU available: False, used: False
+TPU available: None, using: 0 TPU cores
+Set SLURM handle signals.
+
+  | Name     | Type              | Params
+-----------------------------------------------
+0 | net      | Sequential        | 2.8 K 
+1 | loss_fct | BCEWithLogitsLoss | 0     
+-----------------------------------------------
+2.8 K     Trainable params
+0         Non-trainable params
+2.8 K     Total params
+GPU available: False, used: False
+TPU available: None, using: 0 TPU cores
+Set SLURM handle signals.
+
+  | Name     | Type              | Params
+-----------------------------------------------
+0 | net      | Sequential        | 2.8 K 
+1 | loss_fct | BCEWithLogitsLoss | 0     
+-----------------------------------------------
+2.8 K     Trainable params
+0         Non-trainable params
+2.8 K     Total params
+GPU available: False, used: False
+TPU available: None, using: 0 TPU cores
+Set SLURM handle signals.
+
+  | Name     | Type              | Params
+-----------------------------------------------
+0 | net      | Sequential        | 2.8 K 
+1 | loss_fct | BCEWithLogitsLoss | 0     
+-----------------------------------------------
+2.8 K     Trainable params
+0         Non-trainable params
+2.8 K     Total params
+GPU available: False, used: False
+TPU available: None, using: 0 TPU cores
+Set SLURM handle signals.
+
+  | Name     | Type              | Params
+-----------------------------------------------
+0 | net      | Sequential        | 2.8 K 
+1 | loss_fct | BCEWithLogitsLoss | 0     
+-----------------------------------------------
+2.8 K     Trainable params
+0         Non-trainable params
+2.8 K     Total params
+mean val auc: 0.7198261737823486
+GPU available: False, used: False
+TPU available: None, using: 0 TPU cores
+Set SLURM handle signals.
+
+  | Name     | Type              | Params
+-----------------------------------------------
+0 | net      | Sequential        | 2.8 K 
+1 | loss_fct | BCEWithLogitsLoss | 0     
+-----------------------------------------------
+2.8 K     Trainable params
+0         Non-trainable params
+2.8 K     Total params
+GPU available: False, used: False
+TPU available: None, using: 0 TPU cores
+Set SLURM handle signals.
+
+  | Name     | Type              | Params
+-----------------------------------------------
+0 | net      | Sequential        | 2.8 K 
+1 | loss_fct | BCEWithLogitsLoss | 0     
+-----------------------------------------------
+2.8 K     Trainable params
+0         Non-trainable params
+2.8 K     Total params
+GPU available: False, used: False
+TPU available: None, using: 0 TPU cores
+Set SLURM handle signals.
+
+  | Name     | Type              | Params
+-----------------------------------------------
+0 | net      | Sequential        | 2.8 K 
+1 | loss_fct | BCEWithLogitsLoss | 0     
+-----------------------------------------------
+2.8 K     Trainable params
+0         Non-trainable params
+2.8 K     Total params
