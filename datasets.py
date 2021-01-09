@@ -61,7 +61,8 @@ DATASET_SETTINGS = {"Adult": {
 
 class Dataset(Dataset):
 
-    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True, idcs=None, disable_warnings=False):
+    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True, idcs=None,
+                 extended_groups=False, disable_warnings=False):
         '''
         dataset_name - str, identifier of the dataset
         test - bool, whether to use the test set
@@ -116,6 +117,11 @@ class Dataset(Dataset):
         # create labels
         self.labels = (features[target_variable].to_numpy() == target_value).astype(int)
         self.labels = torch.from_numpy(self.labels)
+
+        # TODO
+        # # if set, add label to protected groups (for IPW when respecting labels)
+        # if extended_groups:
+        #     sensitive_column_names.append(target_variable)
         
         # if set, will binarize/group values in the sensitive columns
         if binarize_prot_group:
@@ -134,7 +140,7 @@ class Dataset(Dataset):
         # remove target variable from features
         columns.remove(target_variable)
         self.sensitives = features[sensitive_column_names]
-        if hide_sensitive_columns: # remove sensitive columns
+        if hide_sensitive_columns:  # remove sensitive columns
             for c in sensitive_column_names:
                 columns.remove(c)
         features = features[columns]
@@ -145,9 +151,11 @@ class Dataset(Dataset):
             s = tuple(self.sensitives.iloc[i])
             self.memberships[i] = self.values2index[s]
 
-        # compute the minority group (the one with the fewest members)
+        # compute the minority group (the one with the fewest members) and group probabilities
         vals, counts = self.memberships.unique(return_counts=True)
         self.minority = vals[counts.argmin().item()].item()
+        self.group_probs = counts / torch.sum(counts)
+
 
         ## convert categorical data into onehot
         # load vocab
