@@ -26,9 +26,11 @@ OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad}
 
 
 def grid_search(args):
-    '''
-    runs gridsearch
-    '''
+    """
+    Runs grid search for hyperparameters
+    :param args: object from the argument parser
+    :return: not implemented
+    """
     # set run version
     version = str(int(time()))
 
@@ -66,10 +68,10 @@ def grid_search(args):
 
 def get_model(args, dataset):
     """
-    TODO
-    :param args: TODO
-    :param dataset: TODO
-    :return: TODO
+    Selects, initializes and returns a model instance that is to be trained
+    :param args: object from the argument parser
+    :param dataset: the dataset that the model will be trained on
+    :return: an instantiated model for future training/evaluation
     """
     if args.model == 'ARL':
         model = ARL(num_features=dataset.dimensionality,
@@ -106,7 +108,7 @@ def get_model(args, dataset):
     
 def run_folds(args, version=None):
     """
-    Function to train a model
+    Function to run kfold cross validation for a given set of parameters
     :param args: object from the argument parser
     :version: used to group runs from a single grid search into the same directory
     :return: Results from testing the model
@@ -146,8 +148,12 @@ def train(args, train_dataset=None, val_dataset=None, test_dataset=None, version
     """
     Function to train a model
     :param args: object from the argument parser
-    :version: used to group runs from a single grid search into the same directory
-    :return: Results from testing the model
+    :param train_dataset: dataset instance for training
+    :param val_dataset: optional dataset instance if validation shall be done
+    :param test_dataset: optional dataset instance if testing shall be done
+    :param version: used to group runs from a single grid search into the same directory
+    :param fold_nbr: number of the fold if kfold cross validation is used
+    :return: The trained model instance
     """
 
     # create logdir

@@ -15,16 +15,15 @@ class IPW(pl.LightningModule):
         group_probs=None,
         opt_kwargs={},
         ):
-        '''
-        num_features - int, number of features of the input
-        prim_hidden - list, number of hidden units in each layer of the learner network
-        adv_hidden - list, number of hidden units in each layer of the adversary network
-        prim_lr - float, learning rate for updating the learner
-        adv_lr - float, learning rate for updating the adversary
-        optimizer - torch.optim.Optimizer constructor function, optimizer to adjust the model's parameters
-        opt_kwargs - dict, optimizer keywords (other than learning rate)
-        '''
-        
+        """
+        Class for inverse probability weighting
+        :param num_features: int, number of features of the input
+        :param hidden_units: list, number of hidden units in each layer of the learner network
+        :param lr: float, learning rate for updating the learner
+        :param optimizer: torch.optim.Optimizer constructor function, optimizer to adjust the model's parameters
+        :param group_probs: empirical observation probabilities of the different protected groups
+        :param opt_kwargs: dict, optimizer keywords (other than learning rate)
+        """
         super().__init__()
 
         # save params
@@ -41,19 +40,12 @@ class IPW(pl.LightningModule):
 
     
     def training_step(self, batch, batch_idx):
-        '''        
-        Inputs
-        ----------
-        batch - input batch from dataset 
-        batch_idx - index of batch in the dataset (not needed)
-        optimizer_idx - index of the optimizer to use for the training step,
-                        0 = learner, 1 = adversary
-            
-        Returns
-        -------
-        loss - scalar, minimization objective
-        '''
-        
+        """
+        Implements the training step for PyTorch Lightning
+        :param batch: input batch from dataset
+        :param batch_idx: index of batch in the dataset (not needed)
+        :return: scalar, minimization objective
+        """
         x, y, s = batch
         y = y.float()   # TODO: fix in datasets.py?
 
@@ -66,17 +58,13 @@ class IPW(pl.LightningModule):
 
     
     def learner_step(self, x, y, s=None):
-        '''        
-        Inputs
-        ----------
-        x - float tensor of shape [batch_size, num_features], input features of data batch
-        y - int tensor of shape [batch_size], labels of data batch
-
-        Returns
-        -------
-        loss - scalar, minimization objective for the learner       
-        '''
-        
+        """
+        TODO
+        :param x: TODO
+        :param y: TODO
+        :param s: TODO
+        :return: TODO
+        """
         # compute unweighted bce
         logits = self.learner(x)
         bce = self.loss_fct(logits, y)
@@ -93,6 +81,12 @@ class IPW(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
+        """
+        TODO
+        :param batch: TODO
+        :param batch_idx: TODO
+        :return: TODO
+        """
         x, y, _ = batch
         y = y.float()   # TODO: fix in datasets.py?
         loss = self.learner_step(x, y)
@@ -101,6 +95,12 @@ class IPW(pl.LightningModule):
         self.log("validation/loss", loss)
 
     def test_step(self, batch, batch_idx):
+        """
+        TODO
+        :param batch: TODO
+        :param batch_idx: TODO
+        :return: TODO
+        """
         x, y, _ = batch 
         y = y.float()   # TODO: fix in datasets.py?
         loss = self.learner_step(x, y)
@@ -109,17 +109,19 @@ class IPW(pl.LightningModule):
         self.log("test/loss", loss)
 
     def configure_optimizers(self):
-        '''
-        Returns
-        -------
-        [optimizer_learn, optimizer_adv] - list, optimizers for learner and adversary
-        [] - list, learning rate schedulers for learner and adversary (not used)
-        '''
-        
+        """
+        TODO
+        :return: TODO
+        """
         # Create optimizers for learner and adversary
         optimizer = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.lr, **self.hparams.opt_kwargs)
 
         return optimizer
 
     def forward(self, x):
+        """
+        TODO
+        :param x: TODO
+        :return: TODO
+        """
         return self.learner(x)

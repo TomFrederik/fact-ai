@@ -63,15 +63,17 @@ class Dataset(Dataset):
 
     def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True, idcs=None,
                  extended_groups=False, disable_warnings=False):
-        '''
-        dataset_name - str, identifier of the dataset
-        test - bool, whether to use the test set
-        hide_sensitive_columns - bool, whether to hide (delete) sensitive columns
-        binarize_prot_group - bool, whether to binarize the protected group. If true, all races other than black will be mapped to 0.
+        """
+        Dataset class for creating a dataset
+        :param dataset_name: str, identifier of the dataset
+        :param test: bool, whether to use the test set
+        :param hide_sensitive_columns: bool, whether to hide (delete) sensitive columns
+        :param binarize_prot_group: bool, whether to binarize the protected group. If true, all races other than black will be mapped to 0.
                                     If false, a unique index for each combination of sensitive column values is created.
-        idcs - list, indices indicating which elements to take
-        disable_warnings - bool, whether to show warnings regarding mean and std of the dataset
-        '''
+        :param idcs: list, indices indicating which elements to take
+        :param extended_groups: bool, whether to include the target variable as a protected feature
+        :param disable_warnings: bool, whether to show warnings regarding mean and std of the dataset
+        """
         super().__init__()
 
         vocab_path = DATASET_SETTINGS[dataset_name]["vocab_path"]
