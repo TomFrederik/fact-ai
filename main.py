@@ -2,6 +2,7 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.metrics.functional.classification import auroc
+from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
 from datasets import Dataset
@@ -13,6 +14,7 @@ import argparse
 import os
 
 import numpy as np
+from time import time
 
 from sklearn.model_selection import KFold
 
@@ -30,6 +32,7 @@ def train(args):
     # create logdir
     logdir = os.path.join(args.log_dir, args.dataset, args.model)
     os.makedirs(logdir, exist_ok=True)
+    version = str(int(time()))
 
     # Seed for reproducability
     pl.seed_everything(args.seed)
@@ -51,7 +54,7 @@ def train(args):
     test_callback = Logger(test_dataset, 'test')
     
     # perform 5-fold crossvalidation
-    kf = KFold(n_splits=5)
+    kf = KFold(n_splits=args.num_folds)
     fold_nbr = 0
     aucs = []
     for train_idcs, val_idcs in kf.split(dummy_train_dataset):
@@ -97,9 +100,14 @@ def train(args):
             args.pretrain_steps = 0 # NO PRETRAINING
 
 
+        logger = TensorBoardLogger(save_dir='./', name=logdir, version=f'version_{version}')
+        print(logger.log_dir)
+        print(logger.root_dir)
+        print(logger.save_dir)
+        #raise ValueError
         # Create a PyTorch Lightning trainer
-        trainer = pl.Trainer(default_root_dir=os.path.join(logdir,f'fold_{fold_nbr}'),
-                            checkpoint_callback=ModelCheckpoint(save_weights_only=True),
+        trainer = pl.Trainer(logger=logger,
+                            checkpoint_callback=ModelCheckpoint(save_weights_only=True, dirpath=logger.log_dir, filename=f'fold_{fold_nbr}'),
                             gpus=1 if torch.cuda.is_available() else 0,
                             max_steps=args.train_steps+args.pretrain_steps,
                             callbacks=[train_callback, val_callback], # test callback?
@@ -146,6 +154,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', default=0, type=int)
     parser.add_argument('--log_dir', default='training_logs', type=str)
     parser.add_argument('--p_bar', action='store_true')
+    parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
 
     # Dataset settings
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
