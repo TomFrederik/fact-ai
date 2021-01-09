@@ -17,7 +17,7 @@ DATASET_SETTINGS = {"Adult": {
                     "sex", "capital-gain", "capital-loss", "hours-per-week",
                     "native-country", "income"],
         "sensitive_column_names": ['race','sex'],
-        "sensitive_column_values": ['Black','Female'],
+        "sensitive_column_values": [' Black',' Female'],
         "target_variable": "income",
         "target_value": " >50K"},
     "LSAC": {
