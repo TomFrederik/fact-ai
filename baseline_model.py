@@ -41,7 +41,7 @@ class BaselineModel(pl.LightningModule):
         self.loss_fct = nn.BCEWithLogitsLoss()
 
     def forward(self, input):
-        out = self.net(input).squeeze_()
+        out = self.net(input).squeeze(dim=-1)
         return out
     
     def training_step(self, batch, batch_idx):

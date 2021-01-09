@@ -193,7 +193,7 @@ class Learner(nn.Module):
         
         out = self.net(x)
         
-        return torch.squeeze(out)
+        return torch.squeeze(out, dim=-1)
 
     
 class Adversary(nn.Module):
