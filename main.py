@@ -116,7 +116,6 @@ def train(args):
         # Evaluate on val set to get an estimate of performance
         scores = torch.sigmoid(model(val_dataset.features))
         aucs.append(auroc(scores, val_dataset.labels).item())
-        print(f'{fold_nbr} val auc: {aucs[-1]}')
     
     mean_auc = np.mean(aucs)
     print(f'mean val auc: {mean_auc}')
