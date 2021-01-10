@@ -42,7 +42,6 @@ def grid_search(args):
 
     # find best hparams
     best_mean_auc = 0
-    
     for lr, bs in itertools.product(lr_list, batch_size_list):
         args.prim_lr, args.adv_lr = lr, lr
         args.batch_size = bs
@@ -53,10 +52,8 @@ def grid_search(args):
             best_lr = lr
 
     # Test model
-    train_dataset = Dataset(args.dataset, disable_warnings=args.disable_warnings)
-    test_dataset = Dataset(args.dataset, test=True, disable_warnings=args.disable_warnings)
     args.prim_lr, args.adv_lr, args.batch_size = best_lr, best_lr, best_bs
-    train(args, train_dataset=train_dataset, test_dataset=test_dataset, version=version + '_test')
+    full_train_test(args, version=version + '_test')
 
     # save parameters
     best_params = {'learning_rate': best_lr, 'batch_size': best_bs}
@@ -152,7 +149,7 @@ def run_folds(args, version=None):
     return mean_auc
 
 
-def train(args, train_dataset=None, val_dataset=None, test_dataset=None, version=None, fold_nbr=None):
+def train(args, train_dataset=None, val_dataset=None, test_dataset=None, version=str(int(time())), fold_nbr=None):
     """
     Function to train a model
     :param args: object from the argument parser
@@ -167,9 +164,6 @@ def train(args, train_dataset=None, val_dataset=None, test_dataset=None, version
     # create logdir
     logdir = os.path.join(args.log_dir, args.dataset, args.model)
     os.makedirs(logdir, exist_ok=True)
-    if version is None:
-        version = str(int(time()))
-
 
     # create fold loaders and callbacks
     train_loader = DataLoader(train_dataset,
@@ -220,6 +214,22 @@ def train(args, train_dataset=None, val_dataset=None, test_dataset=None, version
     return model
 
 
+def full_train_test(args, version=str(int(time()))):
+    """
+    Trains a model on the complete training dataset and evaluates on test set
+    :param args: object from the argument parser
+    :param version: used to group runs from a single grid search into the same directory
+    :return: not implemented
+    """
+    # create datasets
+    train_dataset = Dataset(args.dataset, disable_warnings=args.disable_warnings)
+    test_dataset = Dataset(args.dataset, test=True, disable_warnings=args.disable_warnings)
+
+    # run training and testing
+    train(args, train_dataset=train_dataset, test_dataset=test_dataset, version=version)
+
+
+
 if __name__ == "__main__":
     
     # collect cmd line args
@@ -260,4 +270,4 @@ if __name__ == "__main__":
         grid_search(args)
     else:
         # run training loop
-        train(args)
+        full_train_test(args)
