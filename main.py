@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 
 from datasets import Dataset
 from arl import ARL
+from dro import DRO
 from ipw import IPW
 from baseline_model import BaselineModel
 from metrics import Logger
@@ -84,7 +85,14 @@ def get_model(args, dataset):
                     opt_kwargs={})
 
     elif args.model == 'DRO':
-        raise NotImplementedError
+        model = DRO(num_features=dataset.dimensionality,
+                    hidden_units=args.prim_hidden,
+                    lr=args.prim_lr,
+                    eta=args.eta,
+                    k=args.k,
+                    optimizer=OPT_BY_NAME[args.opt],
+                    opt_kwargs={})
+        args.pretrain_steps = 0  # NO PRETRAINING
 
     elif args.model == 'IPW':
         model = IPW(num_features=dataset.dimensionality,
@@ -221,6 +229,8 @@ if __name__ == "__main__":
     parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required=True)
     parser.add_argument('--prim_hidden', default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', default=[32], help='Number of hidden units in adversarial network')
+    parser.add_argument('--eta', default=0.2, type=float, help='Threshold for single losses that contribute to learning objective')
+    parser.add_argument('--k', default=2.0, type=float, help='Norm of the loss function')
 
     # Training settings
     parser.add_argument('--batch_size', default=256, type=int)
