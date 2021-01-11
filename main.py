@@ -186,7 +186,7 @@ def train(args, train_dataset=None, val_dataset=None, test_dataset=None, version
         callbacks.append(EarlyStopping(
             monitor='validation/micro_avg_auc',
             min_delta=0.00,
-            patience=3,
+            patience=10,
             verbose=True,
             mode='max'
         ))
