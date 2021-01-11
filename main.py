@@ -5,7 +5,7 @@ from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
-from datasets import Dataset
+from datasets import CustomDataset, CustomSubset
 from arl import ARL
 from dro import DRO
 from ipw import IPW
@@ -40,24 +40,20 @@ def grid_search(args):
     lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
     batch_size_list = [32, 64, 128, 256, 512]
 
-    '''
+    
     # perform n-fold crossvalidation
     kf = KFold(n_splits=args.num_folds)
 
     # create datasets
-    dummy_train_dataset = Dataset(args.dataset)
-    for train_idcs, val_idcs in kf.split(dummy_train_dataset):
-        # create datasets for fold
-        train_datasets.append(Dataset(args.dataset, idcs=train_idcs, disable_warnings=args.disable_warnings))
-        val_datasets.append(Dataset(args.dataset, idcs=val_idcs, disable_warnings=args.disable_warnings))
-    '''
+    dataset = CustomDataset(args.dataset)
+    fold_indices = list(kf.split(dataset))
     
     # find best hparams
     best_mean_auc = 0
     for lr, bs in itertools.product(lr_list, batch_size_list):
         args.prim_lr, args.adv_lr = lr, lr
         args.batch_size = bs
-        mean_auc = run_folds(args, version+'_folds')
+        mean_auc = run_folds(args, dataset=dataset, fold_indices=fold_indices, version=version+'_folds')
         if mean_auc > best_mean_auc:
             best_mean_auc = mean_auc
             best_bs = bs
@@ -123,30 +119,30 @@ def get_model(args, dataset):
     return model
 
     
-def run_folds(args, version=None):
+def run_folds(args, dataset, fold_indices, version=None):
     """
     Function to run kfold cross validation for a given set of parameters
     :param args: object from the argument parser
+    :dataset: dataset object containing all training examples
+    :fold_indices: list containing tuples of train and val indices
     :version: used to group runs from a single grid search into the same directory
     :return: Results from testing the model
     """
-
+    '''
     # Create datasets
     dummy_train_dataset = Dataset(args.dataset)
 
     # perform n-fold crossvalidation
     kf = KFold(n_splits=args.num_folds)
+    '''
     fold_nbr = 0
     aucs = []
-    for train_idcs, val_idcs in kf.split(dummy_train_dataset):
+    for train_idcs, val_idcs in fold_indices:
         fold_nbr += 1
-
+        
         # create datasets for fold
-        train_dataset = Dataset(args.dataset, idcs=train_idcs, disable_warnings=args.disable_warnings)
-        val_dataset = Dataset(args.dataset, idcs=val_idcs, disable_warnings=args.disable_warnings)
-
-        print(train_dataset)
-        print(val_dataset)
+        train_dataset = CustomSubset(dataset, train_idcs)
+        val_dataset = CustomSubset(dataset, val_idcs)
 
         # train model
         model = train(args, train_dataset=train_dataset, val_dataset=val_dataset, version=version, fold_nbr=fold_nbr)
@@ -154,7 +150,7 @@ def run_folds(args, version=None):
         # Evaluate on val set to get an estimate of performance
         scores = torch.sigmoid(model(val_dataset.features))
         aucs.append(auroc(scores, val_dataset.labels).item())
-    
+
     mean_auc = np.mean(aucs)
     print(f'mean val auc: {mean_auc}')
 
@@ -234,8 +230,8 @@ def full_train_test(args, version=str(int(time()))):
     :return: not implemented
     """
     # create datasets
-    train_dataset = Dataset(args.dataset, disable_warnings=args.disable_warnings)
-    test_dataset = Dataset(args.dataset, test=True, disable_warnings=args.disable_warnings)
+    train_dataset = CustomDataset(args.dataset, disable_warnings=args.disable_warnings)
+    test_dataset = CustomDataset(args.dataset, test=True, disable_warnings=args.disable_warnings)
 
     # run training and testing
     train(args, train_dataset=train_dataset, test_dataset=test_dataset, version=version)

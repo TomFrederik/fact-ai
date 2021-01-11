@@ -59,7 +59,7 @@ DATASET_SETTINGS = {"Adult": {
     }
 
 
-class Dataset(Dataset):
+class CustomDataset(Dataset):
 
     def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True, idcs=None,
                  extended_groups=False, disable_warnings=False):
@@ -219,6 +219,53 @@ class Dataset(Dataset):
         sensitive attributes. The order of attributes is the same as in the
         `sensitive_column_names` argument from `DATASET_SETTINGS`."""
         return self.index2values
+
+class CustomSubset(Dataset):
+    """
+    Subset of a dataset at specified indices.
+
+    Arguments:
+        dataset (Dataset): The whole CustomDataset
+        indices (sequence): Indices in the whole set selected for subset
+    """
+
+    def __init__(self, dataset, indices):
+        self.dataset = dataset
+        self.indices = indices
+
+    def __getitem__(self, idx):
+        return self.dataset[self.indices[idx]]
+
+    def __len__(self):
+        return len(self.indices)
+    
+    @property
+    def protected_index2value(self):
+        return self.dataset.protected_index2value
+    
+    @property
+    def features(self):
+        return self.dataset.features[self.indices]
+    
+    @property
+    def dimensionality(self):
+        return self.dataset.dimensionality
+    
+    @property
+    def minority(self):
+        return self.dataset.minority
+    
+    @property
+    def group_probs(self):
+        return self.dataset.group_probs
+    
+    @property
+    def memberships(self):
+        return self.dataset.memberships[self.indices]
+    
+    @property
+    def labels(self):
+        return self.dataset.labels[self.indices]
 
 
 if __name__ == '__main__':
