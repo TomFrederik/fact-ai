@@ -1,6 +1,6 @@
 import torch 
 import torch.nn as nn
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, SubsetRandomSampler, DataLoader
 import pandas as pd
 import numpy as np
 import json
@@ -232,3 +232,7 @@ if __name__ == '__main__':
 
     lsac_dataset = Dataset('LSAC')
     print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
+    #indices = [1,2,3,4]
+    #subsetloader = DataLoader(lsac_dataset, batch_size=3, sampler=SubsetRandomSampler(indices))
+    #print('\n\nFirst batch in subsetloader:\n',next(enumerate(subsetloader)))
+    

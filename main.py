@@ -40,6 +40,18 @@ def grid_search(args):
     lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
     batch_size_list = [32, 64, 128, 256, 512]
 
+    '''
+    # perform n-fold crossvalidation
+    kf = KFold(n_splits=args.num_folds)
+
+    # create datasets
+    dummy_train_dataset = Dataset(args.dataset)
+    for train_idcs, val_idcs in kf.split(dummy_train_dataset):
+        # create datasets for fold
+        train_datasets.append(Dataset(args.dataset, idcs=train_idcs, disable_warnings=args.disable_warnings))
+        val_datasets.append(Dataset(args.dataset, idcs=val_idcs, disable_warnings=args.disable_warnings))
+    '''
+    
     # find best hparams
     best_mean_auc = 0
     for lr, bs in itertools.product(lr_list, batch_size_list):
