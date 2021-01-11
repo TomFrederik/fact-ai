@@ -40,14 +40,14 @@ def grid_search(args):
     lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
     batch_size_list = [32, 64, 128, 256, 512]
 
-    
+
     # perform n-fold crossvalidation
     kf = KFold(n_splits=args.num_folds)
 
     # create datasets
-    dataset = CustomDataset(args.dataset)
+    dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label)
     fold_indices = list(kf.split(dataset))
-    
+
     # find best hparams
     best_mean_auc = 0
     for lr, bs in itertools.product(lr_list, batch_size_list):
@@ -105,6 +105,7 @@ def get_model(args, dataset):
                     lr=args.prim_lr,
                     optimizer=OPT_BY_NAME[args.opt],
                     group_probs=dataset.group_probs,
+                    sensitive_label=args.sensitive_label,
                     opt_kwargs={})
         args.pretrain_steps = 0  # NO PRETRAINING
 
@@ -139,7 +140,7 @@ def run_folds(args, dataset, fold_indices, version=None):
     aucs = []
     for train_idcs, val_idcs in fold_indices:
         fold_nbr += 1
-        
+
         # create datasets for fold
         train_dataset = CustomSubset(dataset, train_idcs)
         val_dataset = CustomSubset(dataset, val_idcs)
@@ -230,8 +231,8 @@ def full_train_test(args, version=str(int(time()))):
     :return: not implemented
     """
     # create datasets
-    train_dataset = CustomDataset(args.dataset, disable_warnings=args.disable_warnings)
-    test_dataset = CustomDataset(args.dataset, test=True, disable_warnings=args.disable_warnings)
+    train_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
+    test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
 
     # run training and testing
     train(args, train_dataset=train_dataset, test_dataset=test_dataset, version=version)
@@ -252,7 +253,7 @@ if __name__ == "__main__":
 
     # Training settings
     parser.add_argument('--batch_size', default=256, type=int)
-    parser.add_argument('--train_steps', default=20, type=int)
+    parser.add_argument('--train_steps', default=5000, type=int)
     parser.add_argument('--pretrain_steps', default=250, type=int)
     parser.add_argument('--test_steps', default=5, type=int)
     parser.add_argument('--opt', choices=['Adagrad'], default="Adagrad", help='Name of optimizer')
@@ -268,6 +269,8 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
+    parser.add_argument('--sensitive_label', default=False, type=bool, help='If True, target label will be included in list of sensitive columns')
+
 
     args = parser.parse_args()
 

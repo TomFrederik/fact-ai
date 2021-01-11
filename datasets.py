@@ -62,7 +62,7 @@ DATASET_SETTINGS = {"Adult": {
 class CustomDataset(Dataset):
 
     def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True, idcs=None,
-                 extended_groups=False, disable_warnings=False):
+                 sensitive_label=False, disable_warnings=False):
         """
         Dataset class for creating a dataset
         :param dataset_name: str, identifier of the dataset
@@ -71,7 +71,7 @@ class CustomDataset(Dataset):
         :param binarize_prot_group: bool, whether to binarize the protected group. If true, all races other than black will be mapped to 0.
                                     If false, a unique index for each combination of sensitive column values is created.
         :param idcs: list, indices indicating which elements to take
-        :param extended_groups: bool, whether to include the target variable as a protected feature
+        :param sensitive_label: bool, whether to include the target variable as a protected feature
         :param disable_warnings: bool, whether to show warnings regarding mean and std of the dataset
         """
         super().__init__()
@@ -120,11 +120,6 @@ class CustomDataset(Dataset):
         self.labels = (features[target_variable].to_numpy() == target_value).astype(int)
         self.labels = torch.from_numpy(self.labels)
 
-        # TODO
-        # # if set, add label to protected groups (for IPW when respecting labels)
-        # if extended_groups:
-        #     sensitive_column_names.append(target_variable)
-        
         # if set, will binarize/group values in the sensitive columns
         if binarize_prot_group:
             for col, val in zip(sensitive_column_names, sensitive_column_values):
@@ -156,8 +151,16 @@ class CustomDataset(Dataset):
         # compute the minority group (the one with the fewest members) and group probabilities
         vals, counts = self.memberships.unique(return_counts=True)
         self.minority = vals[counts.argmin().item()].item()
-        self.group_probs = counts / torch.sum(counts)
 
+        # calculate group probabilities for IPW
+        if sensitive_label:
+            prob_identifier = torch.stack([self.memberships, self.labels], dim=1)
+            vals, counts = prob_identifier.unique(return_counts=True, dim=0)
+            probs = counts / torch.sum(counts)
+            self.group_probs = probs.reshape(-1,2)
+        else:
+            vals, counts = self.memberships.unique(return_counts=True)
+            self.group_probs = counts / torch.sum(counts)
 
         ## convert categorical data into onehot
         # load vocab
