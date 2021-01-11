@@ -262,12 +262,12 @@ if __name__ == "__main__":
     parser.add_argument('--log_dir', default='training_logs', type=str)
     parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
-    parser.add_argument('--grid_search', default=False, type=bool, help='Whether to optimize batch size and lr via gridsearch')
+    parser.add_argument('--grid_search', action='store_true', help='Whether to optimize batch size and lr via gridsearch')
 
     # Dataset settings
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
-    parser.add_argument('--disable_warnings', default=False, type=bool, help='Whether to disable warnings about mean and std in the dataset')
+    parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
 
     args = parser.parse_args()
 
