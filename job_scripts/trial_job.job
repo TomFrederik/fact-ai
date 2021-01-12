@@ -1,10 +1,10 @@
 #!/bin/bash
 
 #SBATCH --partition=gpu_shared_course
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:0
 #SBATCH --job-name=trial_job
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=3
+#SBATCH --cpus-per-task=6
 #SBATCH --time=01:30:00
 #SBATCH --mem=32000M
 #SBATCH --output=outputs/trial_job_%A.out
@@ -24,4 +24,4 @@ cd $HOME/fact-ai/
 source activate fact-ai
 
 # Run code
-srun python -u main.py --model baseline --dataset LSAC --disable_warnings True --num_workers 4 --train_steps 2000 --grid_search True
+srun python -u main.py --model baseline --dataset LSAC --disable_warnings --num_workers 4 --train_steps 20 --grid_search --num_cpus 6

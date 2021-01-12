@@ -25,6 +25,11 @@ import ray
 
 from sklearn.model_selection import KFold
 
+# supress device information
+import logging
+logging.getLogger("lightning").addHandler(logging.NullHandler())
+logging.getLogger("lightning").propagate = False
+
 # dict to access optimizers by name, if we need to use different opts.
 OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad}
 
@@ -330,7 +335,8 @@ def train(args, train_dataset=None, val_dataset=None, test_dataset=None, version
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps + args.pretrain_steps,
                          callbacks=callbacks,
-                         progress_bar_refresh_rate=1 if args.p_bar else 0
+                         progress_bar_refresh_rate=1 if args.p_bar else 0,
+                         weights_summary=None, # supress model summary
                          # fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
                          )
 
