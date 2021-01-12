@@ -13,6 +13,7 @@ class IPW(pl.LightningModule):
         lr=0.01,
         optimizer=torch.optim.Adagrad,
         group_probs=None,
+        sensitive_label=False,
         opt_kwargs={},
         ):
         """
@@ -69,9 +70,15 @@ class IPW(pl.LightningModule):
         logits = self.learner(x)
         bce = self.loss_fct(logits, y)
 
+        # consider both s and y for selecting probability
+
         if s is not None:
             # compute weights
-            sample_weights = torch.index_select(self.group_probs, 0, s)
+            if self.hparams.sensitive_label:
+                sample_weights = torch.index_select(torch.index_select(self.group_probs, 0, s), 0, y)
+            else:
+                sample_weights = torch.index_select(self.group_probs, 0, s)
+
             # compute reweighted loss
             loss = torch.mean(bce / sample_weights)
         else:
