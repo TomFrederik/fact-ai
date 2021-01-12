@@ -45,34 +45,31 @@ class GridsearchClass():
 
     def set_up_runs(self):
         
-        if self.args.grid_search:
-            # specify search space 
-            # TODO: pull this outside this function for more flexible search space?
-            lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
-            batch_size_list = [32, 64, 128, 256, 512]
+        # specify search space 
+        # TODO: pull this outside this function for more flexible search space?
+        lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
+        batch_size_list = [32, 64, 128, 256, 512]
 
-            # perform n-fold crossvalidation
-            kf = KFold(n_splits=args.num_folds)
+        # perform n-fold crossvalidation
+        kf = KFold(n_splits=args.num_folds)
 
-            # create datasets
-            dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label)
-            fold_indices = list(kf.split(dataset))
+        # create datasets
+        dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label)
+        fold_indices = list(kf.split(dataset))
 
-            # set up runs
-            self.mean_aucs = []
-            self.idx2setting = {}
+        # set up runs
+        self.mean_aucs = []
+        self.idx2setting = {}
+        
+        for idx, (lr, bs) in enumerate(itertools.product(lr_list, batch_size_list)):
+            # set params
+            self.args.prim_lr, self.args.adv_lr = lr, lr
+            self.args.batch_size = bs
+            self.idx2setting[idx] = (lr, bs)
             
-            for idx, (lr, bs) in enumerate(itertools.product(lr_list, batch_size_list)):
-                # set params
-                self.args.prim_lr, self.args.adv_lr = lr, lr
-                self.args.batch_size = bs
-                self.idx2setting[idx] = (lr, bs)
-                
-                # init remote process
-                self.mean_aucs.append(run_folds.remote(self.args, dataset=dataset, fold_indices=fold_indices, version=args.version+'_folds'))
-                print(f'Scheduled seed {self.seed} - lr {lr} - bs {bs}')
-        else:
-            pass # TODO: SINGLE RUN
+            # init remote process
+            self.mean_aucs.append(run_folds.remote(self.args, dataset=dataset, fold_indices=fold_indices, version=args.version+'_folds'))
+            print(f'Scheduled seed {self.seed} - lr {lr} - bs {bs}')
         
             
     def get_best_settings(self):
@@ -98,9 +95,7 @@ class GridsearchClass():
                                  f'seed_{self.seed}')
         os.makedirs(path, exist_ok=True)
         with open(os.path.join(path,'best_params.json'), 'w') as f:
-            json.dump(best_params, f)
-
-        
+            json.dump(best_params, f)     
         
     def run_best_settings(self):
         '''
@@ -123,22 +118,29 @@ def main(args):
     # set run version
     args.version = str(int(time()))
 
-    # schedule remote processes
-    seed_classes = [] 
-    for seed in range(args.nbr_seeds):
-        args.seed = seed # change seed
-        seed_classes.append(GridsearchClass(args))
-        seed_classes[-1].set_up_runs()
-    
-    print('\n##########\nScheduled all jobs!\n##########\n')
-    
-    # get results
-    results = []
-    # TODO: Is this efficient?
-    for i in range(len(seed_classes)):
-        seed_classes[i].get_best_settings()
-        results.append(seed_classes[i].run_best_settings())
-    
+    if args.grid_search:
+        # schedule remote processes
+        seed_classes = [] 
+        for seed in range(args.nbr_seeds):
+            args.seed = seed # change seed
+            seed_classes.append(GridsearchClass(args))
+            seed_classes[-1].set_up_runs()
+        
+        print('\n##########\nScheduled all jobs!\n##########\n')
+        
+        # get results
+        results = []
+        # TODO: Is this efficient?
+        for i in range(len(seed_classes)):
+            seed_classes[i].get_best_settings()
+            results.append(seed_classes[i].run_best_settings())
+    else:
+        if args.nbr_seeds == 1:
+            _, results = full_train_test(args, version=args.version)
+            results = [results]
+        else:
+            print('You have specified no grid search but more than 1 seed.')
+            raise NotImplementedError
     
     # average results
     avg_results = {}
@@ -146,7 +148,7 @@ def main(args):
         mean = np.mean([r[key] for r in results])
         std = np.std([r[key] for r in results])
         avg_results[key] = (float(mean), float(std))
-
+    
     # print results
     print(f'Average results = {avg_results}')
     
