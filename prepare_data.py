@@ -86,6 +86,10 @@ apply_dicts(df, race_dict=race_dict)
 
 df['is_recid'] = df.apply(lambda x: 'Yes' if x['is_recid']==1.0 else 'No', axis=1).astype('category')
 
+# There are a few entries where c_charge_degree is missing
+# We just remove those
+df = df.dropna()
+
 train_df, test_df = train_test_split(df, test_size=0.30, random_state=42)
 
 save_results(train_df, test_df, base_dir)

@@ -1,3 +1,4 @@
+import os
 import torch 
 import torch.nn as nn
 from torch.utils.data import Dataset, SubsetRandomSampler, DataLoader
@@ -8,49 +9,17 @@ import itertools
 
 
 DATASET_SETTINGS = {"Adult": {
-        "vocab_path": "./data/uci_adult/vocabulary.json",
-        "train_path": "./data/uci_adult/train.csv",
-        "test_path": "./data/uci_adult/test.csv",
-        'mean_std_path':'./data/uci_adult/mean_std.json',
-        "columns": ["age", "workclass", "fnlwgt", "education", "education-num",
-                    "marital-status", "occupation", "relationship", "race",
-                    "sex", "capital-gain", "capital-loss", "hours-per-week",
-                    "native-country", "income"],
         "sensitive_column_names": ['race','sex'],
         "sensitive_column_values": [' Black',' Female'],
         "target_variable": "income",
         "target_value": " >50K"},
     "LSAC": {
-        'vocab_path':"./data/law_school/vocabulary.json",
-        "train_path": "./data/law_school/train.csv",
-        "test_path": "./data/law_school/test.csv",
-        'mean_std_path':'./data/law_school/mean_std.json',
-        'columns':["zfygpa",
-                    "zgpa", 
-                    "DOB_yr",
-                    "isPartTime",
-                    "sex",  
-                    "race", 
-                    "cluster_tier", 
-                    "family_income", 
-                    "lsat",
-                    "ugpa",
-                    "pass_bar",
-                    "weighted_lsat_ugpa"
-                ],
         "sensitive_column_names": ['race','sex'],
         "sensitive_column_values": ['Black','Female'],
         "target_variable": "pass_bar",
         "target_value": "Passed"
         },
     "COMPAS":{
-        'vocab_path':"./data/compas/vocabulary.json",
-        "train_path": "./data/compas/train.csv",
-        "test_path": "./data/compas/test.csv",
-        'mean_std_path':'./data/compas/mean_std.json',
-        'columns':["juv_fel_count", "juv_misd_count", "juv_other_count", "priors_count",
-                    "age", "c_charge_degree", "c_charge_desc", "age_cat", "sex", "race",
-                    "is_recid"],
         "sensitive_column_names": ['race','sex'],
         "sensitive_column_values": ['Black','Female'],
         "target_variable": "is_recid",
@@ -76,10 +45,10 @@ class CustomDataset(Dataset):
         """
         super().__init__()
 
-        vocab_path = DATASET_SETTINGS[dataset_name]["vocab_path"]
-        path = DATASET_SETTINGS[dataset_name]["test_path" if test else "train_path"]
-        mean_std_path = DATASET_SETTINGS[dataset_name]['mean_std_path']
-        columns = DATASET_SETTINGS[dataset_name]["columns"].copy()
+        base_path = os.path.join("data", dataset_name)
+        vocab_path = os.path.join(base_path, "vocabulary.json")
+        path = os.path.join(base_path, "test.csv" if test else "train.csv")
+        mean_std_path = os.path.join(base_path, "mean_std.json")
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"].copy()
         sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"].copy()
         target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
@@ -88,7 +57,8 @@ class CustomDataset(Dataset):
         self.hide_sensitive_columns = hide_sensitive_columns
 
         # load data
-        features = pd.read_csv(path, ',', names=columns)
+        features = pd.read_csv(path, ',', header=0)
+        columns = list(features.columns)
 
         # drop indices not specified
         if idcs is not None:
@@ -170,11 +140,6 @@ class CustomDataset(Dataset):
         # we already mapped target var values to 0 and 1 before
         del vocab[target_variable]
         
-
-        # fill nan values in COMPAS dataset
-        if dataset_name == 'COMPAS':
-            features['c_charge_desc'].fillna('nan', inplace=True)
-
         class_columns = []
         num_classes = []
         tensors = []
@@ -194,10 +159,6 @@ class CustomDataset(Dataset):
         self.features = torch.stack(tensors, dim=1).float()
         self.dimensionality = self.features.size(1)
 
-
-        # store dimensionality of x
-        #x_ = list(features.iloc[0].to_numpy())
-        #self.dimensionality = torch.flatten(torch.cat(x_, dim=0)).shape[0]
 
     def __len__(self):
         return self.features.size(0)
@@ -273,16 +234,14 @@ class CustomSubset(Dataset):
 
 if __name__ == '__main__':
 
-    # adult_dataset = Dataset("Adult")
-    # print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
-    # print(adult_dataset.features["age"].unique())
+    adult_dataset = CustomDataset("Adult")
+    print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
 
-    # compas_dataset = Dataset('COMPAS')
-    # print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
+    compas_dataset = CustomDataset('COMPAS')
+    print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
 
-    lsac_dataset = Dataset('LSAC')
+    lsac_dataset = CustomDataset('LSAC')
     print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
     #indices = [1,2,3,4]
     #subsetloader = DataLoader(lsac_dataset, batch_size=3, sampler=SubsetRandomSampler(indices))
     #print('\n\nFirst batch in subsetloader:\n',next(enumerate(subsetloader)))
-    
