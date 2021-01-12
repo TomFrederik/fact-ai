@@ -20,20 +20,58 @@ from time import time
 import itertools
 import json
 
+
+import ray
+
 from sklearn.model_selection import KFold
 
 # dict to access optimizers by name, if we need to use different opts.
 OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad}
 
+def main(args):
+    """
+    Runs the specified training procedure for potentially multiple seeds and 
+    averages the results. Saves results in a json.
+    :param args: object from the argument parser
+    :return None:
+    """
+    # set run version
+    args.version = str(int(time()))
 
+    # schedule remote processes
+    for seed in range(args.nbr_seeds):
+        results = []
+        args.seed = seed # change seed
+        # TODO: seed pl for every subroutine differently
+        if args.grid_search:
+            results.append(grid_search.remote(args))
+        else:
+            results.append(full_train_test.remote(args))
+    
+    # fetch remotes
+    results = [ray.get(r) for r in results]
+    
+    # average results
+    avg_results = {}
+    for key in results[0]:
+        mean = np.mean([r[key] for r in results])
+        std = np.std([r[key] for r in results])
+        avg_results[key] = (mean, std)
+
+    # save results
+    with open(os.path.join(args.log_dir, args.dataset,
+                            args.model, f'version_{args.version}_test', 'avg_results.json'),'w') as f:
+        json.dump(avg_results)
+
+
+@ray.remote
 def grid_search(args):
     """
     Runs grid search for hyperparameters
     :param args: object from the argument parser
     :return: not implemented
     """
-    # set run version
-    version = str(int(time()))
+    
 
     # specify search space 
     # TODO: pull this outside this function for more flexible search space?
@@ -48,7 +86,10 @@ def grid_search(args):
     dataset = CustomDataset(args.dataset)
     fold_indices = list(kf.split(dataset))
     
-    # find best hparams
+    ## find best hparams
+
+    '''
+    # serial execution
     best_mean_auc = 0
     for lr, bs in itertools.product(lr_list, batch_size_list):
         args.prim_lr, args.adv_lr = lr, lr
@@ -58,15 +99,33 @@ def grid_search(args):
             best_mean_auc = mean_auc
             best_bs = bs
             best_lr = lr
+    '''
 
-    # Test model
+    # parallel execution
+    mean_aucs = []
+    idx2setting = {}
+    
+    for idx, (lr, bs) in enumerate(itertools.product(lr_list, batch_size_list)):
+        # set params
+        args.prim_lr, args.adv_lr = lr, lr
+        args.batch_size = bs
+        idx2setting[idx] = (lr, bs)
+        
+        # init remote process
+        mean_aucs.append(run_folds.remote(args, dataset=dataset, fold_indices=fold_indices, version=args.version+'_folds'))
+    
+    # fetch remote processes and get best settings
+    best_lr, best_bs = idx2setting[np.argmax([ray.get(auc) for auc in mean_aucs])]
+
+    # Test model on best settings
     args.prim_lr, args.adv_lr, args.batch_size = best_lr, best_lr, best_bs
-    full_train_test(args, version=version + '_test')
+    full_train_test(args, version=args.version + '_test')
 
     # save parameters
     best_params = {'learning_rate': best_lr, 'batch_size': best_bs}
+    
     # write best params to file
-    with open(os.path.join(args.log_dir, args.dataset, args.model, f'version_{version}_test', 'best_params.json'), 'w') as f:
+    with open(os.path.join(args.log_dir, args.dataset, args.model, f'version_{args.version}_test', 'best_params.json'), 'w') as f:
         json.dump(best_params, f)
 
     print(f'Best hyperparameters: {best_params}')
@@ -118,7 +177,8 @@ def get_model(args, dataset):
 
     return model
 
-    
+
+@ray.remote
 def run_folds(args, dataset, fold_indices, version=None):
     """
     Function to run kfold cross validation for a given set of parameters
@@ -250,19 +310,22 @@ if __name__ == "__main__":
     parser.add_argument('--eta', default=0.2, type=float, help='Threshold for single losses that contribute to learning objective')
     parser.add_argument('--k', default=2.0, type=float, help='Norm of the loss function')
 
-    # Training settings
+    # Single run settings
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--train_steps', default=20, type=int)
-    parser.add_argument('--pretrain_steps', default=250, type=int)
-    parser.add_argument('--test_steps', default=5, type=int)
-    parser.add_argument('--opt', choices=['Adagrad'], default="Adagrad", help='Name of optimizer')
     parser.add_argument('--prim_lr', default=0.1, type=float, help='Learning rate for primary network')
     parser.add_argument('--adv_lr', default=0.1, type=float, help='Learning rate for adversarial network')
     parser.add_argument('--seed', default=0, type=int)
+    
+    # More general train settings
+    parser.add_argument('--pretrain_steps', default=250, type=int)
+    parser.add_argument('--test_steps', default=5, type=int) # DO WE ACTUALLY USE THIS?
+    parser.add_argument('--opt', choices=['Adagrad'], default="Adagrad", help='Name of optimizer')
     parser.add_argument('--log_dir', default='training_logs', type=str)
     parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
     parser.add_argument('--grid_search', action='store_true', help='Whether to optimize batch size and lr via gridsearch')
+    parser.add_argument('--nbr_seeds', default=1, type=int, help='Number of independent training runs')
 
     # Dataset settings
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
@@ -271,11 +334,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Seed for reproducability
-    pl.seed_everything(args.seed)
 
-    if args.grid_search:
-        grid_search(args)
-    else:
-        # run training loop
-        full_train_test(args)
+    # init ray for parallelism
+    ray.init()
+
+    # run main loop
+    main(args)
