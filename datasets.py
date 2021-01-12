@@ -10,9 +10,9 @@ import itertools
 
 DATASET_SETTINGS = {"Adult": {
         "sensitive_column_names": ['race','sex'],
-        "sensitive_column_values": [' Black',' Female'],
+        "sensitive_column_values": ['Black','Female'],
         "target_variable": "income",
-        "target_value": " >50K"},
+        "target_value": ">50K"},
     "LSAC": {
         "sensitive_column_names": ['race','sex'],
         "sensitive_column_values": ['Black','Female'],
