@@ -21,15 +21,11 @@ class Logger(Callback):
 
     def on_epoch_end(self, trainer, pl_module):
         super().on_epoch_end(trainer, pl_module)
-        scores = torch.sigmoid(pl_module(self.dataset.features))
-        aucs = aucs_from_dataset(scores, self.dataset)
-        acc = self.accuracy(scores, self.dataset.labels)
 
-        pl_module.log(f"{self.name}/min_auc", min(aucs.values()))
-        pl_module.log(f"{self.name}/macro_avg_auc", mean(aucs.values()))
-        pl_module.log(f"{self.name}/micro_avg_auc", auroc(scores, self.dataset.labels).item())
-        pl_module.log(f"{self.name}/minority_auc", aucs[self.dataset.minority])
-        pl_module.log(f"{self.name}/accuracy", acc)
+        results = get_all_auc_scores(self.pl_module, self.dataset)
+        
+        for key in results:
+            pl_module.log(f'{self.name}/{key}', results[key])
 
 
 def group_aucs(predictions, targets, memberships):
@@ -64,3 +60,23 @@ def aucs_from_dataset(predictions, dataset):
     Returns:
         A dictionary with the group indices as keys and their AUROCs as values"""
     return group_aucs(predictions, dataset.labels, dataset.memberships)
+
+
+def get_all_auc_scores(pl_module, dataset):
+    '''
+    Computes all the different AUC scores of the given module on the given dataset
+    '''
+    accuracy = Accuracy()
+    scores = torch.sigmoid(pl_module(dataset.features))
+    aucs = aucs_from_dataset(scores, dataset)
+    acc = accuracy(scores, dataset.labels)
+
+    results = {'min_auc':min(aucs.values()),
+                'macro_avg_auc': mean(aucs.values()),
+                'micro_avg_auc': auroc(scores, dataset.labels).item(),
+                'minority_auc': aucs[dataset.minority],
+                'accuracy':acc
+    }
+    
+    return results
+    
