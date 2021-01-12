@@ -26,9 +26,9 @@ import ray
 from sklearn.model_selection import KFold
 
 # supress device information
-import logging
-logging.getLogger("lightning").addHandler(logging.NullHandler())
-logging.getLogger("lightning").propagate = False
+#import logging
+#logging.getLogger("lightning").addHandler(logging.NullHandler())
+#logging.getLogger("lightning").propagate = False
 
 # dict to access optimizers by name, if we need to use different opts.
 OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad}
@@ -51,14 +51,14 @@ class GridsearchClass():
             lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
             batch_size_list = [32, 64, 128, 256, 512]
 
-
             # perform n-fold crossvalidation
             kf = KFold(n_splits=args.num_folds)
 
             # create datasets
             dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label)
             fold_indices = list(kf.split(dataset))
-            # parallel execution
+
+            # set up runs
             self.mean_aucs = []
             self.idx2setting = {}
             
@@ -70,7 +70,7 @@ class GridsearchClass():
                 
                 # init remote process
                 self.mean_aucs.append(run_folds.remote(self.args, dataset=dataset, fold_indices=fold_indices, version=args.version+'_folds'))
-            
+                print(f'Scheduled seed {self.seed} - lr {lr} - bs {bs}')
         else:
             pass # TODO: SINGLE RUN
         
@@ -80,18 +80,27 @@ class GridsearchClass():
 
         '''
         # fetch remote processes and get best settings
-        self.best_lr, self.best_bs = self.idx2setting[np.argmax([ray.get(auc) for auc in self.mean_aucs])]
+        print('Fetching all results')
+        all_results = ray.get(self.mean_aucs)
+        
+
+        print('Computing best params')
+        self.best_lr, self.best_bs = self.idx2setting[np.argmax(all_results)]
 
         # save parameters
         best_params = {'learning_rate': self.best_lr, 'batch_size': self.best_bs}
         
+        print(f'Best hyperparameters for seed {self.seed}: {best_params}')
+
         # write best params to file
-        with open(os.path.join(self.args.log_dir, self.args.dataset,
+        path = os.path.join(self.args.log_dir, self.args.dataset,
                                  self.args.model, f'version_{self.args.version}_test',
-                                 f'seed_{self.seed}','best_params.json'), 'w') as f:
+                                 f'seed_{self.seed}')
+        os.makedirs(path, exist_ok=True)
+        with open(os.path.join(path,'best_params.json'), 'w') as f:
             json.dump(best_params, f)
 
-        print(f'Best hyperparameters: {best_params}')
+        
         
     def run_best_settings(self):
         '''
@@ -121,27 +130,30 @@ def main(args):
         seed_classes.append(GridsearchClass(args))
         seed_classes[-1].set_up_runs()
     
+    print('\n##########\nScheduled all jobs!\n##########\n')
+    
     # get results
     results = []
     # TODO: Is this efficient?
     for i in range(len(seed_classes)):
         seed_classes[i].get_best_settings()
         results.append(seed_classes[i].run_best_settings())
-
+    
+    
     # average results
     avg_results = {}
     for key in results[0]:
         mean = np.mean([r[key] for r in results])
         std = np.std([r[key] for r in results])
-        avg_results[key] = (mean, std)
+        avg_results[key] = (float(mean), float(std))
 
     # print results
-    print(results)
+    print(f'Average results = {avg_results}')
     
     # save results
     with open(os.path.join(args.log_dir, args.dataset,
                             args.model, f'version_{args.version}_test', 'avg_results.json'),'w') as f:
-        json.dump(avg_results)
+        json.dump(avg_results, f)
 
 
 def grid_search(args):
@@ -241,7 +253,7 @@ def get_model(args, dataset):
     return model
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def run_folds(args, dataset, fold_indices, version=None):
     """
     Function to run kfold cross validation for a given set of parameters
@@ -258,6 +270,9 @@ def run_folds(args, dataset, fold_indices, version=None):
     # perform n-fold crossvalidation
     kf = KFold(n_splits=args.num_folds)
     '''
+
+    print(f'Starting run with seed {args.seed} - lr {args.prim_lr} - bs {args.batch_size}')
+    
     fold_nbr = 0
     aucs = []
     for train_idcs, val_idcs in fold_indices:
@@ -275,7 +290,7 @@ def run_folds(args, dataset, fold_indices, version=None):
         aucs.append(auroc(scores, val_dataset.labels).item())
 
     mean_auc = np.mean(aucs)
-    print(f'mean val auc: {mean_auc}')
+    print(f'Finished run with seed {args.seed} - lr {args.prim_lr} - bs {args.batch_size} - mean val auc: {mean_auc}')
 
     return mean_auc
 

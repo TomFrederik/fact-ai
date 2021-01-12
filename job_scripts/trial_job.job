@@ -24,4 +24,4 @@ cd $HOME/fact-ai/
 source activate fact-ai
 
 # Run code
-srun python -u main.py --model baseline --dataset LSAC --disable_warnings --num_workers 4 --train_steps 20 --grid_search --num_cpus 6
+srun python -u main.py --model baseline --dataset LSAC --disable_warnings --grid_search --num_cpus 6 --nbr_seeds 10
