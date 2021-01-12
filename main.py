@@ -10,7 +10,7 @@ from arl import ARL
 from dro import DRO
 from ipw import IPW
 from baseline_model import BaselineModel
-from metrics import Logger
+from metrics import Logger, get_all_auc_scores
 
 import argparse
 import os
@@ -28,6 +28,77 @@ from sklearn.model_selection import KFold
 # dict to access optimizers by name, if we need to use different opts.
 OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad}
 
+
+class GridsearchClass():
+
+    def __init__(self, args):
+        '''
+
+        '''
+        self.args = args
+        self.seed = args.seed # for better access
+
+    def set_up_runs(self):
+        
+        if self.args.grid_search:
+            # specify search space 
+            # TODO: pull this outside this function for more flexible search space?
+            lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
+            batch_size_list = [32, 64, 128, 256, 512]
+
+
+            # perform n-fold crossvalidation
+            kf = KFold(n_splits=args.num_folds)
+
+            # create datasets
+            dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label)
+            fold_indices = list(kf.split(dataset))
+            # parallel execution
+            self.mean_aucs = []
+            self.idx2setting = {}
+            
+            for idx, (lr, bs) in enumerate(itertools.product(lr_list, batch_size_list)):
+                # set params
+                self.args.prim_lr, self.args.adv_lr = lr, lr
+                self.args.batch_size = bs
+                self.idx2setting[idx] = (lr, bs)
+                
+                # init remote process
+                self.mean_aucs.append(run_folds.remote(self.args, dataset=dataset, fold_indices=fold_indices, version=args.version+'_folds'))
+            
+        else:
+            pass # TODO: SINGLE RUN
+        
+            
+    def get_best_settings(self):
+        '''
+
+        '''
+        # fetch remote processes and get best settings
+        self.best_lr, self.best_bs = self.idx2setting[np.argmax([ray.get(auc) for auc in self.mean_aucs])]
+
+        # save parameters
+        best_params = {'learning_rate': self.best_lr, 'batch_size': self.best_bs}
+        
+        # write best params to file
+        with open(os.path.join(self.args.log_dir, self.args.dataset,
+                                 self.args.model, f'version_{self.args.version}_test',
+                                 f'seed_{self.seed}','best_params.json'), 'w') as f:
+            json.dump(best_params, f)
+
+        print(f'Best hyperparameters: {best_params}')
+        
+    def run_best_settings(self):
+        '''
+
+        '''
+        # Test model on best settings
+        self.args.prim_lr, self.args.adv_lr, self.args.batch_size = self.best_lr, self.best_lr, self.best_bs
+        _, results = full_train_test(self.args, version=self.args.version + '_test')
+
+        return results
+        
+
 def main(args):
     """
     Runs the specified training procedure for potentially multiple seeds and 
@@ -39,18 +110,19 @@ def main(args):
     args.version = str(int(time()))
 
     # schedule remote processes
+    seed_classes = [] 
     for seed in range(args.nbr_seeds):
-        results = []
         args.seed = seed # change seed
-        # TODO: seed pl for every subroutine differently
-        if args.grid_search:
-            results.append(grid_search.remote(args))
-        else:
-            results.append(full_train_test.remote(args))
+        seed_classes.append(GridsearchClass(args))
+        seed_classes[-1].set_up_runs()
     
-    # fetch remotes
-    results = [ray.get(r) for r in results]
-    
+    # get results
+    results = []
+    # TODO: Is this efficient?
+    for i in range(len(seed_classes)):
+        seed_classes[i].get_best_settings()
+        results.append(seed_classes[i].run_best_settings())
+
     # average results
     avg_results = {}
     for key in results[0]:
@@ -58,13 +130,15 @@ def main(args):
         std = np.std([r[key] for r in results])
         avg_results[key] = (mean, std)
 
+    # print results
+    print(results)
+    
     # save results
     with open(os.path.join(args.log_dir, args.dataset,
                             args.model, f'version_{args.version}_test', 'avg_results.json'),'w') as f:
         json.dump(avg_results)
 
 
-@ray.remote
 def grid_search(args):
     """
     Runs grid search for hyperparameters
@@ -88,34 +162,17 @@ def grid_search(args):
     
     ## find best hparams
 
-    '''
+    
     # serial execution
     best_mean_auc = 0
     for lr, bs in itertools.product(lr_list, batch_size_list):
         args.prim_lr, args.adv_lr = lr, lr
         args.batch_size = bs
-        mean_auc = run_folds(args, dataset=dataset, fold_indices=fold_indices, version=version+'_folds')
+        mean_auc = run_folds(args, dataset=dataset, fold_indices=fold_indices, version=args.version+'_folds')
         if mean_auc > best_mean_auc:
             best_mean_auc = mean_auc
             best_bs = bs
             best_lr = lr
-    '''
-
-    # parallel execution
-    mean_aucs = []
-    idx2setting = {}
-    
-    for idx, (lr, bs) in enumerate(itertools.product(lr_list, batch_size_list)):
-        # set params
-        args.prim_lr, args.adv_lr = lr, lr
-        args.batch_size = bs
-        idx2setting[idx] = (lr, bs)
-        
-        # init remote process
-        mean_aucs.append(run_folds.remote(args, dataset=dataset, fold_indices=fold_indices, version=args.version+'_folds'))
-    
-    # fetch remote processes and get best settings
-    best_lr, best_bs = idx2setting[np.argmax([ray.get(auc) for auc in mean_aucs])]
 
     # Test model on best settings
     args.prim_lr, args.adv_lr, args.batch_size = best_lr, best_lr, best_bs
@@ -262,7 +319,7 @@ def train(args, train_dataset=None, val_dataset=None, test_dataset=None, version
     logger = TensorBoardLogger(
         save_dir='./',
         name=logdir,
-        version=f'version_{version}/lr_{args.prim_lr}_bs_{args.batch_size}'
+        version=f'version_{version}/seed_{args.seed}/lr_{args.prim_lr}_bs_{args.batch_size}'
                 + (f'/fold_{fold_nbr}' if fold_nbr is not None else '')
     )
 
@@ -288,15 +345,20 @@ def full_train_test(args, version=str(int(time()))):
     Trains a model on the complete training dataset and evaluates on test set
     :param args: object from the argument parser
     :param version: used to group runs from a single grid search into the same directory
-    :return: not implemented
+    :return model: trained pytorch_lightning module
+    :return results: dict containing AUC scores of the trained model on the test dataset
     """
     # create datasets
     train_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
     test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
 
     # run training and testing
-    train(args, train_dataset=train_dataset, test_dataset=test_dataset, version=version)
+    model = train(args, train_dataset=train_dataset, test_dataset=test_dataset, version=version)
 
+    # compute final test scores
+    results = get_all_auc_scores(model, test_dataset)
+
+    return model, results
 
 
 if __name__ == "__main__":
@@ -334,12 +396,14 @@ if __name__ == "__main__":
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--sensitive_label', default=False, type=bool, help='If True, target label will be included in list of sensitive columns')
 
+    # ray settings
+    parser.add_argument('--num_cpus', default=1, type=int, help='Number of CPUs available to ray')
 
     args = parser.parse_args()
 
 
     # init ray for parallelism
-    ray.init()
+    ray.init(num_cpus=args.num_cpus)
 
     # run main loop
     main(args)

@@ -22,7 +22,7 @@ class Logger(Callback):
     def on_epoch_end(self, trainer, pl_module):
         super().on_epoch_end(trainer, pl_module)
 
-        results = get_all_auc_scores(self.pl_module, self.dataset)
+        results = get_all_auc_scores(pl_module, self.dataset)
         
         for key in results:
             pl_module.log(f'{self.name}/{key}', results[key])
