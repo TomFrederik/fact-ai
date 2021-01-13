@@ -5,13 +5,14 @@ import pytorch_lightning as pl
 
 class BaselineModel(pl.LightningModule):
 
-    def __init__(self, 
-    num_features,
-    hidden_units=[64,32],
-    lr=0.01,
-    optimizer=torch.optim.Adagrad,
-    opt_kwargs={},
-    ):
+    def __init__(self,
+        config,
+        num_features,
+        hidden_units=[64,32],
+        lr=0.01, # deprecated
+        optimizer=torch.optim.Adagrad,
+        opt_kwargs={},
+        ):
         '''
         num_features - int, number of features of the input
         hidden_units - list, number of hidden units in each layer of the DNN
@@ -91,4 +92,4 @@ class BaselineModel(pl.LightningModule):
 
     
     def configure_optimizers(self):
-        return self.optimizer(self.parameters(), lr=self.hparams.lr, **self.hparams.opt_kwargs)
+        return self.optimizer(self.parameters(), lr=self.hparams.config['lr'], **self.hparams.opt_kwargs)

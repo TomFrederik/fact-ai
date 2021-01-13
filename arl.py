@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 class ARL(pl.LightningModule):
 
     def __init__(self, 
+        config,
         num_features,
         pretrain_steps,
         prim_hidden=[64,32],
@@ -149,8 +150,8 @@ class ARL(pl.LightningModule):
         '''
         
         # Create optimizers for learner and adversary
-        optimizer_learn = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.prim_lr, **self.hparams.opt_kwargs)
-        optimizer_adv = self.hparams.optimizer(self.adversary.parameters(), lr=self.hparams.adv_lr, **self.hparams.opt_kwargs)
+        optimizer_learn = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.config["lr"], **self.hparams.opt_kwargs)
+        optimizer_adv = self.hparams.optimizer(self.adversary.parameters(), lr=self.hparams.config["lr"], **self.hparams.opt_kwargs)
 
         return [optimizer_learn, optimizer_adv], []
 

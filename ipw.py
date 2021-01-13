@@ -8,9 +8,10 @@ from arl import Learner
 class IPW(pl.LightningModule):
 
     def __init__(self, 
+        config,
         num_features,
         hidden_units=[64,32],
-        lr=0.01,
+        lr=0.01, # deprecated
         optimizer=torch.optim.Adagrad,
         group_probs=None,
         sensitive_label=False,
@@ -121,7 +122,7 @@ class IPW(pl.LightningModule):
         :return: TODO
         """
         # Create optimizers for learner and adversary
-        optimizer = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.lr, **self.hparams.opt_kwargs)
+        optimizer = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.config['lr'], **self.hparams.opt_kwargs)
 
         return optimizer
 

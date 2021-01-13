@@ -26,14 +26,15 @@ class DRO_loss(torch.nn.Module):
 class DRO(pl.LightningModule):
 
     def __init__(self, 
-    num_features,
-    hidden_units=[64,32],
-    eta=0.95,
-    k=2.0,
-    lr=0.01,
-    optimizer=torch.optim.Adagrad,
-    opt_kwargs={},
-    ):
+        config,
+        num_features,
+        hidden_units=[64,32],
+        eta=0.95, # deprecated
+        k=2.0,
+        lr=0.01, # deprecated
+        optimizer=torch.optim.Adagrad,
+        opt_kwargs={},
+        ):
         '''
         num_features - int, number of features of the input
         hidden_units - list, number of hidden units in each layer of the DNN
@@ -60,7 +61,7 @@ class DRO(pl.LightningModule):
         self.net = nn.Sequential(*net_list)
 
         # init loss
-        self.loss_fct = DRO_loss(self.hparams.eta, self.hparams.k)
+        self.loss_fct = DRO_loss(self.hparams.config['eta'], self.hparams.k)
 
     def forward(self, input):
         out = self.net(input).squeeze(dim=-1)
@@ -110,4 +111,4 @@ class DRO(pl.LightningModule):
 
     
     def configure_optimizers(self):
-        return self.optimizer(self.parameters(), lr=self.hparams.lr, **self.hparams.opt_kwargs)
+        return self.optimizer(self.parameters(), lr=self.hparams.config['lr'], **self.hparams.opt_kwargs)
