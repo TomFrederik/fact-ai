@@ -69,7 +69,7 @@ def get_all_auc_scores(pl_module, dataset):
     accuracy = Accuracy()
     scores = torch.sigmoid(pl_module(dataset.features))
     aucs = aucs_from_dataset(scores, dataset)
-    acc = accuracy(scores, dataset.labels)
+    acc = accuracy(scores, dataset.labels).item()
 
     results = {'min_auc':min(aucs.values()),
                 'macro_avg_auc': mean(aucs.values()),
