@@ -116,7 +116,7 @@ renameColumns = {
 
 # Renaming columns
 df = df.rename(columns = renameColumns)
-columns = renameColumns.values()
+columns = list(df.columns)
 
 # NaN in 'pass_bar' refer to dropouts. Considering NaN as failing the bar.
 df['pass_bar'] = df['pass_bar'].fillna(value=0.0)
