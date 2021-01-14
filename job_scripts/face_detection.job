@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu_shared_course
+#SBATCH --gres=gpu:0
+#SBATCH --job-name=trial_job
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=6
+#SBATCH --time=01:30:00
+#SBATCH --mem=32000M
+#SBATCH --output=outputs/trial_job_%A.out
+
+module purge
+module load 2020
+module load Python/3.7.5-foss-2019b
+module load CUDA/10.1.243
+module load cuDNN/7.6.5.32-CUDA-10.1.243
+module load NCCL/2.5.6-CUDA-10.1.243
+module load Anaconda3/2020.02
+
+# cd into repo dir
+cd $HOME/fact-ai/
+
+# Activate environment
+source activate image_preprocessing
+
+# Run code
+srun python -u crop_faces.py
