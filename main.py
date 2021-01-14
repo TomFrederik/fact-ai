@@ -44,13 +44,14 @@ def main(args):
     config = {}
     
     if args.grid_search:
-        lr_list = [0.001]
-        batch_size_list = [32]
+        # specify search space 
+        # TODO: pull this outside this function for more flexible search space?
+        lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
+        batch_size_list = [32, 64, 128, 256, 512]
         eta_list = [0] # dummy entry
         
         if args.model == 'DRO':
-            eta_list = [0.3, 0.5, 0.7, 0.9]
-    
+            eta_list = [0.3, 0.5, 0.7, 0.9]    
     
         # configurations for hparam tuning
         config = {
@@ -258,6 +259,7 @@ def train(config, args, train_dataset=None, val_dataset=None, test_dataset=None,
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps + args.pretrain_steps,
                          callbacks=callbacks,
+                         gradient_clip_val=1 if args.model=='DRO' else 0,
                          progress_bar_refresh_rate=1 if args.p_bar else 0,
                          weights_summary=None, # supress model summary
                          # fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
@@ -270,7 +272,7 @@ def train(config, args, train_dataset=None, val_dataset=None, test_dataset=None,
 
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     
     # collect cmd line args
     parser = argparse.ArgumentParser()
@@ -296,7 +298,7 @@ if __name__ == "__main__":
     parser.add_argument('--log_dir', default='training_logs', type=str)
     parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
-    parser.add_argument('--grid_search', action='store_false', help='Whether to optimize batch size and lr via gridsearch')
+    parser.add_argument('--no_grid_search', action='store_false', default=True, dest="grid_search", help='Whether to optimize batch size and lr via gridsearch')
     parser.add_argument('--nbr_seeds', default=2, type=int, help='Number of independent training runs') # TODO: not implemented yet
 
     # Dataset settings
