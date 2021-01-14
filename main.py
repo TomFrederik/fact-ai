@@ -259,6 +259,7 @@ def train(config, args, train_dataset=None, val_dataset=None, test_dataset=None,
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps + args.pretrain_steps,
                          callbacks=callbacks,
+                         gradient_clip_val=1 if args.model=='DRO' else 0,
                          progress_bar_refresh_rate=1 if args.p_bar else 0,
                          weights_summary=None, # supress model summary
                          # fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
@@ -271,7 +272,7 @@ def train(config, args, train_dataset=None, val_dataset=None, test_dataset=None,
 
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     
     # collect cmd line args
     parser = argparse.ArgumentParser()
