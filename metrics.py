@@ -1,13 +1,13 @@
 from statistics import mean
 
 from pytorch_lightning.metrics.functional.classification import auroc
-from pytorch_lightning.metrics.classification import Accuracy
 from pytorch_lightning.callbacks import Callback
 import torch
+from torch.utils.data import DataLoader
 
 
 class Logger(Callback):
-    def __init__(self, dataset, name):
+    def __init__(self, dataset, name, batch_size):
         """Callback that logs various AUC metrics.
 
         Args:
@@ -16,13 +16,13 @@ class Logger(Callback):
         """
         super().__init__()
         self.dataset = dataset
+        self.batch_size = batch_size
         self.name = name
-        self.accuracy = Accuracy()
 
     def on_epoch_end(self, trainer, pl_module):
         super().on_epoch_end(trainer, pl_module)
 
-        results = get_all_auc_scores(pl_module, self.dataset)
+        results = get_all_auc_scores(pl_module, self.dataset, self.batch_size)
         
         for key in results:
             pl_module.log(f'{self.name}/{key}', results[key])
@@ -38,18 +38,21 @@ def group_aucs(predictions, targets, memberships):
 
     Returns:
         A dictionary with the group indices as keys and their AUROCs as values"""
-    groups = memberships.unique()
+    groups = memberships.unique().to(predictions.device)
+    groups = groups.to(predictions.device)
+    targets = targets.to(predictions.device)
     aucs = {}
     for group in groups:
         indices = (memberships == group)
         if torch.sum(targets[indices]) == 0 or torch.sum(1-targets[indices]) == 0:
             aucs[group.item()] = 0 
         else:
+
             aucs[group.item()] = auroc(predictions[indices], targets[indices]).item()
 
     return aucs
 
-
+# deprecated
 def aucs_from_dataset(predictions, dataset):
     """Compute the AUROC for each protected group in an entire dataset.
 
@@ -62,18 +65,41 @@ def aucs_from_dataset(predictions, dataset):
     return group_aucs(predictions, dataset.labels, dataset.memberships)
 
 
-def get_all_auc_scores(pl_module, dataset):
+def get_all_auc_scores(pl_module, dataset, batch_size):
     '''
     Computes all the different AUC scores of the given module on the given dataset
     '''
-    accuracy = Accuracy()
-    scores = torch.sigmoid(pl_module(dataset.features))
-    aucs = aucs_from_dataset(scores, dataset)
-    acc = accuracy(scores, dataset.labels).item()
+
+    # create a dataloader to pass the dataset through the model
+    dataloader = DataLoader(dataset, batch_size=batch_size)
+
+    # iterate through dataloader to generate predictions
+    predictions = []
+    memberships = []
+    targets = []
+    for x, y, s in iter(dataloader):
+        x = x.to(pl_module.device)
+        y = y.to(pl_module.device)
+        s = s.to(pl_module.device)
+        batch_predictions = torch.sigmoid(pl_module(x))
+        predictions.append(batch_predictions)
+        memberships.append(s)
+        targets.append(y)
+
+    predictions = torch.cat(predictions, dim=0)
+    targets = torch.cat(targets, dim=0)
+    memberships = torch.cat(memberships, dim=0)
+
+    #print("predictions.shape = ", predictions.shape)
+    #print("targets.shape = ", targets.shape)
+    #print("memberships.shape = ", memberships.shape)
+    
+    aucs = group_aucs(predictions, targets, memberships)
+    acc = torch.sum(predictions == targets).item()
 
     results = {'min_auc':min(aucs.values()),
                 'macro_avg_auc': mean(aucs.values()),
-                'micro_avg_auc': auroc(scores, dataset.labels).item(),
+                'micro_avg_auc': auroc(predictions, targets).item(),
                 'minority_auc': aucs[dataset.minority],
                 'accuracy':acc
     }

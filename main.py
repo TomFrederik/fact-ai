@@ -25,6 +25,7 @@ from ray import tune
 
 from sklearn.model_selection import KFold
 
+print(f'Cuda available? {torch.cuda.is_available()}')
 
 
 # dict to access optimizers by name, if we need to use different opts.
@@ -230,10 +231,10 @@ def train(config, args, train_dataset=None, val_dataset=None, test_dataset=None,
                               shuffle=True,
                               num_workers=args.num_workers)
 
-    callbacks = [Logger(train_dataset, 'training')]
+    callbacks = [Logger(train_dataset, 'training', batch_size=config['batch_size'])]
     
     if val_dataset is not None:
-        callbacks.append(Logger(val_dataset, 'validation'))
+        callbacks.append(Logger(val_dataset, 'validation', batch_size=args.eval_batch_size))
         callbacks.append(EarlyStopping(
             monitor='validation/micro_avg_auc',
             min_delta=0.00,
@@ -243,7 +244,7 @@ def train(config, args, train_dataset=None, val_dataset=None, test_dataset=None,
         ))
     
     if test_dataset is not None:
-        callbacks.append(Logger(test_dataset, 'test'))
+        callbacks.append(Logger(test_dataset, 'test', batch_size=args.eval_batch_size))
         
     # Select model and instantiate
     model = get_model(config, args, train_dataset)
@@ -303,7 +304,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
     parser.add_argument('--no_grid_search', action='store_false', default=True, dest="grid_search", help='Whether to optimize batch size and lr via gridsearch')
     parser.add_argument('--nbr_seeds', default=2, type=int, help='Number of independent training runs') # TODO: not implemented yet
-
+    parser.add_argument('--eval_batch_size', default=512, type=int, help='batch size for AUC computation, should be as large as possible')
+    
     # Dataset settings
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required='True')
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
