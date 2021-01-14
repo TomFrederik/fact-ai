@@ -44,13 +44,14 @@ def main(args):
     config = {}
     
     if args.grid_search:
-        lr_list = [0.001]
-        batch_size_list = [32]
+        # specify search space 
+        # TODO: pull this outside this function for more flexible search space?
+        lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
+        batch_size_list = [32, 64, 128, 256, 512]
         eta_list = [0] # dummy entry
         
         if args.model == 'DRO':
-            eta_list = [0.3, 0.5, 0.7, 0.9]
-    
+            eta_list = [0.3, 0.5, 0.7, 0.9]    
     
         # configurations for hparam tuning
         config = {
