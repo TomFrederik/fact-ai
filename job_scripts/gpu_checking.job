@@ -4,7 +4,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=gpu_check_job
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=3
+#SBATCH --cpus-per-task=4
 #SBATCH --time=00:30:00
 #SBATCH --mem=32000M
 #SBATCH --output=outputs/gpu_check_%A.out
@@ -21,7 +21,7 @@ module load Anaconda3/2018.12
 cd $HOME/fact-ai/
 
 # Activate environment
-source activate fact-ai
+source activate fact-ai-lisa
 
 # Run code
-srun python -u main.py --model baseline --dataset LSAC --disable_warnings True --num_workers 4 --train_steps 1
+srun python -u gpu_tune_example.py
