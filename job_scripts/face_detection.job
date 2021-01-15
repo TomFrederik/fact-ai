@@ -24,4 +24,4 @@ cd $HOME/fact-ai/
 source activate image_preprocessing
 
 # Run code
-srun python -u crop_faces.py
+# srun python -u crop_faces.py

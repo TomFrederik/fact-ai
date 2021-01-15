@@ -10,8 +10,6 @@ from __future__ import print_function, division
 import warnings
 warnings.filterwarnings("ignore")
 import os.path
-import pandas as pd
-import numpy as np
 import dlib
 import os
 import argparse
