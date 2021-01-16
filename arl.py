@@ -215,7 +215,7 @@ class Adversary(nn.Module):
         num_units = [num_features] + hidden_units
         for i in range(len(num_units)-1):   # range = 0 for one linear layer (hidden_units list is empty)
             net_list.append(nn.Linear(num_units[i],num_units[i+1]))
-            net_list.append(nn.ReLU())
+        #    net_list.append(nn.ReLU())
         net_list.append(nn.Linear(num_units[-1], 1))
         net_list.append(nn.Sigmoid())
 
