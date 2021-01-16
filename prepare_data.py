@@ -45,18 +45,21 @@ def build_mean_std(df, base_dir):
     description = df.describe().to_dict()
     mean_std_dict = {}
     for key, value in description.items():
+        print(key)
+        print(value)
         mean_std_dict[key] = [value['mean'], value['std']]
 
     output_file_path = os.path.join(base_dir, 'mean_std.json')
     with open(output_file_path, mode="w") as output_file:
         json.dump(mean_std_dict, output_file)
 
-def save_results(train_df, test_df, base_dir):
+def save_results(train_df, test_df, base_dir, contains_numeric=True):
     train_df.to_csv(os.path.join(base_dir, 'train.csv'), index=False, header=True)
     test_df.to_csv(os.path.join(base_dir, 'test.csv'), index=False, header=True)
 
     build_vocab(train_df, base_dir)
-    build_mean_std(train_df, base_dir)
+    if contains_numeric:
+        build_mean_std(train_df, base_dir)
     
 
 ##########
@@ -167,3 +170,30 @@ test_df = load_df(test_file, columns=columns, skiprows=1)
 test_df['income'] = test_df['income'].apply(lambda x: x[:-1])
 
 save_results(train_df, test_df, base_dir)
+
+############
+# FairFace #
+############
+print("Processing FairFace")
+base_dir = "data/FairFace/labels"
+train_file = os.path.join(base_dir, 'train_original.csv')
+test_file = os.path.join(base_dir, 'test_original.csv')
+
+columns = [
+    "file", "age", "gender", "race", "service_test"
+]
+
+train_df = load_df(train_file)
+test_df = load_df(test_file)
+
+# Remove the folder name in file path
+train_df['file'] = train_df['file'].apply(lambda x: x[6:])
+test_df['file'] = test_df['file'].apply(lambda x: x[4:])
+
+# delete irrelevant columns
+del train_df['service_test']
+del test_df['service_test']
+del train_df['age']
+del test_df['age']
+
+save_results(train_df, test_df, base_dir, contains_numeric=False)
