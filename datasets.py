@@ -1,41 +1,42 @@
 from typing import Dict, Type, Optional, Any, List, Tuple, Union
 from abc import ABC, abstractmethod
 import os
-import torch 
+import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, SubsetRandomSampler, DataLoader
-import pandas as pd # type: ignore
-import numpy as np # type: ignore
+import pandas as pd  # type: ignore
+import numpy as np  # type: ignore
 import json
 import itertools
 from skimage import io
 
 DATASET_SETTINGS: Dict[str, Dict[str, Union[List[str], str]]] = {
     "Adult": {
-        "sensitive_column_names": ['race','sex'],
-        "sensitive_column_values": ['Black','Female'],
+        "sensitive_column_names": ['race', 'sex'],
+        "sensitive_column_values": ['Black', 'Female'],
         "target_variable": "income",
         "target_value": ">50K"},
     "LSAC": {
-        "sensitive_column_names": ['race','sex'],
-        "sensitive_column_values": ['Black','Female'],
+        "sensitive_column_names": ['race', 'sex'],
+        "sensitive_column_values": ['Black', 'Female'],
         "target_variable": "pass_bar",
         "target_value": "Passed"
-        },
+    },
     "COMPAS": {
-        "sensitive_column_names": ['race','sex'],
-        "sensitive_column_values": ['Black','Female'],
+        "sensitive_column_names": ['race', 'sex'],
+        "sensitive_column_values": ['Black', 'Female'],
         "target_variable": "is_recid",
         "target_value": "Yes"
-        },
+    },
     "FairFace": {
         "sensitive_column_names": ['race'],
         "sensitive_column_values": [''],
         "target_variable": "gender",
         "target_value": "Female",
-        "dimensionality": [3,224,224]
-        }
+        "dimensionality": [3, 224, 224]
     }
+}
+
 
 class FairnessDataset(ABC, Dataset):
     @abstractmethod
@@ -80,7 +81,6 @@ class FairnessDataset(ABC, Dataset):
     @abstractmethod
     def labels(self) -> torch.Tensor:
         pass
-
 
 
 class CustomDataset(FairnessDataset):
@@ -142,8 +142,8 @@ class CustomDataset(FairnessDataset):
                         print(f'WARNING: mean is {mean}')
                     if delta_std > 1e-4:
                         print(f'WARNING: delta std is {delta_std}')
-                #assert mean < 1e-10, f'mean is {mean}'
-                #assert delta_std < 1e-4, f'delta std is {delta_std}'
+                # assert mean < 1e-10, f'mean is {mean}'
+                # assert delta_std < 1e-4, f'delta std is {delta_std}'
 
         # create labels
         labels = (features[target_variable].to_numpy() == target_value).astype(int)
@@ -153,8 +153,7 @@ class CustomDataset(FairnessDataset):
         if binarize_prot_group:
             for col, val in zip(sensitive_column_names, sensitive_column_values):
                 features[col] = features[col].apply(lambda x: float(x == val))
-                
-        
+
         # turn protected group memberships into a single index
         # first create lists of all the values the sensitive columns can take:
         uniques = [tuple(features[col].unique()) for col in sensitive_column_names]
@@ -186,7 +185,7 @@ class CustomDataset(FairnessDataset):
             prob_identifier = torch.stack([self.memberships, self.labels], dim=1)
             vals, counts = prob_identifier.unique(return_counts=True, dim=0)
             probs = counts / torch.sum(counts)
-            self._group_probs = probs.reshape(-1,2)
+            self._group_probs = probs.reshape(-1, 2)
         else:
             vals, counts = self.memberships.unique(return_counts=True)
             self._group_probs = counts / torch.sum(counts).float()
@@ -195,15 +194,15 @@ class CustomDataset(FairnessDataset):
         # load vocab
         with open(vocab_path) as json_file:
             vocab = json.load(json_file)
-        
+
         # we already mapped target var values to 0 and 1 before
         del vocab[target_variable]
-        
+
         tensors: List[torch.Tensor] = []
         for c in columns:
             if c in vocab:
                 vals = list(vocab[c])
-                val2int = {vals[i]:i for i in range(len(vals))} # map possible value to integer
+                val2int = {vals[i]: i for i in range(len(vals))}  # map possible value to integer
                 features[c] = features[c].apply(lambda x: val2int[x])
                 one_hot = nn.functional.one_hot(
                     torch.tensor(features[c].values).long(),
@@ -215,10 +214,9 @@ class CustomDataset(FairnessDataset):
 
         self._features = torch.stack(tensors, dim=1).float()
 
-
     def __len__(self):
         return self.features.size(0)
-    
+
     def __getitem__(self, index):
         x = self.features[index]
 
@@ -264,7 +262,8 @@ class CustomDataset(FairnessDataset):
     def labels(self):
         return self._labels
 
-class ImageDataset(Dataset):
+
+class ImageDataset(FairnessDataset):
 
     def __init__(self, dataset_name, test=False, binarize_prot_group=False, idcs=None, sensitive_label=False):
         """
@@ -282,7 +281,7 @@ class ImageDataset(Dataset):
         path = os.path.join(self.base_path, "test.csv" if test else "train.csv")
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"].copy()
         sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"].copy()
-        self.dimensionality = DATASET_SETTINGS[dataset_name]["dimensionality"].copy()
+        self._dimensionality = DATASET_SETTINGS[dataset_name]["dimensionality"].copy()
         target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
@@ -297,8 +296,8 @@ class ImageDataset(Dataset):
             frame = frame.iloc[idcs]
 
         # create labels
-        self.labels = (frame[target_variable].to_numpy() == target_value).astype(int)
-        self.labels = torch.from_numpy(self.labels)
+        self._labels = (frame[target_variable].to_numpy() == target_value).astype(int)
+        self._labels = torch.from_numpy(self._labels)
 
         self.img_paths = frame['file'].to_list()
 
@@ -318,36 +317,37 @@ class ImageDataset(Dataset):
         sensitives = frame[sensitive_column_names]
 
         # Create a tensor with protected group membership indices for easier access
-        self.memberships = torch.empty(len(frame), dtype=int)
-        for i in range(len(self.memberships)):
+        self._memberships = torch.empty(len(frame), dtype=int)
+        for i in range(len(self._memberships)):
             s = tuple(sensitives.iloc[i])
-            self.memberships[i] = values2index[s]
+            self._memberships[i] = values2index[s]
 
         # compute the minority group (the one with the fewest members) and group probabilities
-        vals, counts = self.memberships.unique(return_counts=True)
-        self.minority = vals[counts.argmin().item()].item()
+        vals, counts = self._memberships.unique(return_counts=True)
+        self._minority = vals[counts.argmin().item()].item()
 
         # calculate group probabilities for IPW
         if sensitive_label:
-            prob_identifier = torch.stack([self.memberships, self.labels], dim=1)
+            prob_identifier = torch.stack([self._memberships, self.labels], dim=1)
             vals, counts = prob_identifier.unique(return_counts=True, dim=0)
             probs = counts / torch.sum(counts)
-            self.group_probs = probs.reshape(-1, 2)
+            self._roup_probs = probs.reshape(-1, 2)
         else:
-            vals, counts = self.memberships.unique(return_counts=True)
-            self.group_probs = counts / torch.sum(counts).float()
+            vals, counts = self._memberships.unique(return_counts=True)
+            self._group_probs = counts / torch.sum(counts).float()
 
     def __len__(self):
-        return self.labels.size(0)
+        return self._labels.size(0)
 
     def __getitem__(self, index):
         img_path = os.path.join(self.base_path, 'images', 'test' if self.test else 'train', self.img_paths[index])
         x = torch.from_numpy(io.imread(img_path))  # H x W x C
         x = x.permute(2, 0, 1)  # C x H x W
+        x = x / 255
 
-        y = float(self.labels[index])
+        y = float(self._labels[index])
 
-        s = self.memberships[index].item()
+        s = self._memberships[index].item()
 
         return x, y, s
 
@@ -363,6 +363,29 @@ class ImageDataset(Dataset):
         `sensitive_column_names` argument from `DATASET_SETTINGS`."""
         return self.index2values
 
+    @property
+    def features(self):
+        raise Exception("Class ImageDataset does not implement features property.")
+
+    @property
+    def dimensionality(self):
+        return self._dimensionality
+
+    @property
+    def minority(self):
+        return self._minority
+
+    @property
+    def group_probs(self):
+        return self._group_probs
+
+    @property
+    def memberships(self):
+        return self._memberships
+
+    @property
+    def labels(self):
+        return self._labels
 
 
 class CustomSubset(FairnessDataset):
@@ -383,38 +406,37 @@ class CustomSubset(FairnessDataset):
 
     def __len__(self):
         return len(self.indices)
-    
+
     @property
     def protected_index2value(self):
         return self.dataset.protected_index2value
-    
+
     @property
     def features(self):
         return self.dataset.features[self.indices]
-    
+
     @property
     def dimensionality(self):
         return self.dataset.dimensionality
-    
+
     @property
     def minority(self):
         return self.dataset.minority
-    
+
     @property
     def group_probs(self):
         return self.dataset.group_probs
-    
+
     @property
     def memberships(self):
         return self.dataset.memberships[self.indices]
-    
+
     @property
     def labels(self):
         return self.dataset.labels[self.indices]
 
 
 if __name__ == '__main__':
-
     # adult_dataset = CustomDataset("Adult")
     # print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
 
@@ -423,9 +445,9 @@ if __name__ == '__main__':
 
     # lsac_dataset = CustomDataset('LSAC')
     # print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
-    #indices = [1,2,3,4]
-    #subsetloader = DataLoader(lsac_dataset, batch_size=3, sampler=SubsetRandomSampler(indices))
-    #print('\n\nFirst batch in subsetloader:\n',next(enumerate(subsetloader)))
+    # indices = [1,2,3,4]
+    # subsetloader = DataLoader(lsac_dataset, batch_size=3, sampler=SubsetRandomSampler(indices))
+    # print('\n\nFirst batch in subsetloader:\n',next(enumerate(subsetloader)))
 
     # fairface_dataset = ImageDataset("FairFace")
     # print('\n\nExample 1 of FairFace set: \n',fairface_dataset[1][0].shape)
