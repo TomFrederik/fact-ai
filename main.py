@@ -111,7 +111,7 @@ def main(args):
     model = train(config, args, train_dataset=dataset, test_dataset=test_dataset)
     
     # compute final test scores
-    auc_scores = get_all_auc_scores(model, test_dataset)
+    auc_scores = get_all_auc_scores(model, test_dataset, args.eval_batch_size)
         
     # print results
     print(f'Results = {auc_scores}')

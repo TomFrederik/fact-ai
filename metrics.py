@@ -95,7 +95,7 @@ def get_all_auc_scores(pl_module, dataset, batch_size):
     #print("memberships.shape = ", memberships.shape)
     
     aucs = group_aucs(predictions, targets, memberships)
-    acc = torch.sum(predictions == targets).item()
+    acc = torch.mean(((predictions > 0.5).int() == targets).float()).item()
 
     results = {'min_auc':min(aucs.values()),
                 'macro_avg_auc': mean(aucs.values()),
