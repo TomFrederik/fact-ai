@@ -124,7 +124,7 @@ def main(args: argparse.Namespace):
     
     # compute final test scores
     dataloader = DataLoader(test_dataset, batch_size=args.eval_batch_size)
-    auc_scores: Dict[str, float] = get_all_auc_scores(model, test_dataloader, test_dataset.minority)
+    auc_scores: Dict[str, float] = get_all_auc_scores(model, dataloader, test_dataset.minority)
         
     # print results
     print(f'Results = {auc_scores}')
