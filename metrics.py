@@ -99,10 +99,6 @@ def get_all_auc_scores(pl_module, dataloader, minority):
     
     aucs = group_aucs(predictions, targets, memberships)
     acc = torch.mean(((predictions > 0.5).int() == targets).float()).item()
-
-        #acctime = time()
-        acc = torch.sum(predictions == targets).item()
-        #print(f'acc time was {time() - acctime}')
     
     results = {'min_auc':min(aucs.values()),
                 'macro_avg_auc': mean(aucs.values()),

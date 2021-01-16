@@ -109,9 +109,11 @@ def main(args):
         config['eta'] = args.eta
         
         if args.seed_run:
-            path = f'./{args.log_dir}/{args.dataset}/{args.model}/version_{args.seed_run_version}/seed_{args.seed}'
+            path = f'./{args.log_dir}/{args.dataset}/{args.model}/seed_run_version_{args.seed_run_version}/seed_{args.seed}'
         else:
             path = f'./{args.log_dir}/{args.dataset}/{args.model}/version_{args.version}'
+
+        os.makedirs(path, exist_ok=True)
         
     # single training run
     model = train(config, args, train_dataset=dataset, test_dataset=test_dataset)

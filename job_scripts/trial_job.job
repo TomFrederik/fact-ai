@@ -24,4 +24,4 @@ cd $HOME/fact-ai/
 source activate fact-ai-lisa
 
 # Run code
-srun python -u main.py --model baseline --dataset COMPAS --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed 1
+srun python -u main.py --model baseline --dataset COMPAS --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed 1 --seed_run

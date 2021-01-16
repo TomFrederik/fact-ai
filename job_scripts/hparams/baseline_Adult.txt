@@ -1,11 +1,11 @@
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 1
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 2
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 3
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 4
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 5
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 6
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 7
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 8
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 9
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 10
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 1 --seed_run
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 2 --seed_run
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 3 --seed_run
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 4 --seed_run
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 5 --seed_run
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 6 --seed_run
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 7 --seed_run
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 8 --seed_run
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 9 --seed_run
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 128 --batch_size 0.01 --seed 10 --seed_run
 
