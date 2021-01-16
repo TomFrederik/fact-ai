@@ -2,12 +2,12 @@
 
 #SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:0
-#SBATCH --job-name=trial_job
+#SBATCH --job-name=baseline_compas_gridsearch
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --time=01:30:00
+#SBATCH --time=04:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=outputs/trial_job_%A.out
+#SBATCH --output=outputs/baseline_LSAC_gridsearch_%A.out
 
 module purge
 module load 2019
@@ -24,4 +24,5 @@ cd $HOME/fact-ai/
 source activate fact-ai-lisa
 
 # Run code
-srun python -u main.py --model baseline --dataset COMPAS --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed 1
+srun python -u main.py --model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2
+

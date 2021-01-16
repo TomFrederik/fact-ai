@@ -130,7 +130,7 @@ class CustomDataset(Dataset):
             self.group_probs = probs.reshape(-1,2)
         else:
             vals, counts = self.memberships.unique(return_counts=True)
-            self.group_probs = counts / torch.sum(counts)
+            self.group_probs = counts / torch.sum(counts).float()
 
         ## convert categorical data into onehot
         # load vocab

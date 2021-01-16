@@ -40,6 +40,9 @@ def main(args):
     # set run version
     args.version = str(int(time()))
     
+    # seed
+    pl.seed_everything(args.seed)
+
     # create datasets
     dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
     test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
@@ -52,7 +55,7 @@ def main(args):
         # TODO: pull this outside this function for more flexible search space?
         lr_list = [0.001, 0.01, 0.1, 1, 2, 5]
         batch_size_list = [32, 64, 128, 256, 512]
-        eta_list = [0] # dummy entry
+        eta_list = [0] # dummy entry for non-DRO experiments
         
         if args.model == 'DRO':
             eta_list = [0.3, 0.5, 0.7, 0.9]    
@@ -105,13 +108,16 @@ def main(args):
         config['batch_size'] = args.batch_size
         config['eta'] = args.eta
         
-        path = f'./{args.log_dir}/{args.dataset}/{args.model}/version_{args.version}'
+        if args.seed_run:
+            path = f'./{args.log_dir}/{args.dataset}/{args.model}/version_{args.seed_run_version}/seed_{args.seed}'
+        else:
+            path = f'./{args.log_dir}/{args.dataset}/{args.model}/version_{args.version}'
         
     # single training run
     model = train(config, args, train_dataset=dataset, test_dataset=test_dataset)
     
     # compute final test scores
-    auc_scores = get_all_auc_scores(model, test_dataset)
+    auc_scores = get_all_auc_scores(model, test_dataset, dataset.minority)
         
     # print results
     print(f'Results = {auc_scores}')
@@ -135,8 +141,8 @@ def get_model(config, args, dataset):
                     pretrain_steps=args.pretrain_steps,
                     prim_hidden=args.prim_hidden, 
                     adv_hidden=args.adv_hidden, 
-                    prim_lr=args.prim_lr, # deprecated
-                    adv_lr=args.adv_lr, # deprecated
+                    #prim_lr=args.prim_lr, # deprecated
+                    #adv_lr=args.adv_lr, # deprecated
                     optimizer=OPT_BY_NAME[args.opt],
                     opt_kwargs={})
 
@@ -144,8 +150,8 @@ def get_model(config, args, dataset):
         model = DRO(config=config, # for hparam tuning
                     num_features=dataset.dimensionality,
                     hidden_units=args.prim_hidden,
-                    lr=args.prim_lr, # deprecated
-                    eta=args.eta, # deprecated
+                    #lr=args.prim_lr, # deprecated
+                    #eta=args.eta, # deprecated
                     k=args.k,
                     optimizer=OPT_BY_NAME[args.opt],
                     opt_kwargs={})
@@ -155,7 +161,7 @@ def get_model(config, args, dataset):
         model = IPW(config=config, # for hparam tuning
                     num_features=dataset.dimensionality,
                     hidden_units=args.prim_hidden,
-                    lr=args.prim_lr, # deprecated
+                    #lr=args.prim_lr, # deprecated
                     optimizer=OPT_BY_NAME[args.opt],
                     group_probs=dataset.group_probs,
                     sensitive_label=args.sensitive_label,
@@ -166,7 +172,7 @@ def get_model(config, args, dataset):
         model = BaselineModel(config=config, # for hparam tuning
                               num_features=dataset.dimensionality,
                               hidden_units=args.prim_hidden,
-                              lr=args.prim_lr, # deprecated
+                              #lr=args.prim_lr, # deprecated
                               optimizer=OPT_BY_NAME[args.opt],
                               opt_kwargs={})
         args.pretrain_steps = 0  # NO PRETRAINING
@@ -207,7 +213,7 @@ def run_folds(config, args, dataset, fold_indices, version=None):
         model = train(config, args, train_dataset=train_dataset, val_dataset=val_dataset, version=args.version, fold_nbr=fold_nbr)
 
         # Evaluate on val set to get an estimate of performance
-        scores = torch.sigmoid(model(val_dataset.features))
+        scores = torch.sigmoid(model(val_dataset.features)) # suspect of this. Does it work with gpu? doesn't seem to throw an error
         aucs.append(auroc(scores, val_dataset.labels).item())
 
     mean_auc = np.mean(aucs)
@@ -229,10 +235,12 @@ def train(config, args, train_dataset=None, val_dataset=None, test_dataset=None,
     train_loader = DataLoader(train_dataset,
                               batch_size=config['batch_size'],
                               shuffle=True,
-                              num_workers=args.num_workers)
+                              num_workers=args.num_workers,
+                              pin_memory=True)
 
-    callbacks = [Logger(train_dataset, 'training', batch_size=config['batch_size'])]
-    
+    #callbacks = [Logger(train_dataset, 'training', batch_size=config['batch_size'])]
+    callbacks = []
+
     if val_dataset is not None:
         callbacks.append(Logger(val_dataset, 'validation', batch_size=args.eval_batch_size))
         callbacks.append(EarlyStopping(
@@ -266,11 +274,14 @@ def train(config, args, train_dataset=None, val_dataset=None, test_dataset=None,
                          gradient_clip_val=1 if args.model=='DRO' else 0,
                          progress_bar_refresh_rate=1 if args.p_bar else 0,
                          weights_summary=None, # supress model summary
+                         #profiler='simple',
                          # fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
                          )
-
+    
     # Training
+    fit_time = time()
     trainer.fit(model, train_loader)
+    print(f'time to fit was {time()-fit_time}')
 
     return model
 
@@ -292,8 +303,10 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--train_steps', default=5000, type=int)
     parser.add_argument('--prim_lr', default=0.1, type=float, help='Learning rate for primary network')
-    parser.add_argument('--adv_lr', default=0.1, type=float, help='Learning rate for adversarial network') # deprecated
-    parser.add_argument('--seed', default=0, type=int) # TODO: not implemented yet
+    #parser.add_argument('--adv_lr', default=0.1, type=float, help='Learning rate for adversarial network') # deprecated
+    parser.add_argument('--seed', default=0, type=int)
+    parser.add_argument('--seed_run', action='store_true', help='Whether this is part of a run with multiple seeds')
+    parser.add_argument('--seed_run_version', default=0, type=int, help='Version of the run with multiple seeds')
     
     # More general train settings
     parser.add_argument('--pretrain_steps', default=250, type=int)
@@ -303,7 +316,7 @@ if __name__ == '__main__':
     parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
     parser.add_argument('--no_grid_search', action='store_false', default=True, dest="grid_search", help='Whether to optimize batch size and lr via gridsearch')
-    parser.add_argument('--nbr_seeds', default=2, type=int, help='Number of independent training runs') # TODO: not implemented yet
+    #parser.add_argument('--nbr_seeds', default=2, type=int, help='Number of independent training runs') # TODO: not implemented yet
     parser.add_argument('--eval_batch_size', default=512, type=int, help='batch size for AUC computation, should be as large as possible')
     
     # Dataset settings

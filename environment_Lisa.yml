@@ -1,0 +1,20 @@
+name: fact-ai-lisa
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - cudatoolkit=10.1.243
+  - pip=20.2.4
+  - python=3.7.5
+  - pytorch=1.6.0=py3.7_cuda10.1.243_cudnn7.6.3_0
+  - torchvision=0.7.0=py37_cu101
+  - pandas=1.2.0
+  - scikit-learn=0.24.0
+  - pip:
+    - matplotlib==3.3.2
+    - numpy==1.19.2
+    - pytorch-lightning==1.1.3
+    - scipy==1.5.3
+    - ray==1.1.0
+

@@ -5,4 +5,7 @@
 __pycache__
 /training_logs
 *.out
+/grid_search
+/grid_search_gpu_example
+/env
 **/fairface/**/*.jpg
