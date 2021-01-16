@@ -282,7 +282,10 @@ def train(config: Dict[str, Any],
     
     # Create a PyTorch Lightning trainer
     trainer = pl.Trainer(logger=logger,
-                         checkpoint_callback=ModelCheckpoint(save_weights_only=True, dirpath=logger.log_dir, mode='max', monitor='validation/micro_avg_auc'),
+                         checkpoint_callback=ModelCheckpoint(save_weights_only=True, 
+                                                             dirpath=logger.log_dir, 
+                                                             mode='max', 
+                                                             monitor='validation/micro_avg_auc' if val_dataset is not None else 'test/micro_avg_auc'),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps + args.pretrain_steps,
                          callbacks=callbacks,
