@@ -4,11 +4,11 @@
 #SBATCH --gres=gpu:0
 #SBATCH --job-name=baseline_compas_seed_avg
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
-#SBATCH --array=1-10%1
+#SBATCH --cpus-per-task=3
+#SBATCH --array=1-10%2
 #SBATCH --time=04:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=outputs/baseline_LSAC_avg%A.out
+#SBATCH --output=outputs/baseline_LSAC_avg_%a_%A.out
 
 module purge
 module load 2019

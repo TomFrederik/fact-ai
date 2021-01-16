@@ -1,0 +1,10 @@
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 1
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 2
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 3
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 4
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 5
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 6
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 7
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 8
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 9
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.001 --batch_size 64 --seed_run --seed 10

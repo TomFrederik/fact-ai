@@ -1,5 +1,6 @@
 from statistics import mean
 
+from pytorch_lightning import LightningModule
 from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.callbacks import Callback
 import torch
@@ -82,8 +83,7 @@ def get_all_auc_scores(pl_module, dataloader, minority):
     targets = []
     for x, y, s in iter(dataloader):
         x = x.to(pl_module.device)
-        y = y.to(pl_module.device)
-        s = s.to(pl_module.device)
+        # y and s are simple scalars, no need to move to GPU
         batch_predictions = torch.sigmoid(pl_module(x))
         predictions.append(batch_predictions)
         memberships.append(s)
@@ -93,22 +93,15 @@ def get_all_auc_scores(pl_module, dataloader, minority):
     targets = torch.cat(targets, dim=0)
     memberships = torch.cat(memberships, dim=0)
 
-    #print("predictions.shape = ", predictions.shape)
-    #print("targets.shape = ", targets.shape)
-    #print("memberships.shape = ", memberships.shape)
-    
     aucs = group_aucs(predictions, targets, memberships)
     acc = torch.mean(((predictions > 0.5).int() == targets).float()).item()
-
-        #acctime = time()
-        acc = torch.sum(predictions == targets).item()
-        #print(f'acc time was {time() - acctime}')
     
-    results = {'min_auc':min(aucs.values()),
-                'macro_avg_auc': mean(aucs.values()),
-                'micro_avg_auc': auroc(predictions, targets).item(),
-                'minority_auc': aucs[minority],
-                'accuracy':acc
+    results = {
+        'min_auc': min(aucs.values()),
+        'macro_avg_auc': mean(aucs.values()),
+        'micro_avg_auc': auroc(predictions, targets).item(),
+        'minority_auc': aucs[minority],
+        'accuracy': acc
     }
     
     return results
