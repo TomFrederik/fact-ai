@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import json
 import itertools
+from skimage import io
 
 
 DATASET_SETTINGS = {"Adult": {
@@ -24,6 +25,13 @@ DATASET_SETTINGS = {"Adult": {
         "sensitive_column_values": ['Black','Female'],
         "target_variable": "is_recid",
         "target_value": "Yes"
+        },
+    "FairFace":{
+        "sensitive_column_names": ['race'],
+        "sensitive_column_values": [''],
+        "target_variable": "gender",
+        "target_value": "Female",
+        "dimensionality": [3,224,224]
         }
     }
 
@@ -184,6 +192,107 @@ class CustomDataset(Dataset):
         `sensitive_column_names` argument from `DATASET_SETTINGS`."""
         return self.index2values
 
+
+class ImageDataset(Dataset):
+
+    def __init__(self, dataset_name, test=False, binarize_prot_group=False, idcs=None, sensitive_label=False):
+        """
+        Dataset class for creating a dataset
+        :param dataset_name: str, identifier of the dataset
+        :param test: bool, whether to use the test set
+        :param binarize_prot_group: bool, whether to binarize the protected group. If true, all races other than black will be mapped to 0.
+                                    If false, a unique index for each combination of sensitive column values is created.
+        :param idcs: list, indices indicating which elements to take
+        :param sensitive_label: bool, whether to include the target variable as a protected feature
+        """
+        super().__init__()
+
+        self.base_path = os.path.join("data", dataset_name)
+        path = os.path.join(self.base_path, "test.csv" if test else "train.csv")
+        sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"].copy()
+        sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"].copy()
+        self.dimensionality = DATASET_SETTINGS[dataset_name]["dimensionality"].copy()
+        target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
+        target_value = DATASET_SETTINGS[dataset_name]["target_value"]
+
+        self.test = test
+
+        # load data
+        frame = pd.read_csv(path, ',')
+        columns = list(frame.columns)
+
+        # drop indices not specified
+        if idcs is not None:
+            frame = frame.iloc[idcs]
+
+        # create labels
+        self.labels = (frame[target_variable].to_numpy() == target_value).astype(int)
+        self.labels = torch.from_numpy(self.labels)
+
+        self.img_paths = frame['file'].to_list()
+
+        # if set, will binarize group values in the sensitive columns. If not set, check if values should be transformed to numbers instead
+        if binarize_prot_group:
+            for col, val in zip(sensitive_column_names, sensitive_column_values):
+                frame[col] = frame[col].apply(lambda x: float(x == val))
+
+        # turn protected group memberships into a single index
+        # first create lists of all the values the sensitive columns can take:
+        uniques = [tuple(frame[col].unique()) for col in sensitive_column_names]
+        # create a list of tuples of such values. This corresponds to a list of all protected groups
+        self.index2values = itertools.product(*uniques)
+        # create the inverse dictionary:
+        values2index = {vals: index for index, vals in enumerate(self.index2values)}
+
+        sensitives = frame[sensitive_column_names]
+
+        # Create a tensor with protected group membership indices for easier access
+        self.memberships = torch.empty(len(frame), dtype=int)
+        for i in range(len(self.memberships)):
+            s = tuple(sensitives.iloc[i])
+            self.memberships[i] = values2index[s]
+
+        # compute the minority group (the one with the fewest members) and group probabilities
+        vals, counts = self.memberships.unique(return_counts=True)
+        self.minority = vals[counts.argmin().item()].item()
+
+        # calculate group probabilities for IPW
+        if sensitive_label:
+            prob_identifier = torch.stack([self.memberships, self.labels], dim=1)
+            vals, counts = prob_identifier.unique(return_counts=True, dim=0)
+            probs = counts / torch.sum(counts)
+            self.group_probs = probs.reshape(-1, 2)
+        else:
+            vals, counts = self.memberships.unique(return_counts=True)
+            self.group_probs = counts / torch.sum(counts).float()
+
+    def __len__(self):
+        return self.labels.size(0)
+
+    def __getitem__(self, index):
+        img_path = os.path.join(self.base_path, 'images', 'test' if self.test else 'train', self.img_paths[index])
+        x = torch.from_numpy(io.imread(img_path))  # H x W x C
+        x = x.permute(2, 0, 1)  # C x H x W
+
+        y = float(self.labels[index])
+
+        s = self.memberships[index].item()
+
+        return x, y, s
+
+    @property
+    def protected_index2value(self):
+        """List that turns the index of a protected group into meaningful values.
+
+        Dataset.__getitem__() returns three values, the third of which is an integer
+        index that specifies the protected group the item belongs to.
+        With Dataset.protected_index2value[index] you can turn this into a tuple
+        such as ("White", "Male") that specifies the values of the underlying
+        sensitive attributes. The order of attributes is the same as in the
+        `sensitive_column_names` argument from `DATASET_SETTINGS`."""
+        return self.index2values
+
+
 class CustomSubset(Dataset):
     """
     Subset of a dataset at specified indices.
@@ -234,14 +343,19 @@ class CustomSubset(Dataset):
 
 if __name__ == '__main__':
 
-    adult_dataset = CustomDataset("Adult")
-    print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
+    # adult_dataset = CustomDataset("Adult")
+    # print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
 
-    compas_dataset = CustomDataset('COMPAS')
-    print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
+    # compas_dataset = CustomDataset('COMPAS')
+    # print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
 
-    lsac_dataset = CustomDataset('LSAC')
-    print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
+    # lsac_dataset = CustomDataset('LSAC')
+    # print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
     #indices = [1,2,3,4]
     #subsetloader = DataLoader(lsac_dataset, batch_size=3, sampler=SubsetRandomSampler(indices))
     #print('\n\nFirst batch in subsetloader:\n',next(enumerate(subsetloader)))
+
+    # fairface_dataset = ImageDataset("FairFace")
+    # print('\n\nExample 1 of FairFace set: \n',fairface_dataset[1][0].shape)
+
+    pass
