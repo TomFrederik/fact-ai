@@ -80,39 +80,25 @@ def get_all_auc_scores(pl_module, dataloader, minority):
     predictions = []
     memberships = []
     targets = []
-    #avg_fw_time = 0
-    #fw_time = time()
-    #num_steps = 0
-    with torch.no_grad():
-        for x, y, s in iter(dataloader):
-            #num_steps+=1
-            x = x.to(pl_module.device)
-            y = y.to(pl_module.device)
-            s = s.to(pl_module.device)
-        
-            batch_fw_time = time()
-        
-            batch_predictions = torch.sigmoid(pl_module(x))
-            #avg_fw_time += time() - batch_fw_time
-            predictions.append(batch_predictions)
-            memberships.append(s)
-            targets.append(y)
-        #print(f'fw time was {time() - fw_time}')
-        #print(f'avg fw time was {avg_fw_time/num_steps}')
-        
-        #cattime = time()
-        predictions = torch.cat(predictions, dim=0)
-        targets = torch.cat(targets, dim=0)
-        memberships = torch.cat(memberships, dim=0)
-        #print(f'cat time was {time()-cattime}')
+    for x, y, s in iter(dataloader):
+        x = x.to(pl_module.device)
+        y = y.to(pl_module.device)
+        s = s.to(pl_module.device)
+        batch_predictions = torch.sigmoid(pl_module(x))
+        predictions.append(batch_predictions)
+        memberships.append(s)
+        targets.append(y)
 
-        #print("predictions.shape = ", predictions.shape)
-        #print("targets.shape = ", targets.shape)
-        #print("memberships.shape = ", memberships.shape)
-        
-        #auctime = time()
-        aucs = group_aucs(predictions, targets, memberships)
-        #print(f'time to compute auc was {time() - auctime}')
+    predictions = torch.cat(predictions, dim=0)
+    targets = torch.cat(targets, dim=0)
+    memberships = torch.cat(memberships, dim=0)
+
+    #print("predictions.shape = ", predictions.shape)
+    #print("targets.shape = ", targets.shape)
+    #print("memberships.shape = ", memberships.shape)
+    
+    aucs = group_aucs(predictions, targets, memberships)
+    acc = torch.mean(((predictions > 0.5).int() == targets).float()).item()
 
         #acctime = time()
         acc = torch.sum(predictions == targets).item()

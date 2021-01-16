@@ -117,7 +117,7 @@ def main(args):
     model = train(config, args, train_dataset=dataset, test_dataset=test_dataset)
     
     # compute final test scores
-    auc_scores = get_all_auc_scores(model, test_dataset, dataset.minority)
+    auc_scores = get_all_auc_scores(model, test_dataset, args.eval_batch_size)
         
     # print results
     print(f'Results = {auc_scores}')
@@ -144,7 +144,7 @@ def get_model(config, args, dataset):
                     #prim_lr=args.prim_lr, # deprecated
                     #adv_lr=args.adv_lr, # deprecated
                     optimizer=OPT_BY_NAME[args.opt],
-                    opt_kwargs={})
+                    opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
 
     elif args.model == 'DRO':
         model = DRO(config=config, # for hparam tuning
@@ -154,7 +154,7 @@ def get_model(config, args, dataset):
                     #eta=args.eta, # deprecated
                     k=args.k,
                     optimizer=OPT_BY_NAME[args.opt],
-                    opt_kwargs={})
+                    opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
         args.pretrain_steps = 0  # NO PRETRAINING
 
     elif args.model == 'IPW':
@@ -165,7 +165,7 @@ def get_model(config, args, dataset):
                     optimizer=OPT_BY_NAME[args.opt],
                     group_probs=dataset.group_probs,
                     sensitive_label=args.sensitive_label,
-                    opt_kwargs={})
+                    opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
         args.pretrain_steps = 0  # NO PRETRAINING
 
     elif args.model == 'baseline':
@@ -174,8 +174,18 @@ def get_model(config, args, dataset):
                               hidden_units=args.prim_hidden,
                               #lr=args.prim_lr, # deprecated
                               optimizer=OPT_BY_NAME[args.opt],
-                              opt_kwargs={})
+                              opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
         args.pretrain_steps = 0  # NO PRETRAINING
+
+    # if Tensorflow mode is active, we use the TF default initialization,
+    # which means Xavier/Glorot uniform (with gain 1) for the weights
+    # and 0 bias
+    if args.tf_mode:
+        def init_weights(layer):
+            if type(layer) == torch.nn.Linear:
+                torch.nn.init.xavier_uniform_(layer.weight)
+                torch.nn.init.zeros_(layer.bias)
+        model.apply(init_weights)
 
     return model
 
@@ -318,6 +328,7 @@ if __name__ == '__main__':
     parser.add_argument('--no_grid_search', action='store_false', default=True, dest="grid_search", help='Whether to optimize batch size and lr via gridsearch')
     #parser.add_argument('--nbr_seeds', default=2, type=int, help='Number of independent training runs') # TODO: not implemented yet
     parser.add_argument('--eval_batch_size', default=512, type=int, help='batch size for AUC computation, should be as large as possible')
+    parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     
     # Dataset settings
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required='True')
