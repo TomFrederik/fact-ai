@@ -1,14 +1,16 @@
+from typing import Dict, Type, Optional, Any, List, Tuple, Union
+from abc import ABC, abstractmethod
 import os
 import torch 
 import torch.nn as nn
 from torch.utils.data import Dataset, SubsetRandomSampler, DataLoader
-import pandas as pd
-import numpy as np
+import pandas as pd # type: ignore
+import numpy as np # type: ignore
 import json
 import itertools
 
-
-DATASET_SETTINGS = {"Adult": {
+DATASET_SETTINGS: Dict[str, Dict[str, Union[List[str], str]]] = {
+    "Adult": {
         "sensitive_column_names": ['race','sex'],
         "sensitive_column_values": ['Black','Female'],
         "target_variable": "income",
@@ -19,7 +21,7 @@ DATASET_SETTINGS = {"Adult": {
         "target_variable": "pass_bar",
         "target_value": "Passed"
         },
-    "COMPAS":{
+    "COMPAS": {
         "sensitive_column_names": ['race','sex'],
         "sensitive_column_values": ['Black','Female'],
         "target_variable": "is_recid",
@@ -27,11 +29,60 @@ DATASET_SETTINGS = {"Adult": {
         }
     }
 
+class FairnessDataset(ABC, Dataset):
+    @abstractmethod
+    def __getitem__(self, idx) -> Tuple[torch.Tensor, float, int]:
+        pass
 
-class CustomDataset(Dataset):
+    @abstractmethod
+    def __len__(self):
+        pass
 
-    def __init__(self, dataset_name, test=False, hide_sensitive_columns=True, binarize_prot_group=True, idcs=None,
-                 sensitive_label=False, disable_warnings=False):
+    @property
+    @abstractmethod
+    def protected_index2value(self):
+        pass
+
+    @property
+    @abstractmethod
+    def features(self) -> torch.Tensor:
+        pass
+
+    @property
+    @abstractmethod
+    def dimensionality(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def minority(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def group_probs(self) -> torch.Tensor:
+        pass
+
+    @property
+    @abstractmethod
+    def memberships(self) -> torch.Tensor:
+        pass
+
+    @property
+    @abstractmethod
+    def labels(self) -> torch.Tensor:
+        pass
+
+
+
+class CustomDataset(FairnessDataset):
+
+    def __init__(self, dataset_name: str, test: bool = False,
+                 hide_sensitive_columns: bool = True,
+                 binarize_prot_group: bool = True,
+                 idcs: Optional[List[int]] = None,
+                 sensitive_label: bool = False,
+                 disable_warnings: bool = False):
         """
         Dataset class for creating a dataset
         :param dataset_name: str, identifier of the dataset
@@ -58,7 +109,7 @@ class CustomDataset(Dataset):
 
         # load data
         features = pd.read_csv(path, ',', header=0)
-        columns = list(features.columns)
+        columns: List[str] = list(features.columns)
 
         # drop indices not specified
         if idcs is not None:
@@ -66,7 +117,7 @@ class CustomDataset(Dataset):
 
         # load mean and std
         with open(mean_std_path) as json_file:
-            mean_std = json.load(json_file)
+            mean_std: Dict[str, Tuple[float, float]] = json.load(json_file)
 
         # center and normalize numerical features
         for key in mean_std:
@@ -87,8 +138,8 @@ class CustomDataset(Dataset):
                 #assert delta_std < 1e-4, f'delta std is {delta_std}'
 
         # create labels
-        self.labels = (features[target_variable].to_numpy() == target_value).astype(int)
-        self.labels = torch.from_numpy(self.labels)
+        labels = (features[target_variable].to_numpy() == target_value).astype(int)
+        self._labels: torch.Tensor = torch.from_numpy(labels)
 
         # if set, will binarize/group values in the sensitive columns
         if binarize_prot_group:
@@ -100,7 +151,7 @@ class CustomDataset(Dataset):
         # first create lists of all the values the sensitive columns can take:
         uniques = [tuple(features[col].unique()) for col in sensitive_column_names]
         # create a list of tuples of such values. This corresponds to a list of all protected groups
-        self.index2values = itertools.product(*uniques)
+        self.index2values = list(itertools.product(*uniques))
         # create the inverse dictionary:
         self.values2index = {vals: index for index, vals in enumerate(self.index2values)}
 
@@ -113,24 +164,24 @@ class CustomDataset(Dataset):
         features = features[columns]
 
         # Create a tensor with protected group membership indices for easier access
-        self.memberships = torch.empty(len(features), dtype=int)
+        self._memberships = torch.empty(len(features), dtype=int)
         for i in range(len(self.memberships)):
             s = tuple(self.sensitives.iloc[i])
-            self.memberships[i] = self.values2index[s]
+            self._memberships[i] = self.values2index[s]
 
         # compute the minority group (the one with the fewest members) and group probabilities
         vals, counts = self.memberships.unique(return_counts=True)
-        self.minority = vals[counts.argmin().item()].item()
+        self._minority = vals[counts.argmin().item()].item()
 
         # calculate group probabilities for IPW
         if sensitive_label:
             prob_identifier = torch.stack([self.memberships, self.labels], dim=1)
             vals, counts = prob_identifier.unique(return_counts=True, dim=0)
             probs = counts / torch.sum(counts)
-            self.group_probs = probs.reshape(-1,2)
+            self._group_probs = probs.reshape(-1,2)
         else:
             vals, counts = self.memberships.unique(return_counts=True)
-            self.group_probs = counts / torch.sum(counts).float()
+            self._group_probs = counts / torch.sum(counts).float()
 
         ## convert categorical data into onehot
         # load vocab
@@ -140,9 +191,7 @@ class CustomDataset(Dataset):
         # we already mapped target var values to 0 and 1 before
         del vocab[target_variable]
         
-        class_columns = []
-        num_classes = []
-        tensors = []
+        tensors: List[torch.Tensor] = []
         for c in columns:
             if c in vocab:
                 vals = list(vocab[c])
@@ -156,8 +205,7 @@ class CustomDataset(Dataset):
             else:
                 tensors.append(torch.tensor(features[c].values))
 
-        self.features = torch.stack(tensors, dim=1).float()
-        self.dimensionality = self.features.size(1)
+        self._features = torch.stack(tensors, dim=1).float()
 
 
     def __len__(self):
@@ -184,7 +232,31 @@ class CustomDataset(Dataset):
         `sensitive_column_names` argument from `DATASET_SETTINGS`."""
         return self.index2values
 
-class CustomSubset(Dataset):
+    @property
+    def features(self):
+        return self._features
+    
+    @property
+    def dimensionality(self):
+        return self.features.size(1)
+    
+    @property
+    def minority(self):
+        return self._minority
+    
+    @property
+    def group_probs(self):
+        return self._group_probs
+    
+    @property
+    def memberships(self):
+        return self._memberships
+    
+    @property
+    def labels(self):
+        return self._labels
+
+class CustomSubset(FairnessDataset):
     """
     Subset of a dataset at specified indices.
 
