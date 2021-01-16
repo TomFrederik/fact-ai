@@ -58,7 +58,7 @@ def main(args):
         eta_list = [0] # dummy entry for non-DRO experiments
         
         if args.model == 'DRO':
-            eta_list = [0.3, 0.5, 0.7, 0.9]    
+            eta_list = [0.5, 0.6, 0.7, 0.8, 0.9]    
     
         # configurations for hparam tuning
         config = {
@@ -101,6 +101,7 @@ def main(args):
         # set hparams for final run
         config['lr'] = analysis.best_config['lr']
         config['batch_size'] = analysis.best_config['batch_size']
+        config['eta'] = analysis.best_config['eta']
         
     else:
         # set hparams for single run
@@ -307,7 +308,7 @@ if __name__ == '__main__':
     parser.add_argument('--prim_hidden', default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', default=[32], help='Number of hidden units in adversarial network')
     parser.add_argument('--eta', default=0.7, type=float, help='Threshold for single losses that contribute to learning objective')
-    parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight the losses')
+    parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
 
     # Single run settings
     parser.add_argument('--batch_size', default=256, type=int)
