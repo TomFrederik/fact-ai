@@ -151,12 +151,12 @@ def get_model(config, args, dataset):
         model = DRO(config=config, # for hparam tuning
                     num_features=dataset.dimensionality,
                     hidden_units=args.prim_hidden,
+                    pretrain_steps=args.pretrain_steps,
                     #lr=args.prim_lr, # deprecated
                     #eta=args.eta, # deprecated
                     k=args.k,
                     optimizer=OPT_BY_NAME[args.opt],
                     opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
-        args.pretrain_steps = 0  # NO PRETRAINING
 
     elif args.model == 'IPW':
         model = IPW(config=config, # for hparam tuning

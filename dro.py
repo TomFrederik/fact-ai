@@ -15,7 +15,7 @@ class DRO_loss(torch.nn.Module):
         bce = -1*y*self.logsig(x) - (1-y)*self.logsig(-x)
 
         if self.k > 0:
-            bce = self.relu(bce - self.eta)
+            bce = self.relu(bce - self.eta)            
             bce = bce**self.k
             return bce.mean()
         else:
@@ -28,6 +28,7 @@ class DRO(pl.LightningModule):
     def __init__(self, 
         config,
         num_features,
+        pretrain_steps,
         hidden_units=[64,32],
         eta=0.95, # deprecated
         k=2.0,
@@ -60,8 +61,11 @@ class DRO(pl.LightningModule):
 
         self.net = nn.Sequential(*net_list)
 
-        # init loss
+        # init DRO loss
         self.loss_fct = DRO_loss(self.hparams.config['eta'], self.hparams.k)
+        
+        # init pretrain loss
+        self.bce = nn.BCEWithLogitsLoss()
 
     def forward(self, input):
         out = self.net(input).squeeze(dim=-1)
@@ -75,8 +79,11 @@ class DRO(pl.LightningModule):
         # compute logits
         logits = self(x)
         
-        # compute loss
-        loss = self.loss_fct(logits, y)
+        if self.global_step > self.hparams.pretrain_steps:        
+            # compute loss
+            loss = self.loss_fct(logits, y)
+        else:
+            loss = self.bce(logits, y)
 
         # logging
         self.log('training/loss', loss)
