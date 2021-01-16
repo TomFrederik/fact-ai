@@ -282,7 +282,7 @@ def train(config: Dict[str, Any],
     
     # Create a PyTorch Lightning trainer
     trainer = pl.Trainer(logger=logger,
-                         checkpoint_callback=ModelCheckpoint(save_weights_only=True, dirpath=logger.log_dir),
+                         checkpoint_callback=ModelCheckpoint(save_weights_only=True, dirpath=logger.log_dir, mode='max', monitor='validation/micro_avg_auc'),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps + args.pretrain_steps,
                          callbacks=callbacks,
@@ -297,6 +297,19 @@ def train(config: Dict[str, Any],
     fit_time = time()
     trainer.fit(model, train_loader)
     print(f'time to fit was {time()-fit_time}')
+    
+    # Load best checkpoint after training
+    if args.model == 'baseline':
+        model: pl.LightningModule = BaselineModel.load_from_checkpoint(trainer.checkpoint_callback.best_model_path) 
+        
+    elif args.model == 'ARL':
+        model: pl.LightningModule = ARL.load_from_checkpoint(trainer.checkpoint_callback.best_model_path) 
+        
+    elif args.model == 'DRO':
+        model: pl.LightningModule = DRO.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+        
+    elif args.model == 'IPW':
+        model: pl.LightningModule = IPW.load_from_checkpoint(trainer.checkpoint_callback.best_model_path) 
 
     return model
 
@@ -311,7 +324,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required=True)
     parser.add_argument('--prim_hidden', default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', default=[32], help='Number of hidden units in adversarial network')
-    parser.add_argument('--eta', default=0.7, type=float, help='Threshold for single losses that contribute to learning objective')
+    parser.add_argument('--eta', default=0.5, type=float, help='Threshold for single losses that contribute to learning objective')
     parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
 
     # Single run settings
