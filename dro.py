@@ -1,3 +1,5 @@
+# Adapted from https://worksheets.codalab.org/worksheets/0x17a501d37bbe49279b0c70ae10813f4c/
+
 from typing import Dict, Type, Optional, Any, List, Tuple
 import torch
 import torch.nn as nn
