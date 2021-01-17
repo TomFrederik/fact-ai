@@ -8,9 +8,9 @@ import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
 import json
 import itertools
-from skimage import io
+from skimage import io # type: ignore
 
-DATASET_SETTINGS: Dict[str, Dict[str, Union[List[str], str]]] = {
+DATASET_SETTINGS: Dict[str, Dict[str, Any]] = {
     "Adult": {
         "sensitive_column_names": ['race', 'sex'],
         "sensitive_column_values": ['Black', 'Female'],
@@ -171,7 +171,8 @@ class CustomDataset(FairnessDataset):
         features = features[columns]
 
         # Create a tensor with protected group membership indices for easier access
-        self._memberships = torch.empty(len(features), dtype=int)
+        # Ignore type because mypy throws an error even though this is correct
+        self._memberships = torch.empty(len(features), dtype=int) # type: ignore
         for i in range(len(self.memberships)):
             s = tuple(self.sensitives.iloc[i])
             self._memberships[i] = self.values2index[s]

@@ -1,17 +1,18 @@
+from typing import Dict, Type, Optional, Any, List, Tuple
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
 
 class DRO_loss(torch.nn.Module):
-    def __init__(self, eta, k):
+    def __init__(self, eta: float, k: float):
         super(DRO_loss, self).__init__()
         self.eta = eta
         self.k = k
         self.logsig = nn.LogSigmoid()
         self.relu = nn.ReLU()
     
-    def forward(self, x, y):
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         bce = -1*y*self.logsig(x) - (1-y)*self.logsig(-x)
 
         if self.k > 0:
@@ -26,15 +27,13 @@ class DRO_loss(torch.nn.Module):
 class DRO(pl.LightningModule):
 
     def __init__(self, 
-        config,
-        num_features,
-        pretrain_steps,
-        hidden_units=[64,32],
-        eta=0.95, # deprecated
+        config: Dict[str, Any],
+        num_features: int,
+        pretrain_steps: int,
+        hidden_units: List[int] = [64,32],
         k=2.0,
-        lr=0.01, # deprecated
-        optimizer=torch.optim.Adagrad,
-        opt_kwargs={},
+        optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
+        opt_kwargs: Dict[str, Any] = {},
         ):
         '''
         num_features - int, number of features of the input
@@ -52,10 +51,10 @@ class DRO(pl.LightningModule):
         self.optimizer = optimizer
 
         # construct network
-        net_list = []
+        net_list: List[torch.nn.Module] = []
         num_units = [self.hparams.num_features] + self.hparams.hidden_units
-        for i in range(len(num_units)-1):
-            net_list.append(nn.Linear(num_units[i],num_units[i+1]))
+        for num_in, num_out in zip(num_units[:-1], num_units[1:]):
+            net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
         net_list.append(nn.Linear(num_units[-1], 1))
 
@@ -67,11 +66,11 @@ class DRO(pl.LightningModule):
         # init pretrain loss
         self.bce = nn.BCEWithLogitsLoss()
 
-    def forward(self, input):
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         out = self.net(input).squeeze(dim=-1)
         return out
     
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
         
         # get features and labels
         x, y, s = batch
@@ -90,7 +89,7 @@ class DRO(pl.LightningModule):
 
         return loss        
         
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
         # get features and labels
         x, y, s = batch
         
@@ -103,7 +102,7 @@ class DRO(pl.LightningModule):
         # logging
         self.log('validation/loss', loss)        
         
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
         # get features and labels
         x, y, s = batch
         

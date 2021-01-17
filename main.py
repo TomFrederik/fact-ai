@@ -301,18 +301,22 @@ def train(config: Dict[str, Any],
     trainer.fit(model, train_loader)
     print(f'time to fit was {time()-fit_time}')
     
+    # necessary to make the type checker happy and since this is only run once,
+    # runtime is not an issue
+    assert trainer.checkpoint_callback is not None
+
     # Load best checkpoint after training
     if args.model == 'baseline':
-        model: pl.LightningModule = BaselineModel.load_from_checkpoint(trainer.checkpoint_callback.best_model_path) 
+        model = BaselineModel.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
         
     elif args.model == 'ARL':
-        model: pl.LightningModule = ARL.load_from_checkpoint(trainer.checkpoint_callback.best_model_path) 
+        model = ARL.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
         
     elif args.model == 'DRO':
-        model: pl.LightningModule = DRO.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+        model = DRO.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
         
     elif args.model == 'IPW':
-        model: pl.LightningModule = IPW.load_from_checkpoint(trainer.checkpoint_callback.best_model_path) 
+        model = IPW.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
 
     return model
 

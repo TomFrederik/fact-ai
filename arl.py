@@ -1,3 +1,4 @@
+from typing import Dict, Type, Optional, Any, List, Tuple
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
@@ -7,22 +8,18 @@ import pytorch_lightning as pl
 class ARL(pl.LightningModule):
 
     def __init__(self, 
-        config,
-        num_features,
-        pretrain_steps,
-        prim_hidden=[64,32],
-        adv_hidden=[],
-        prim_lr=0.01,
-        adv_lr=0.01,
-        optimizer=torch.optim.Adagrad,
-        opt_kwargs={},
+        config: Dict[str, Any],
+        num_features: int,
+        pretrain_steps: int,
+        prim_hidden: List[int] = [64,32],
+        adv_hidden: List[int] = [],
+        optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
+        opt_kwargs: Dict[str, Any] = {},
         ):
         '''
         num_features - int, number of features of the input
         prim_hidden - list, number of hidden units in each layer of the learner network
         adv_hidden - list, number of hidden units in each layer of the adversary network
-        prim_lr - float, learning rate for updating the learner
-        adv_lr - float, learning rate for updating the adversary
         optimizer - torch.optim.Optimizer constructor function, optimizer to adjust the model's parameters
         opt_kwargs - dict, optimizer keywords (other than learning rate)
         '''
@@ -40,7 +37,10 @@ class ARL(pl.LightningModule):
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
 
     
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self,
+                      batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+                      batch_idx: int,
+                      optimizer_idx: int) -> Optional[torch.Tensor]:
         '''        
         Inputs
         ----------
@@ -55,24 +55,25 @@ class ARL(pl.LightningModule):
         '''
         
         x, y, _ = batch         
-        y = y.float()   # TODO: fix in datasets.py?
 
         if optimizer_idx == 0:
             loss = self.learner_step(x, y)
             
             # logging
-            # TODO: add AUC metric
             self.log("training/reweighted_loss_learner", loss)
             
             return loss
-            
+
         elif optimizer_idx == 1 and self.global_step > self.hparams.pretrain_steps:
             loss = self.adversary_step(x, y)
             
             return loss
-    
-    
-    def learner_step(self, x, y):
+
+        else:
+            return None
+
+
+    def learner_step(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         '''        
         Inputs
         ----------
@@ -97,7 +98,7 @@ class ARL(pl.LightningModule):
         return loss
      
         
-    def adversary_step(self, x, y):
+    def adversary_step(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         '''        
         Inputs
         ----------
@@ -121,23 +122,19 @@ class ARL(pl.LightningModule):
         return loss        
         
         
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
         x, y, _ = batch        
-        y = y.float()   # TODO: fix in datasets.py?
         loss = self.learner_step(x, y)
         
         # logging
-        # TODO: add AUC metric
         self.log("validation/reweighted_loss_learner", loss)
 
         
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
         x, y, _ = batch 
-        y = y.float()   # TODO: fix in datasets.py?
         loss = self.learner_step(x, y)
         
         # logging
-        # TODO: add AUC metric
         self.log("test/reweighted_loss_learner", loss)
  
     
@@ -155,14 +152,14 @@ class ARL(pl.LightningModule):
 
         return [optimizer_learn, optimizer_adv], []
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.learner(x)
     
     
 class Learner(nn.Module):
     def __init__(self, 
-        num_features,
-        hidden_units=[64,32]
+        num_features: int,
+        hidden_units: List[int] = [64,32]
         ):        
         '''
         num_features - int, number of features of the input
@@ -172,16 +169,16 @@ class Learner(nn.Module):
         super().__init__()
         
         # construct network
-        net_list = []
+        net_list: List[torch.nn.Module] = []
         num_units = [num_features] + hidden_units
-        for i in range(len(num_units)-1):
-            net_list.append(nn.Linear(num_units[i],num_units[i+1]))
+        for num_in, num_out in zip(num_units[:-1], num_units[1:]):
+            net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
         net_list.append(nn.Linear(num_units[-1], 1))
 
         self.net = nn.Sequential(*net_list)
         
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         '''        
         Inputs
         ----------
@@ -199,8 +196,8 @@ class Learner(nn.Module):
     
 class Adversary(nn.Module):
     def __init__(self, 
-        num_features,
-        hidden_units=[]
+        num_features: int,
+        hidden_units: List[int] = []
         ):
         
         '''
@@ -211,7 +208,7 @@ class Adversary(nn.Module):
         super().__init__()
         
         # construct network
-        net_list = []
+        net_list: List[torch.nn.Module] = []
         num_units = [num_features] + hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
@@ -221,7 +218,7 @@ class Adversary(nn.Module):
 
         self.net = nn.Sequential(*net_list)
         
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         '''        
         Inputs
         ----------

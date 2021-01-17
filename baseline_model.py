@@ -1,3 +1,4 @@
+from typing import Dict, Type, Optional, Any, List, Tuple
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
@@ -6,12 +7,11 @@ import pytorch_lightning as pl
 class BaselineModel(pl.LightningModule):
 
     def __init__(self,
-        config,
-        num_features,
-        hidden_units=[64,32],
-        lr=0.01, # deprecated
-        optimizer=torch.optim.Adagrad,
-        opt_kwargs={},
+        config: Dict[str, Any],
+        num_features: int,
+        hidden_units: List[int] = [64,32],
+        optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
+        opt_kwargs: Dict[str, Any] = {}
         ):
         '''
         num_features - int, number of features of the input
@@ -29,10 +29,10 @@ class BaselineModel(pl.LightningModule):
         self.optimizer = optimizer
 
         # construct network
-        net_list = []
+        net_list: List[torch.nn.Module] = []
         num_units = [self.hparams.num_features] + self.hparams.hidden_units
-        for i in range(len(num_units)-1):
-            net_list.append(nn.Linear(num_units[i],num_units[i+1]))
+        for num_in, num_out in zip(num_units[:-1], num_units[1:]):
+            net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
         net_list.append(nn.Linear(num_units[-1], 1))
 
@@ -41,11 +41,11 @@ class BaselineModel(pl.LightningModule):
         # init loss
         self.loss_fct = nn.BCEWithLogitsLoss()
 
-    def forward(self, input):
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         out = self.net(input).squeeze(dim=-1)
         return out
     
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
         
         # get features and labels
         x, y, s = batch
@@ -62,7 +62,7 @@ class BaselineModel(pl.LightningModule):
 
         return loss        
         
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
         # get features and labels
         x, y, s = batch
         
@@ -73,10 +73,9 @@ class BaselineModel(pl.LightningModule):
         loss = self.loss_fct(logits, y)
 
         # logging
-        #TODO: add other metrics
         self.log('validation/loss', loss)        
         
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
         # get features and labels
         x, y, s = batch
         
@@ -87,7 +86,6 @@ class BaselineModel(pl.LightningModule):
         loss = self.loss_fct(logits, y)
 
         # logging
-        #TODO: add other metrics
         self.log('test/loss', loss)        
 
     

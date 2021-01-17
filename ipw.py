@@ -1,3 +1,4 @@
+from typing import Dict, Type, Optional, Any, List, Tuple
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
@@ -8,14 +9,13 @@ from arl import Learner
 class IPW(pl.LightningModule):
 
     def __init__(self, 
-        config,
-        num_features,
-        hidden_units=[64,32],
-        lr=0.01, # deprecated
-        optimizer=torch.optim.Adagrad,
-        group_probs=None,
-        sensitive_label=False,
-        opt_kwargs={},
+        config: Dict[str, Any],
+        num_features: int,
+        group_probs: torch.Tensor,
+        hidden_units: List[int] = [64,32],
+        optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
+        sensitive_label: bool = False,
+        opt_kwargs: Dict[str, Any] = {},
         ):
         """
         Class for inverse probability weighting
@@ -41,7 +41,7 @@ class IPW(pl.LightningModule):
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
 
     
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """
         Implements the training step for PyTorch Lightning
         :param batch: input batch from dataset
@@ -49,7 +49,6 @@ class IPW(pl.LightningModule):
         :return: scalar, minimization objective
         """
         x, y, s = batch
-        y = y.float()   # TODO: fix in datasets.py?
 
         loss = self.learner_step(x, y, s)
 
@@ -59,7 +58,7 @@ class IPW(pl.LightningModule):
         return loss
 
     
-    def learner_step(self, x, y, s=None):
+    def learner_step(self, x: torch.Tensor, y: torch.Tensor, s: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         TODO
         :param x: TODO
@@ -88,7 +87,7 @@ class IPW(pl.LightningModule):
         
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
         """
         TODO
         :param batch: TODO
@@ -96,13 +95,12 @@ class IPW(pl.LightningModule):
         :return: TODO
         """
         x, y, _ = batch
-        y = y.float()   # TODO: fix in datasets.py?
         loss = self.learner_step(x, y)
         
         # logging
         self.log("validation/loss", loss)
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
         """
         TODO
         :param batch: TODO
@@ -110,7 +108,6 @@ class IPW(pl.LightningModule):
         :return: TODO
         """
         x, y, _ = batch 
-        y = y.float()   # TODO: fix in datasets.py?
         loss = self.learner_step(x, y)
         
         # logging
@@ -126,7 +123,7 @@ class IPW(pl.LightningModule):
 
         return optimizer
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         TODO
         :param x: TODO
