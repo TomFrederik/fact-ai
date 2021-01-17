@@ -147,6 +147,7 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
         model = ARL(config=config, # for hparam tuning
                     num_features=dataset.dimensionality,
                     pretrain_steps=args.pretrain_steps,
+                    include_labels=not args.exclude_labels,
                     prim_hidden=args.prim_hidden, 
                     adv_hidden=args.adv_hidden, 
                     optimizer=OPT_BY_NAME[args.opt],
@@ -333,6 +334,7 @@ if __name__ == '__main__':
     parser.add_argument('--adv_hidden', default=[], help='Number of hidden units in adversarial network')
     parser.add_argument('--eta', default=0.5, type=float, help='Threshold for single losses that contribute to learning objective')
     parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
+    parser.add_argument('--exclude_labels', default=False, action='store_true', help='Don\'t pass labels to adversary. Only relevant for ARL')
 
     # Single run settings
     parser.add_argument('--batch_size', default=256, type=int)

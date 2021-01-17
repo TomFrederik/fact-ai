@@ -13,6 +13,7 @@ class ARL(pl.LightningModule):
         pretrain_steps: int,
         prim_hidden: List[int] = [64,32],
         adv_hidden: List[int] = [],
+        include_labels: bool = True,
         optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
         opt_kwargs: Dict[str, Any] = {},
         ):
@@ -31,7 +32,7 @@ class ARL(pl.LightningModule):
         
         # init networks
         self.learner = Learner(num_features=num_features, hidden_units=prim_hidden)
-        self.adversary = Adversary(num_features=num_features, hidden_units=adv_hidden)
+        self.adversary = Adversary(num_features=num_features, hidden_units=adv_hidden, include_labels=include_labels)
 
         # init loss function
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
@@ -90,7 +91,7 @@ class ARL(pl.LightningModule):
         bce = self.loss_fct(logits, y)
         
         # compute lambdas
-        lambdas = self.adversary(x)
+        lambdas = self.adversary(x, y)
         
         # compute reweighted loss  
         loss = torch.mean(lambdas * bce)
@@ -114,7 +115,7 @@ class ARL(pl.LightningModule):
         bce = self.loss_fct(logits, y)
         
         # compute lambdas
-        lambdas = self.adversary(x)
+        lambdas = self.adversary(x, y)
         
         # compute reweighted loss
         loss = -torch.mean(lambdas * bce)
@@ -197,7 +198,8 @@ class Learner(nn.Module):
 class Adversary(nn.Module):
     def __init__(self, 
         num_features: int,
-        hidden_units: List[int] = []
+        hidden_units: List[int] = [],
+        include_labels: bool = True
         ):
         
         '''
@@ -209,6 +211,11 @@ class Adversary(nn.Module):
         
         # construct network
         net_list: List[torch.nn.Module] = []
+        if include_labels:
+            # the adversary also takes the label as input, therefore we need the +1
+            num_features += 1
+        self.include_labels = include_labels
+
         num_units = [num_features] + hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
@@ -218,7 +225,7 @@ class Adversary(nn.Module):
 
         self.net = nn.Sequential(*net_list)
         
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         '''        
         Inputs
         ----------
@@ -228,9 +235,13 @@ class Adversary(nn.Module):
         -------
         out - float tensor of shape [batch_size], lambdas for reweighting the loss        
         '''
+        if self.include_labels:
+            input = torch.cat([x, y.unsqueeze(1)], dim=1).float()
+        else:
+            input = x
         
         # compute adversary
-        adv = self.net(x)
+        adv = self.net(input)
         
         # normalize adversary across batch
         # TODO: check numerical stability
@@ -239,7 +250,4 @@ class Adversary(nn.Module):
         # scale and shift
         out = x.shape[0] * adv_norm + torch.ones_like(adv_norm)        
         
-        return torch.squeeze(out)
-    
-    
-    
+        return torch.squeeze(out, dim=-1)
