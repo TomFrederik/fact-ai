@@ -326,7 +326,7 @@ if __name__ == '__main__':
     # Model settings
     parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required=True)
     parser.add_argument('--prim_hidden', default=[64, 32], help='Number of hidden units in primary network')
-    parser.add_argument('--adv_hidden', default=[32], help='Number of hidden units in adversarial network')
+    parser.add_argument('--adv_hidden', default=[], help='Number of hidden units in adversarial network')
     parser.add_argument('--eta', default=0.5, type=float, help='Threshold for single losses that contribute to learning objective')
     parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
 
