@@ -1,12 +1,12 @@
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 1
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 2
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 3
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 4
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 5
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 6
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 7
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 8
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 9
---model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 0.01 --seed_run --seed 10
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 1 --tf_mode
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 2 --tf_mode
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 3 --tf_mode
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 4 --tf_mode
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 5 --tf_mode
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 6 --tf_mode
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 7 --tf_mode
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 8 --tf_mode
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 9 --tf_mode
+--model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 512 --prim_lr 2 --seed_run --seed 10 --tf_mode
 
 

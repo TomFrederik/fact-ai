@@ -26,12 +26,10 @@ class Logger(Callback):
         # create a dataloader to pass the dataset through the model
         self.dataloader = DataLoader(self.dataset, self.batch_size, pin_memory=True)
 
-    def on_epoch_end(self, trainer, pl_module):
-        super().on_epoch_end(trainer, pl_module)
+    def on_validation_epoch_end(self, trainer, pl_module):
+        super().on_validation_end(trainer, pl_module)
 
         results = get_all_auc_scores(pl_module, self.dataloader, self.dataset.minority)
-        
-        print(f'{self.name}/micro_avg_auc = ',results['micro_avg_auc'])
 
         for key in results:
             pl_module.log(f'{self.name}/{key}', results[key])
