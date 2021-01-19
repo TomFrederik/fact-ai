@@ -143,7 +143,7 @@ class ARL(pl.LightningModule):
         lambdas = self.adversary(x, y)
         
         # compute reweighted loss
-        loss = -torch.std(lambdas * bce)
+        loss = -torch.mean(lambdas * bce)
         
         return loss        
         
