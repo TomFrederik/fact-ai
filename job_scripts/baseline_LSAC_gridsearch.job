@@ -2,7 +2,7 @@
 
 #SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:0
-#SBATCH --job-name=baseline_compas_gridsearch
+#SBATCH --job-name=baseline_lsac_gridsearch
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
 #SBATCH --time=04:30:00

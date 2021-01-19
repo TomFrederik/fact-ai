@@ -30,6 +30,8 @@ class Logger(Callback):
         super().on_epoch_end(trainer, pl_module)
 
         results = get_all_auc_scores(pl_module, self.dataloader, self.dataset.minority)
+        
+        print(f'{self.name}/micro_avg_auc = ',results['micro_avg_auc'])
 
         for key in results:
             pl_module.log(f'{self.name}/{key}', results[key])

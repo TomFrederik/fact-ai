@@ -7,7 +7,7 @@ from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
-from datasets import CustomDataset, CustomSubset, FairnessDataset
+from datasets import CustomDataset, CustomSubset, FairnessDataset, ImageDataset
 from arl import ARL
 from dro import DRO
 from ipw import IPW
@@ -24,7 +24,7 @@ import itertools
 import json
 import warnings
 
-from ray import tune # type: ignore
+from ray import tune  # type: ignore
 
 from sklearn.model_selection import KFold # type: ignore
 
@@ -45,10 +45,15 @@ def main(args: argparse.Namespace):
     
     # seed
     pl.seed_everything(args.seed)
+    np.random.seed(args.seed)
 
     # create datasets
-    dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
-    test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
+    if args.dataset_type == 'image':
+        dataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label)
+        test_dataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
+    elif args.dataset_type == 'tabular':
+        dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
+        test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
     
     # init config dictionary
     config: Dict[str, Any] = {}
@@ -75,7 +80,7 @@ def main(args: argparse.Namespace):
         fold_indices: List[Tuple[np.ndarray, np.ndarray]] = list(kf.split(dataset))
         
         # set path for logging
-        path = f'./grid_search/{args.model}_{args.dataset}_version_{args.version}'
+        path = f'grid_search/{args.model}_{args.dataset}_version_{args.version}'
         
         analysis = tune.run(
             tune.with_parameters(
@@ -117,10 +122,20 @@ def main(args: argparse.Namespace):
         else:
             path = f'./{args.log_dir}/{args.dataset}/{args.model}/version_{args.version}'
 
+        print(f'creating dir {path}')
         os.makedirs(path, exist_ok=True)
-        
+
+    # set log_dir
+    args.log_dir = path
+
+    # create val and train set
+    permuted_idcs = np.random.permutation(np.arange(0, len(dataset)))
+    # create an option to set the split percentage?
+    train_idcs, val_idcs = permuted_idcs[:int(0.9*len(permuted_idcs))], permuted_idcs[int(0.9*len(permuted_idcs)):] 
+    train_dataset, val_dataset = CustomSubset(dataset, train_idcs), CustomSubset(dataset, val_idcs)
+    
     # single training run
-    model: pl.LightningModule = train(config, args, train_dataset=dataset, test_dataset=test_dataset)
+    model: pl.LightningModule = train(config, args, train_dataset=train_dataset, val_dataset=val_dataset, test_dataset=test_dataset)
     
     # compute final test scores
     dataloader = DataLoader(test_dataset, batch_size=args.eval_batch_size)
@@ -134,7 +149,6 @@ def main(args: argparse.Namespace):
         json.dump(auc_scores, f)
     
 
-
 def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: FairnessDataset) -> pl.LightningModule:
     """
     Selects, initializes and returns a model instance that is to be trained
@@ -145,12 +159,14 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
     model: pl.LightningModule
     if args.model == 'ARL':
         model = ARL(config=config, # for hparam tuning
-                    num_features=dataset.dimensionality,
+                    input_shape=dataset.dimensionality,
                     pretrain_steps=args.pretrain_steps,
                     include_labels=not args.exclude_labels,
                     prim_hidden=args.prim_hidden, 
                     adv_hidden=args.adv_hidden, 
                     optimizer=OPT_BY_NAME[args.opt],
+                    dataset_type=args.dataset_type,
+                    pretrained=args.pretrained,
                     opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
 
     elif args.model == 'DRO':
@@ -180,6 +196,7 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
                               opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
         args.pretrain_steps = 0  # NO PRETRAINING
 
+
     # if Tensorflow mode is active, we use the TF default initialization,
     # which means Xavier/Glorot uniform (with gain 1) for the weights
     # and 0 bias
@@ -207,6 +224,7 @@ def run_folds(config: Dict[str, Any],
     :version: used to group runs from a single grid search into the same directory
     :return: Results from testing the model
     """
+    
     print(f'Starting run with seed {args.seed} - lr {config["lr"]} - bs {config["batch_size"]}')
     
     fold_nbr = 0
@@ -243,8 +261,9 @@ def train(config: Dict[str, Any],
           test_dataset: Optional[FairnessDataset]=None,
           version=str(int(time())),
           fold_nbr=None) -> pl.LightningModule:
-    # create logdir
-    logdir: str = args.log_dir if args.grid_search else os.path.join(args.log_dir, args.dataset, args.model)
+    
+    # create logdir if necessary
+    logdir: str = args.log_dir
     os.makedirs(logdir, exist_ok=True)
 
     # create fold loaders and callbacks
@@ -274,34 +293,44 @@ def train(config: Dict[str, Any],
     model: pl.LightningModule = get_model(config, args, train_dataset)
         
     # create logger
+    if args.grid_search:
+        logger_version = ''
+    else:
+        logger_version = f'seed_{args.seed}'
+    if fold_nbr is not None:
+        logger_version += f'./fold_{fold_nbr}'
+    
     logger = TensorBoardLogger(
         save_dir='./',
         name=logdir,
-        version=(f'version_{version}/seed_{args.seed}/lr_{config["lr"]}_bs_{config["batch_size"]}' if not args.grid_search else '')
-                + (f'fold_{fold_nbr}' if fold_nbr is not None else '')
+        version=logger_version
     )
+
+    # create checkpoint
+    checkpoint = ModelCheckpoint(save_weights_only=True,
+                                dirpath=logger.log_dir, 
+                                mode='max', 
+                                verbose=False,
+                                monitor='validation/micro_avg_auc' if val_dataset is not None else 'test/micro_avg_auc')
+    callbacks.append(checkpoint)
     
     # Create a PyTorch Lightning trainer
     trainer = pl.Trainer(logger=logger,
-                         checkpoint_callback=ModelCheckpoint(save_weights_only=True, 
-                                                             dirpath=logger.log_dir, 
-                                                             mode='max', 
-                                                             monitor='validation/micro_avg_auc' if val_dataset is not None else 'test/micro_avg_auc'),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_steps=args.train_steps + args.pretrain_steps,
                          callbacks=callbacks,
                          gradient_clip_val=1 if args.model=='DRO' else 0,
                          progress_bar_refresh_rate=1 if args.p_bar else 0,
-                         weights_summary=None, # supress model summary
-                         #profiler='simple',
+                         #weights_summary=None, # supress model summary
                          # fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
                          )
     
     # Training
     fit_time = time()
-    trainer.fit(model, train_loader)
+    trainer.fit(model, train_loader, val_dataloaders=DataLoader(val_dataset, batch_size=args.eval_batch_size) if val_dataset is not None
+                                                     else DataLoader(test_dataset))
     print(f'time to fit was {time()-fit_time}')
-    
+
     # necessary to make the type checker happy and since this is only run once,
     # runtime is not an issue
     assert trainer.checkpoint_callback is not None
@@ -330,11 +359,12 @@ if __name__ == '__main__':
 
     # Model settings
     parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required=True)
-    parser.add_argument('--prim_hidden', default=[64, 32], help='Number of hidden units in primary network')
-    parser.add_argument('--adv_hidden', default=[], help='Number of hidden units in adversarial network')
+    parser.add_argument('--prim_hidden', nargs='*', type=int, default=[64, 32], help='Number of hidden units in primary network')
+    parser.add_argument('--adv_hidden', nargs='*', type=int, default=[], help='Number of hidden units in adversarial network')
     parser.add_argument('--eta', default=0.5, type=float, help='Threshold for single losses that contribute to learning objective')
     parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
     parser.add_argument('--exclude_labels', default=False, action='store_true', help='Don\'t pass labels to adversary. Only relevant for ARL')
+    parser.add_argument('--pretrained', action='store_true', help='Whether to load a pretrained dataset from torchvision where applicable')
 
     # Single run settings
     parser.add_argument('--batch_size', default=256, type=int)
@@ -356,7 +386,7 @@ if __name__ == '__main__':
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--sensitive_label', default=False, type=bool, help='If True, target label will be included in list of sensitive columns')
@@ -367,7 +397,9 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
+    args.dataset_type = 'image' if args.dataset == 'FairFace' else 'tabular'
+    args.working_dir = os.getcwd()
+
     # run main loop
     main(args)
-    
     

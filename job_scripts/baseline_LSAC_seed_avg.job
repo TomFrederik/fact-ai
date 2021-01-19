@@ -2,7 +2,7 @@
 
 #SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:0
-#SBATCH --job-name=baseline_compas_seed_avg
+#SBATCH --job-name=baseline_lsac_seed_avg
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=3
 #SBATCH --array=1-10%2
