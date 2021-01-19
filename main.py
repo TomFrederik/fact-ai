@@ -7,7 +7,7 @@ from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
-from datasets import CustomDataset, CustomSubset, FairnessDataset
+from datasets import CustomDataset, CustomSubset, FairnessDataset, ImageDataset
 from arl import ARL
 from dro import DRO
 from ipw import IPW
@@ -24,7 +24,7 @@ import itertools
 import json
 import warnings
 
-from ray import tune # type: ignore
+from ray import tune  # type: ignore
 
 from sklearn.model_selection import KFold # type: ignore
 
@@ -47,8 +47,12 @@ def main(args: argparse.Namespace):
     pl.seed_everything(args.seed)
 
     # create datasets
-    dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
-    test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
+    if args.dataset_type == 'image':
+        dataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label)
+        test_dataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
+    elif args.dataset_type == 'tabular':
+        dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
+        test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
     
     # init config dictionary
     config: Dict[str, Any] = {}
@@ -75,7 +79,7 @@ def main(args: argparse.Namespace):
         fold_indices: List[Tuple[np.ndarray, np.ndarray]] = list(kf.split(dataset))
         
         # set path for logging
-        path = f'./grid_search/{args.model}_{args.dataset}_version_{args.version}'
+        path = f'grid_search/{args.model}_{args.dataset}_version_{args.version}'
         
         analysis = tune.run(
             tune.with_parameters(
@@ -134,7 +138,6 @@ def main(args: argparse.Namespace):
         json.dump(auc_scores, f)
     
 
-
 def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: FairnessDataset) -> pl.LightningModule:
     """
     Selects, initializes and returns a model instance that is to be trained
@@ -145,12 +148,13 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
     model: pl.LightningModule
     if args.model == 'ARL':
         model = ARL(config=config, # for hparam tuning
-                    num_features=dataset.dimensionality,
+                    input_shape=dataset.dimensionality,
                     pretrain_steps=args.pretrain_steps,
                     include_labels=not args.exclude_labels,
                     prim_hidden=args.prim_hidden, 
                     adv_hidden=args.adv_hidden, 
                     optimizer=OPT_BY_NAME[args.opt],
+                    dataset_type=args.dataset_type,
                     opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
 
     elif args.model == 'DRO':
@@ -179,6 +183,7 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
                               optimizer=OPT_BY_NAME[args.opt],
                               opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
         args.pretrain_steps = 0  # NO PRETRAINING
+
 
     # if Tensorflow mode is active, we use the TF default initialization,
     # which means Xavier/Glorot uniform (with gain 1) for the weights
@@ -283,8 +288,8 @@ def train(config: Dict[str, Any],
     
     # Create a PyTorch Lightning trainer
     trainer = pl.Trainer(logger=logger,
-                         checkpoint_callback=ModelCheckpoint(save_weights_only=True, 
-                                                             dirpath=logger.log_dir, 
+                         checkpoint_callback=ModelCheckpoint(save_weights_only=True,
+                                                             dirpath=logger.log_dir,
                                                              mode='max', 
                                                              monitor='validation/micro_avg_auc' if val_dataset is not None else 'test/micro_avg_auc'),
                          gpus=1 if torch.cuda.is_available() else 0,
@@ -335,6 +340,7 @@ if __name__ == '__main__':
     parser.add_argument('--eta', default=0.5, type=float, help='Threshold for single losses that contribute to learning objective')
     parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
     parser.add_argument('--exclude_labels', default=False, action='store_true', help='Don\'t pass labels to adversary. Only relevant for ARL')
+    parser.add_argument('--pretrained', action='store_true', help='Whether to load a pretrained dataset from torchvision where applicable')
 
     # Single run settings
     parser.add_argument('--batch_size', default=256, type=int)
@@ -356,7 +362,7 @@ if __name__ == '__main__':
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--sensitive_label', default=False, type=bool, help='If True, target label will be included in list of sensitive columns')
@@ -367,7 +373,9 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
+    args.dataset_type = 'image' if args.dataset == 'FairFace' else 'tabular'
+    args.working_dir = os.getcwd()
+
     # run main loop
     main(args)
-    
     

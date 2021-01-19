@@ -2,6 +2,7 @@ from typing import Dict, Type, Optional, Any, List, Tuple
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
+import torchvision.models as models
 
 
 
@@ -9,12 +10,14 @@ class ARL(pl.LightningModule):
 
     def __init__(self, 
         config: Dict[str, Any],
-        num_features: int,
+        input_shape: int,
         pretrain_steps: int,
         prim_hidden: List[int] = [64,32],
         adv_hidden: List[int] = [],
         include_labels: bool = True,
         optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
+        dataset_type: str = 'tabular',
+        pretrained: bool = False,
         opt_kwargs: Dict[str, Any] = {},
         ):
         '''
@@ -31,8 +34,16 @@ class ARL(pl.LightningModule):
         self.save_hyperparameters()
         
         # init networks
-        self.learner = Learner(num_features=num_features, hidden_units=prim_hidden)
-        self.adversary = Adversary(num_features=num_features, hidden_units=adv_hidden, include_labels=include_labels)
+        if dataset_type == 'tabular':
+            self.learner = Learner(input_shape=input_shape, hidden_units=prim_hidden)
+            self.adversary = Adversary(input_shape=input_shape, hidden_units=adv_hidden, include_labels=include_labels)
+        elif dataset_type == 'image':
+            # only works with [3, 224, 224] images since input shape of fully connected layers must be hard-coded
+            assert input_shape == [3, 224, 224], f"Input shape to ARL is {input_shape} and not [3, 224, 224]!"
+            self.learner = CNN_Learner(input_shape=input_shape, hidden_units=prim_hidden, pretrained=pretrained)
+            self.adversary = CNN_Adversary(input_shape=input_shape, hidden_units=adv_hidden, pretrained=pretrained)
+        else:
+            raise Exception("ARL was unable to recognize the dataset type.")
 
         # init loss function
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
@@ -159,7 +170,7 @@ class ARL(pl.LightningModule):
     
 class Learner(nn.Module):
     def __init__(self, 
-        num_features: int,
+        input_shape: int,
         hidden_units: List[int] = [64,32]
         ):        
         '''
@@ -171,7 +182,7 @@ class Learner(nn.Module):
         
         # construct network
         net_list: List[torch.nn.Module] = []
-        num_units = [num_features] + hidden_units
+        num_units = [input_shape] + hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
@@ -197,7 +208,7 @@ class Learner(nn.Module):
     
 class Adversary(nn.Module):
     def __init__(self, 
-        num_features: int,
+        input_shape: int,
         hidden_units: List[int] = [],
         include_labels: bool = True
         ):
@@ -213,10 +224,10 @@ class Adversary(nn.Module):
         net_list: List[torch.nn.Module] = []
         if include_labels:
             # the adversary also takes the label as input, therefore we need the +1
-            num_features += 1
+            input_shape += 1
         self.include_labels = include_labels
 
-        num_units = [num_features] + hidden_units
+        num_units = [input_shape] + hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
@@ -236,7 +247,7 @@ class Adversary(nn.Module):
         out - float tensor of shape [batch_size], lambdas for reweighting the loss        
         '''
         if self.include_labels:
-            input = torch.cat([x, y.unsqueeze(1)], dim=1).float()
+            input = torch.cat([x, y.unsqueeze(1).float()], dim=1).float()
         else:
             input = x
         
@@ -251,3 +262,112 @@ class Adversary(nn.Module):
         out = x.shape[0] * adv_norm + torch.ones_like(adv_norm)        
         
         return torch.squeeze(out, dim=-1)
+
+
+class CNN_Learner(nn.Module):
+    def __init__(self,
+                 input_shape: int,
+                 hidden_units: list = [512, 32],
+                 pretrained: bool = False
+                 ):
+        """
+        TODO
+        :param input_shape:
+        :param pretrained:
+        """
+
+        super().__init__()
+
+        # construct network
+        self.net = models.resnet34(pretrained=pretrained)
+
+        net_list = []
+        num_units = [512] + hidden_units
+        for i in range(len(num_units) - 1):
+            net_list.append(nn.Linear(num_units[i], num_units[i + 1]))
+            net_list.append(nn.ReLU())
+        net_list.append(nn.Linear(num_units[-1], 1))
+
+        self.net.fc = nn.Sequential(*net_list)
+
+    def forward(self, x):
+        """
+        TODO
+        :param x:
+        :return:
+        """
+        '''
+        Inputs
+        ----------
+        x - float tensor of shape [batch_size, num_features], input features of the data batch
+
+        Returns
+        -------
+        out - float tensor of shape [batch_size], logits of the data batch under the learner network
+        '''
+
+        out = self.net(x)
+
+        return torch.squeeze(out, dim=-1)
+
+
+class CNN_Adversary(nn.Module):
+    def __init__(self,
+                 input_shape: int,
+                 hidden_units: list = [],
+                 pretrained: bool = False
+                 ):
+        """
+        TODO
+        :param input_shape:
+        :param pretrained:
+        """
+        '''
+        num_features - int, number of features of the input
+        hidden_units - list, number of hidden units in each layer of the MLP
+        '''
+
+        super().__init__()
+
+        # construct network and set default fc to identity for appending sample label during forward pass
+        self.net = models.resnet34(pretrained=pretrained)
+        self.net.fc = nn.Identity()
+
+        net_list = []
+        num_units = [512 + 1] + hidden_units
+        for i in range(len(num_units) - 1):
+            net_list.append(nn.Linear(num_units[i], num_units[i + 1]))
+            net_list.append(nn.ReLU())
+        net_list.append(nn.Linear(num_units[-1], 1))
+
+        self.fc = nn.Sequential(*net_list)
+
+    def forward(self, x, y):
+        """
+        TODO
+        :param x:
+        :return:
+        """
+        '''
+        Inputs
+        ----------
+        x - float tensor of shape [batch_size, num_features], input features of the data batch
+
+        Returns
+        -------
+        out - float tensor of shape [batch_size], lambdas for reweighting the loss
+        '''
+
+        # compute adversary
+        intermediate = self.net(x)
+        intermediate = torch.cat([intermediate.float(), y.float().unsqueeze(1)], dim=1)
+        adv = self.fc(intermediate)
+
+        # normalize adversary across batch
+        # TODO: check numerical stability
+        adv_norm = adv / torch.sum(adv)
+
+        # scale and shift
+        out = x.shape[0] * adv_norm + torch.ones_like(adv_norm)
+
+        return torch.squeeze(out)

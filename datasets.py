@@ -8,7 +8,8 @@ import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
 import json
 import itertools
-from skimage import io # type: ignore
+from torchvision import transforms, datasets  # type: ignore
+from PIL import Image
 
 DATASET_SETTINGS: Dict[str, Dict[str, Any]] = {
     "Adult": {
@@ -83,9 +84,11 @@ class FairnessDataset(ABC, Dataset):
         pass
 
 
+# TODO Rename to TabularDataset
 class CustomDataset(FairnessDataset):
 
-    def __init__(self, dataset_name: str, test: bool = False,
+    def __init__(self, dataset_name: str,
+                 test: bool = False,
                  hide_sensitive_columns: bool = True,
                  binarize_prot_group: bool = True,
                  idcs: Optional[List[int]] = None,
@@ -209,9 +212,9 @@ class CustomDataset(FairnessDataset):
                     torch.tensor(features[c].values).long(),
                     len(vals))
                 for i in range(one_hot.size(-1)):
-                    tensors.append(one_hot[:, i])
+                    tensors.append(one_hot[:, i].float())
             else:
-                tensors.append(torch.tensor(features[c].values))
+                tensors.append(torch.tensor(features[c].values).float())
 
         self._features = torch.stack(tensors, dim=1).float()
 
@@ -287,6 +290,8 @@ class ImageDataset(FairnessDataset):
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
         self.test = test
+        self.to_tensor = transforms.ToTensor()
+        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         # load data
         frame = pd.read_csv(path, ',')
@@ -300,7 +305,8 @@ class ImageDataset(FairnessDataset):
         self._labels = (frame[target_variable].to_numpy() == target_value).astype(int)
         self._labels = torch.from_numpy(self._labels)
 
-        self.img_paths = frame['file'].to_list()
+        self._img_paths = [os.path.join(os.getcwd(), self.base_path, 'images', 'test' if self.test else 'train', img_path) for img_path in
+                          frame['file'].to_list()]
 
         # if set, will binarize group values in the sensitive columns. If not set, check if values should be transformed to numbers instead
         if binarize_prot_group:
@@ -332,7 +338,7 @@ class ImageDataset(FairnessDataset):
             prob_identifier = torch.stack([self._memberships, self.labels], dim=1)
             vals, counts = prob_identifier.unique(return_counts=True, dim=0)
             probs = counts / torch.sum(counts)
-            self._roup_probs = probs.reshape(-1, 2)
+            self._group_probs = probs.reshape(-1, 2)
         else:
             vals, counts = self._memberships.unique(return_counts=True)
             self._group_probs = counts / torch.sum(counts).float()
@@ -341,10 +347,10 @@ class ImageDataset(FairnessDataset):
         return self._labels.size(0)
 
     def __getitem__(self, index):
-        img_path = os.path.join(self.base_path, 'images', 'test' if self.test else 'train', self.img_paths[index])
-        x = torch.from_numpy(io.imread(img_path))  # H x W x C
-        x = x.permute(2, 0, 1)  # C x H x W
-        x = x / 255
+        # x = self._images[index].convert('RGB')
+        x = Image.open(self._img_paths[index]).convert('RGB')
+        x = self.to_tensor(x)
+        x = self.normalize(x / 255)
 
         y = float(self._labels[index])
 
@@ -366,7 +372,7 @@ class ImageDataset(FairnessDataset):
 
     @property
     def features(self):
-        raise Exception("Class ImageDataset does not implement features property.")
+        return self._images
 
     @property
     def dimensionality(self):
