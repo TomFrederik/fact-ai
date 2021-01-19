@@ -182,7 +182,7 @@ class ARL(pl.LightningModule):
         """Choose optimizers and learning-rates to use during optimization of
         the primary and adversary network.
         
-        Return:
+        Returns:
             Optimizers.   
             Learning-rate schedulers (currently not used).
         """

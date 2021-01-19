@@ -185,7 +185,7 @@ class DRO(pl.LightningModule):
     def configure_optimizers(self):
         """Choose optimizer and learning-rate to use during optimization.
         
-        Return:
+        Returns:
             Optimizer.       
         """
         
