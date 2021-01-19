@@ -50,7 +50,7 @@ class DRO(pl.LightningModule):
     distributionally robust optimization.
 
     Attributes:
-        config: Dict with hyperparameters learning rate, batch size, eta.
+        config: Dict with hyperparameters (learning rate, batch size, eta).
         num_features: Dimensionality of the data input.
         pretrain_steps: Number of pretraining steps before using the DRO loss.
         hidden_units: Number of hidden units in each layer of the network.
@@ -97,10 +97,10 @@ class DRO(pl.LightningModule):
         """Forward propagation of inputs through the network.
     
         Args:
-            input: Tensor of shape [batch_size, num_features] with data inputs
+            input: Tensor of shape [batch_size, num_features] with data inputs.
     
         Returns:
-            Tensor of shape [batch_size] with predicted logits
+            Tensor of shape [batch_size] with predicted logits.
         """
         
         out = self.net(input).squeeze(dim=-1)
@@ -110,8 +110,8 @@ class DRO(pl.LightningModule):
         """Compute and log the training loss.
     
         Args:
-            batch: Inputs, labels and group memberships of a data batch
-            batch_idx: Index of batch in the dataset (not needed)
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
     
         Returns:
             BCE loss of the batch on the training dataset during pretraining, 
@@ -139,8 +139,8 @@ class DRO(pl.LightningModule):
         """Compute and log the validation loss.
     
         Args:
-            batch: Inputs, labels and group memberships of a data batch
-            batch_idx: Index of batch in the dataset (not needed)
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
         """
         
         # get features and labels
@@ -162,8 +162,8 @@ class DRO(pl.LightningModule):
         """Compute and log the test loss.
     
         Args:
-            batch: Inputs, labels and group memberships of a data batch
-            batch_idx: Index of batch in the dataset (not needed)
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
         """
         
         # get features and labels
@@ -186,7 +186,7 @@ class DRO(pl.LightningModule):
         """Choose optimizer and learning-rate to use during optimization.
         
         Return:
-            Optimizer           
+            Optimizer.       
         """
         
         return self.optimizer(self.parameters(), lr=self.hparams.config['lr'], **self.hparams.opt_kwargs)
