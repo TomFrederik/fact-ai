@@ -12,13 +12,21 @@ from datasets import FairnessDataset
 
 
 class Logger(Callback):
-    def __init__(self, dataset: FairnessDataset, name: str, batch_size: int):
-        """Callback that logs various AUC metrics.
+    """Callback that logs various metrics.
+    
+    Logs micro-average AUC, macro-average AUC, minimum protected group AUC, AUC 
+    of a predefined minority and accuracy.
 
-        Args:
-            dataset: Dataset instance to use
-            name: directory of the logged metrics, e.g. test or training
-        """
+    Attributes:
+        dataset: Dataset instance to use. 
+        name: Directory of the logged metrics, e.g. "training", "validation" 
+            or "test".
+        batch_size: Batch size to iterate through the dataset.
+    """
+    
+    def __init__(self, dataset: FairnessDataset, name: str, batch_size: int):
+        """Inits an instance of Logger with the given attributes."""
+        
         super().__init__()
         self.dataset = dataset
         self.batch_size = batch_size
@@ -27,54 +35,37 @@ class Logger(Callback):
         self.dataloader = DataLoader(self.dataset, self.batch_size, pin_memory=True)
 
     def on_validation_epoch_end(self, trainer, pl_module):
+        """Logs metrics. Function is called at the end of each validation epoch.
+    
+        Args:
+            trainer: Trainer instance that handles the training loop.
+            pl_module: Model to evaluate the metrics on, e.g. an instance of 
+                baseline, ARL, DRO or IPW.    
+        """
+        
         super().on_validation_end(trainer, pl_module)
 
         results = get_all_auc_scores(pl_module, self.dataloader, self.dataset.minority)
 
         for key in results:
             pl_module.log(f'{self.name}/{key}', results[key])
-
-
-def group_aucs(predictions: torch.Tensor, targets: torch.Tensor, memberships: torch.Tensor) -> Dict[int, float]:
-    """Compute the AUROC for each protected group.
-
-    Args:
-        predictions: tensor of shape (n_samples, ) with predictions (either probabilities or scores)
-        targets: tensor with same shape with ground truth (0 or 1)
-        memberships: tensor with same shape with group membership indices
-
-    Returns:
-        A dictionary with the group indices as keys and their AUROCs as values"""
-    groups = memberships.unique().to(predictions.device)
-    groups = groups.to(predictions.device)
-    targets = targets.to(predictions.device)
-    aucs: Dict[int, float] = {}
-    
-    for group in groups:
-        indices = (memberships == group)
-        if torch.sum(targets[indices]) == 0 or torch.sum(1-targets[indices]) == 0:
-            aucs[int(group)] = 0 
-        else:
-            aucs[int(group)] = auroc(predictions[indices], targets[indices]).item()
-    return aucs
-
-# deprecated
-def aucs_from_dataset(predictions, dataset):
-    """Compute the AUROC for each protected group in an entire dataset.
-
-    Args:
-        predictions: tensor of shape (n_samples, ) with predictions (either probabilities or scores)
-        dataset: a Dataset instance with length n_samples
-
-    Returns:
-        A dictionary with the group indices as keys and their AUROCs as values"""
-    return group_aucs(predictions, dataset.labels, dataset.memberships)
-
-
+            
+            
 def get_all_auc_scores(pl_module: LightningModule, dataloader: DataLoader, minority: int) -> Dict[str, float]:
-    '''
-    Computes all the different AUC scores of the given module on the given dataset
-    '''
+    """Computes different AUC scores and the accuracy of the given module on
+    the given dataset.
+
+    Args:
+        pl_module: Model to evaluate the metrics on. 
+        dataloader: Dataloader instance used to pass the dataset through the 
+            model.
+        minority: Index of predefined minority group on which the AUC should 
+            be evaluated.
+
+    Returns:
+        A dict mapping keys to the corresponding metric values.
+    """
+    
     # iterate through dataloader to generate predictions
     predictions: List[torch.Tensor] = []
     memberships: List[torch.Tensor] = []
@@ -103,4 +94,29 @@ def get_all_auc_scores(pl_module: LightningModule, dataloader: DataLoader, minor
     }
     
     return results
+
+
+def group_aucs(predictions: torch.Tensor, targets: torch.Tensor, memberships: torch.Tensor) -> Dict[int, float]:
+    """Computes the AUC for each protected group.
+
+    Args:
+        predictions: Tensor of shape (n_samples, ) with prediction logits.
+        targets: Tensor of shape (n_samples, ) with ground truth (0 or 1).
+        memberships: Tensor of shape (n_samples, ) with group membership indices.
+
+    Returns:
+        A dict mapping group indices as keys to the corresponding AUC values.        
+    """
     
+    groups = memberships.unique().to(predictions.device)
+    groups = groups.to(predictions.device)
+    targets = targets.to(predictions.device)
+    aucs: Dict[int, float] = {}
+    
+    for group in groups:
+        indices = (memberships == group)
+        if torch.sum(targets[indices]) == 0 or torch.sum(1-targets[indices]) == 0:
+            aucs[int(group)] = 0 
+        else:
+            aucs[int(group)] = auroc(predictions[indices], targets[indices]).item()
+    return aucs

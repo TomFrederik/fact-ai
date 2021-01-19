@@ -66,7 +66,8 @@ class ARL(pl.LightningModule):
                       batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
                       batch_idx: int,
                       optimizer_idx: int) -> Optional[torch.Tensor]:
-        """Compute and log the adversarially reweighted loss on the training set.
+        """Computes and logs the adversarially reweighted loss on the training 
+        set.
     
         Args:
             batch: Inputs, labels and group memberships of a data batch.
@@ -100,7 +101,7 @@ class ARL(pl.LightningModule):
 
 
     def learner_step(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        """Compute the adversarially reweighted loss on the training set.
+        """Computes the adversarially reweighted loss on the training set.
     
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
@@ -124,7 +125,7 @@ class ARL(pl.LightningModule):
      
         
     def adversary_step(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        """Compute the negative adversarially reweighted loss on the training set.
+        """Computes the negative adversarially reweighted loss on the training set.
     
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
@@ -142,13 +143,13 @@ class ARL(pl.LightningModule):
         lambdas = self.adversary(x, y)
         
         # compute reweighted loss
-        loss = -torch.mean(lambdas * bce)
+        loss = -torch.std(lambdas * bce)
         
         return loss        
         
         
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
-        """Compute and log the adversarially reweighted loss on the validation 
+        """Computes and logs the adversarially reweighted loss on the validation 
         set.
     
         Args:
@@ -164,7 +165,7 @@ class ARL(pl.LightningModule):
 
         
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
-        """Compute and log the adversarially reweighted loss on the test set.
+        """Computes and logs the adversarially reweighted loss on the test set.
     
         Args:
             batch: Inputs, labels and group memberships of a data batch.
@@ -179,7 +180,7 @@ class ARL(pl.LightningModule):
  
     
     def configure_optimizers(self):
-        """Choose optimizers and learning-rates to use during optimization of
+        """Chooses optimizers and learning-rates to use during optimization of
         the primary and adversary network.
         
         Returns:

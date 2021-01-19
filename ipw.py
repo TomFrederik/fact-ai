@@ -7,6 +7,20 @@ from arl import Learner
 
 
 class IPW(pl.LightningModule):
+    """Feed forward neural network with modified BCE loss, based on inverse 
+    probability weighting of the losses.
+
+    Attributes:
+        config: Dict with hyperparameters (learning rate, batch size).
+        num_features: Dimensionality of the data input.
+        group_probs: Empirical observation probabilities of the different 
+            protected groups.
+        hidden_units: Number of hidden units in each layer of the network.
+        optimizer: Optimizer used to update the model parameters.
+        sensitive_label: Option to use joint probability of label and group
+            membership for computing the weights.
+        opt_kwargs: Optional; optimizer keywords other than learning rate.
+    """
 
     def __init__(self, 
         config: Dict[str, Any],
@@ -17,15 +31,8 @@ class IPW(pl.LightningModule):
         sensitive_label: bool = False,
         opt_kwargs: Dict[str, Any] = {},
         ):
-        """
-        Class for inverse probability weighting
-        :param num_features: int, number of features of the input
-        :param hidden_units: list, number of hidden units in each layer of the learner network
-        :param lr: float, learning rate for updating the learner
-        :param optimizer: torch.optim.Optimizer constructor function, optimizer to adjust the model's parameters
-        :param group_probs: empirical observation probabilities of the different protected groups
-        :param opt_kwargs: dict, optimizer keywords (other than learning rate)
-        """
+        """Inits an instance of IPW with the given attributes."""
+        
         super().__init__()
 
         # save params
@@ -42,12 +49,15 @@ class IPW(pl.LightningModule):
 
     
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
+        """Returns and logs the loss on the training set.
+    
+        Args:
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
+            optimizer_idx: Index of the optimizer that is used for updating the 
+                weights after the training step; 0 = learner, 1 = adversary.
         """
-        Implements the training step for PyTorch Lightning
-        :param batch: input batch from dataset
-        :param batch_idx: index of batch in the dataset (not needed)
-        :return: scalar, minimization objective
-        """
+        
         x, y, s = batch
 
         loss = self.learner_step(x, y, s)
@@ -59,13 +69,25 @@ class IPW(pl.LightningModule):
 
     
     def learner_step(self, x: torch.Tensor, y: torch.Tensor, s: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """Computes the inversely reweighted or unweighted BCE loss.
+    
+        Args:
+            x: Tensor of shape [batch_size, num_features] with data inputs.
+            y: Tensor of shape [batch_size] with labels.
+            s: Optional; tensor of shape [batch_size] with group indices.
+    
+        Returns:
+            One of the following:
+                
+            The mean of single BCE losses that are reweighted with the inverse
+            of the joint probabilities of labels and group memberships.
+            
+            The mean of single BCE losses that are reweighted with the inverse
+            of the group probabilities.
+            
+            The unweighted BCE loss.
         """
-        TODO
-        :param x: TODO
-        :param y: TODO
-        :param s: TODO
-        :return: TODO
-        """
+        
         # compute unweighted bce
         logits = self.learner(x)
         bce = self.loss_fct(logits, y)
@@ -88,12 +110,13 @@ class IPW(pl.LightningModule):
         return loss
 
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
+        """Compute and log the validation loss.
+    
+        Args:
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
         """
-        TODO
-        :param batch: TODO
-        :param batch_idx: TODO
-        :return: TODO
-        """
+        
         x, y, _ = batch
         loss = self.learner_step(x, y)
         
@@ -101,12 +124,13 @@ class IPW(pl.LightningModule):
         self.log("validation/loss", loss)
 
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
+        """Compute and log the test loss.
+    
+        Args:
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
         """
-        TODO
-        :param batch: TODO
-        :param batch_idx: TODO
-        :return: TODO
-        """
+        
         x, y, _ = batch 
         loss = self.learner_step(x, y)
         
@@ -114,19 +138,23 @@ class IPW(pl.LightningModule):
         self.log("test/loss", loss)
 
     def configure_optimizers(self):
+        """Choose optimizer and learning-rate to use during optimization.
+        
+        Returns:
+            Optimizer.       
         """
-        TODO
-        :return: TODO
-        """
-        # Create optimizers for learner and adversary
+        
         optimizer = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.config['lr'], **self.hparams.opt_kwargs)
 
         return optimizer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        TODO
-        :param x: TODO
-        :return: TODO
+        """Forward propagation of inputs through the network.
+    
+        Args:
+            input: Tensor of shape [batch_size, num_features] with data inputs.
+    
+        Returns:
+            Tensor of shape [batch_size] with predicted logits.
         """
         return self.learner(x)

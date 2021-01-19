@@ -57,7 +57,7 @@ class BaselineModel(pl.LightningModule):
         return out
     
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
-        """Compute and log the training loss.
+        """Computes and logs the training loss.
     
         Args:
             batch: Inputs, labels and group memberships of a data batch.
@@ -82,7 +82,7 @@ class BaselineModel(pl.LightningModule):
         return loss        
         
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
-        """Compute and log the validation loss.
+        """Computes and logs the validation loss.
     
         Args:
             batch: Inputs, labels and group memberships of a data batch.
@@ -102,7 +102,7 @@ class BaselineModel(pl.LightningModule):
         self.log('validation/loss', loss)        
         
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
-        """Compute and log the test loss.
+        """Computes and logs the test loss.
     
         Args:
             batch: Inputs, labels and group memberships of a data batch.
@@ -123,9 +123,9 @@ class BaselineModel(pl.LightningModule):
 
     
     def configure_optimizers(self):
-        """Choose optimizer and learning-rate to use during optimization.
+        """Chooses optimizer and learning-rate to use during optimization.
         
-        Return:
+        Returns:
             Optimizer.       
         """
         
