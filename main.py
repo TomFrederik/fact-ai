@@ -155,6 +155,7 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
                     adv_hidden=args.adv_hidden, 
                     optimizer=OPT_BY_NAME[args.opt],
                     dataset_type=args.dataset_type,
+                    pretrained=args.pretrained,
                     opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
 
     elif args.model == 'DRO':
