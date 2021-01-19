@@ -5,6 +5,15 @@ import pytorch_lightning as pl
 
 
 class BaselineModel(pl.LightningModule):
+    """Fully-connected feed forward neural network.
+
+    Attributes:
+        config: Dict with hyperparameters (learning rate, batch size).
+        num_features: Dimensionality of the data input.
+        hidden_units: Number of hidden units in each layer of the network.
+        optimizer: Optimizer used to update the model parameters.
+        opt_kwargs: Optional; optimizer keywords other than learning rate.
+    """
 
     def __init__(self,
         config: Dict[str, Any],
@@ -13,13 +22,7 @@ class BaselineModel(pl.LightningModule):
         optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
         opt_kwargs: Dict[str, Any] = {}
         ):
-        '''
-        num_features - int, number of features of the input
-        hidden_units - list, number of hidden units in each layer of the DNN
-        lr - float, learning rate
-        optimizer - torch.optim.Optimizer constructor function, optimizer to adjust the model's parameters
-        opt_kwargs - dict, optimizer keywords (other than learning rate)
-        '''
+        """Inits an instance of the network with the given attributes."""
         
         super().__init__()
 
@@ -42,10 +45,27 @@ class BaselineModel(pl.LightningModule):
         self.loss_fct = nn.BCEWithLogitsLoss()
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
+        """Forward propagation of inputs through the network.
+    
+        Args:
+            input: Tensor of shape [batch_size, num_features] with data inputs.
+    
+        Returns:
+            Tensor of shape [batch_size] with predicted logits.
+        """
         out = self.net(input).squeeze(dim=-1)
         return out
     
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
+        """Compute and log the training loss.
+    
+        Args:
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
+    
+        Returns:
+            BCE loss of the batch on the training dataset. 
+        """
         
         # get features and labels
         x, y, s = batch
@@ -57,12 +77,18 @@ class BaselineModel(pl.LightningModule):
         loss = self.loss_fct(logits, y)
 
         # logging
-        #TODO: add other metrics
         self.log('training/loss', loss)
 
         return loss        
         
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
+        """Compute and log the validation loss.
+    
+        Args:
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
+        """
+        
         # get features and labels
         x, y, s = batch
         
@@ -76,6 +102,13 @@ class BaselineModel(pl.LightningModule):
         self.log('validation/loss', loss)        
         
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
+        """Compute and log the test loss.
+    
+        Args:
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
+        """
+        
         # get features and labels
         x, y, s = batch
         
@@ -90,4 +123,10 @@ class BaselineModel(pl.LightningModule):
 
     
     def configure_optimizers(self):
+        """Choose optimizer and learning-rate to use during optimization.
+        
+        Return:
+            Optimizer.       
+        """
+        
         return self.optimizer(self.parameters(), lr=self.hparams.config['lr'], **self.hparams.opt_kwargs)
