@@ -79,8 +79,8 @@ def get_all_auc_scores(pl_module: LightningModule, dataloader: DataLoader, minor
         targets.append(y)
 
     prediction_tensor = torch.cat(predictions, dim=0)
-    target_tensor = torch.cat(targets, dim=0)
-    membership_tensor = torch.cat(memberships, dim=0)
+    target_tensor = torch.cat(targets, dim=0).to(prediction_tensor.device)
+    membership_tensor = torch.cat(memberships, dim=0).to(prediction_tensor.device)
 
     aucs = group_aucs(prediction_tensor, target_tensor, membership_tensor)
     acc = torch.mean(((prediction_tensor > 0.5).int() == target_tensor).float()).item()
