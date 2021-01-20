@@ -328,7 +328,7 @@ def train(config: Dict[str, Any],
     # Training
     fit_time = time()
     trainer.fit(model, train_loader, val_dataloaders=DataLoader(val_dataset, batch_size=args.eval_batch_size) if val_dataset is not None
-                                                     else DataLoader(test_dataset))
+                                                     else DataLoader(test_dataset, batch_size=args.eval_batch_size))
     print(f'time to fit was {time()-fit_time}')
 
     # necessary to make the type checker happy and since this is only run once,
@@ -389,7 +389,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
-    parser.add_argument('--sensitive_label', default=False, type=bool, help='If True, target label will be included in list of sensitive columns')
+    parser.add_argument('--sensitive_label', default=False, action='store_true', help='If True, target label will be included in list of sensitive columns; used for IPW(S+Y)')
 
     # ray settings
     parser.add_argument('--num_cpus', default=1, type=int, help='Number of CPUs used for each trial')

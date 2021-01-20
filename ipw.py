@@ -35,14 +35,14 @@ class IPW(pl.LightningModule):
         
         super().__init__()
 
-        # save params
-        self.save_hyperparameters()
+        # save params EXCEPT group_probs since that throws an error
+        self.save_hyperparameters('config', 'num_features', 'hidden_units', 'optimizer', 'sensitive_label', 'opt_kwargs')
 
         # save group probabilities
         self.group_probs = group_probs
         
         # init networks
-        self.learner = Learner(num_features=num_features, hidden_units=hidden_units)
+        self.learner = Learner(input_shape=num_features, hidden_units=hidden_units)
 
         # init loss function
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
@@ -93,16 +93,16 @@ class IPW(pl.LightningModule):
         bce = self.loss_fct(logits, y)
 
         # consider both s and y for selecting probability
-
         if s is not None:
             # compute weights
             if self.hparams.sensitive_label:
-                sample_weights = torch.index_select(torch.index_select(self.group_probs, 0, s), 0, y)
+                sample_weights = torch.index_select(torch.index_select(self.group_probs, 0, s), 1, y.long())
             else:
                 sample_weights = torch.index_select(self.group_probs, 0, s)
 
             # compute reweighted loss
             loss = torch.mean(bce / sample_weights)
+        
         else:
             # compute unweighted loss
             loss = torch.mean(bce)

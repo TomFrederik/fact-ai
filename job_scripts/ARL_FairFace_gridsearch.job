@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --partition=gpu_shared_course
-#SBATCH --gres=gpu:0
+#SBATCH --gres=gpu:1
 #SBATCH --job-name=ARL_FairFace_gridsearch
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6

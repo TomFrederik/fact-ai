@@ -188,12 +188,12 @@ class CustomDataset(FairnessDataset):
         if sensitive_label:
             prob_identifier = torch.stack([self.memberships, self.labels], dim=1)
             vals, counts = prob_identifier.unique(return_counts=True, dim=0)
-            probs = counts / torch.sum(counts)
+            probs = torch.true_divide(counts, torch.sum(counts))
             self._group_probs = probs.reshape(-1, 2)
         else:
             vals, counts = self.memberships.unique(return_counts=True)
-            self._group_probs = counts / torch.sum(counts).float()
-
+            self._group_probs = torch.true_divide(counts, torch.sum(counts).float())
+            
         ## convert categorical data into onehot
         # load vocab
         with open(vocab_path) as json_file:
@@ -337,11 +337,11 @@ class ImageDataset(FairnessDataset):
         if sensitive_label:
             prob_identifier = torch.stack([self._memberships, self.labels], dim=1)
             vals, counts = prob_identifier.unique(return_counts=True, dim=0)
-            probs = counts / torch.sum(counts)
+            probs = torch.true_divide(counts, torch.sum(counts))
             self._group_probs = probs.reshape(-1, 2)
         else:
             vals, counts = self._memberships.unique(return_counts=True)
-            self._group_probs = counts / torch.sum(counts).float()
+            self._group_probs = torch.true_divide(counts, torch.sum(counts).float())
 
     def __len__(self):
         return self._labels.size(0)
