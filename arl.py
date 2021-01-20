@@ -351,8 +351,6 @@ class CNN_Learner(nn.Module):
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        print(x.shape)
-        test = self.net.conv1(x)
         out = self.net(x)
 
         return torch.squeeze(out, dim=-1)
