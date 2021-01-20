@@ -391,7 +391,7 @@ def train(config: Dict[str, Any],
                                 dirpath=logger.log_dir, 
                                 mode='max', 
                                 verbose=False,
-                                monitor='validation/micro_avg_auc' if val_dataset is not None else 'test/micro_avg_auc')
+                                monitor='validation/micro_avg_auc')
     callbacks.append(checkpoint)
     
     # Create a PyTorch Lightning trainer
