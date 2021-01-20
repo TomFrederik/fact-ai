@@ -111,6 +111,7 @@ def group_aucs(predictions: torch.Tensor, targets: torch.Tensor, memberships: to
     groups = memberships.unique().to(predictions.device)
     groups = groups.to(predictions.device)
     targets = targets.to(predictions.device)
+    memberships = memberships.to(predictions.device)
     aucs: Dict[int, float] = {}
     
     for group in groups:
