@@ -96,7 +96,13 @@ def main(args: argparse.Namespace):
         fold_indices: List[Tuple[np.ndarray, np.ndarray]] = list(kf.split(dataset))
         
         # set path for logging
-        path = f'grid_search/{args.model}_{args.dataset}_version_{args.version}'
+        if args.model == 'IPW':
+            if args.sensitive_label:
+                path = f'grid_search/IPW(S+Y)_{args.dataset}_version_{args.version}'
+            else:
+                path = f'grid_search/IPW(S)_{args.dataset}_version_{args.version}'
+        else:
+            path = f'grid_search/{args.model}_{args.dataset}_version_{args.version}'
         
         analysis = tune.run(
             tune.with_parameters(
@@ -134,9 +140,21 @@ def main(args: argparse.Namespace):
         config['eta'] = args.eta
         
         if args.seed_run:
-            path = f'./{args.log_dir}/{args.dataset}/{args.model}/seed_run_version_{args.seed_run_version}/seed_{args.seed}'
+            if args.model == 'IPW':
+                if args.sensitive_label:
+                    path = f'./{args.log_dir}/{args.dataset}/IPW(S+Y)/seed_run_version_{args.seed_run_version}/seed_{args.seed}'
+                else:
+                    path = f'./{args.log_dir}/{args.dataset}/IPW(S)/seed_run_version_{args.seed_run_version}/seed_{args.seed}'
+            else:
+                path = f'./{args.log_dir}/{args.dataset}/{args.model}/seed_run_version_{args.seed_run_version}/seed_{args.seed}'
         else:
-            path = f'./{args.log_dir}/{args.dataset}/{args.model}/version_{args.version}'
+            if args.model == 'IPW':
+                if args.sensitive_label:
+                    path = f'./{args.log_dir}/{args.dataset}/IPW(S+Y)/version_{args.version}'
+                else:
+                    path = f'./{args.log_dir}/{args.dataset}/IPW(S)/version_{args.version}'
+            else:
+                path = f'./{args.log_dir}/{args.dataset}/{args.model}/version_{args.version}'
 
         print(f'creating dir {path}')
         os.makedirs(path, exist_ok=True)
