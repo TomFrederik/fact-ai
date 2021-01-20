@@ -320,8 +320,7 @@ def train(config: Dict[str, Any],
     
     Inits a model and optimizes its parameters on the given training dataset  
     with a given set of hyperparameters. Logs various metrics and stops the 
-    training when the micro-average AUC on the validation or test set stops 
-    improving.
+    training when the micro-average AUC on the validation set stops improving.
     
     Args:
         config: Dict with hyperparameters (learning rate, batch size, eta).
@@ -335,8 +334,8 @@ def train(config: Dict[str, Any],
             is part of kfold cross validation.
     
     Returns:
-        Model with the highest micro-average AUC on the validation or test 
-        set during the training run.
+        Model with the highest micro-average AUC on the validation set during 
+        the training run.
             
     Raises:
         AssertionError: If no model checkpoint callback exists.
@@ -359,7 +358,7 @@ def train(config: Dict[str, Any],
     if val_dataset is not None:
         callbacks.append(Logger(val_dataset, 'validation', batch_size=args.eval_batch_size))
         callbacks.append(EarlyStopping(
-            monitor='validation/micro_avg_auc', # TODO: implement for test set
+            monitor='validation/micro_avg_auc', 
             min_delta=0.00,
             patience=10,
             verbose=True,
