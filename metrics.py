@@ -15,7 +15,7 @@ class Logger(Callback):
     """Callback that logs various metrics.
     
     Logs micro-average AUC, macro-average AUC, minimum protected group AUC, AUC 
-    of a predefined minority and accuracy.
+    of the protected group with the fewest members and accuracy.
 
     Attributes:
         dataset: Dataset instance to use. 
@@ -59,8 +59,7 @@ def get_all_auc_scores(pl_module: LightningModule, dataloader: DataLoader, minor
         pl_module: Model to evaluate the metrics on. 
         dataloader: Dataloader instance used to pass the dataset through the 
             model.
-        minority: Index of predefined minority group on which the AUC should 
-            be evaluated.
+        minority: Index of the protected group with the fewest members.
 
     Returns:
         A dict mapping keys to the corresponding metric values.
