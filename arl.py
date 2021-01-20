@@ -77,8 +77,7 @@ class ARL(pl.LightningModule):
     
         Returns:
             Adversarially reweighted loss or negative adversarially reweighted
-            loss. The learner aims to minimize the loss, the adversary aims to
-            maximize the loss. During pretraining, only return the positive loss.
+            loss. During pretraining, only return the positive loss.
         """
         
         x, y, s = batch         

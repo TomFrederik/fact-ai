@@ -75,7 +75,7 @@ class IPW(pl.LightningModule):
             x: Tensor of shape [batch_size, num_features] with data inputs.
             y: Tensor of shape [batch_size] with labels.
             s: Optional; tensor of shape [batch_size] with group indices.
-    
+            
         Returns:
             One of the following:
                 
