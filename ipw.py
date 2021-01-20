@@ -37,6 +37,8 @@ class IPW(pl.LightningModule):
 
         # save params EXCEPT group_probs since that throws an error
         self.save_hyperparameters('config', 'num_features', 'hidden_units', 'optimizer', 'sensitive_label', 'opt_kwargs')
+        #self.save_hyperparameters()
+        self.hparams.group_probs = group_probs
 
         # save group probabilities
         self.group_probs = group_probs

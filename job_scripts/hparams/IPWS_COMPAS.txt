@@ -1,0 +1,10 @@
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 1 --tf_mode
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 2 --tf_mode
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 3 --tf_mode
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 4 --tf_mode
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 5 --tf_mode
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 6 --tf_mode
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 7 --tf_mode
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 8 --tf_mode
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 9 --tf_mode
+--model IPW --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 0.1 --batch_size 256 --seed_run --seed 10 --tf_mode
