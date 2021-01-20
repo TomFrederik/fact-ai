@@ -39,6 +39,22 @@ os.environ["SLURM_JOB_NAME"] = "bash"
 
 
 def main(args: argparse.Namespace):
+    """Executes a full grid search (optional) and a single training run.
+        
+    Grid search: Defines the hyperparameter search space and runs kfold cross 
+    validation of the model type as given by the argument parser object for all 
+    hyperparameter combinations from the search space. Saves results and best-
+    performing hyperparameters with respect to the micro-average AUC.
+        
+    Single run: Executes a single training run with either the hyperparameters
+    found in the grid search or the hyperparameters as given in the argument
+    parser object. Evaluates various metrics (AUC, accuracy) on the test dataset
+    and saves the scores.   
+    
+    Args:
+        args: Object from the argument parser that defines various settings of
+            the model, dataset and training.
+    """
     
     # set run version
     args.version = str(int(time()))
@@ -150,12 +166,23 @@ def main(args: argparse.Namespace):
     
 
 def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: FairnessDataset) -> pl.LightningModule:
+    """Selects and inits a model instance for training.
+    
+    Args:
+        config: Dict with hyperparameters (learning rate, batch size, eta).
+        args: Object from the argument parser that defines various settings of
+            the model, dataset and training.
+        dataset: Dataset instance that will be used for training.
+    
+    Returns:
+        An instantiated model; one of the following:
+                
+        Model based on Adversarially Reweighted Learning (ARL).
+        Model based on Distributionally Robust Optimization (DRO).
+        Model based on Inverse Probability Weighting (IPW).
+        Baseline model; simple fully-connected or convolutional (TODO) network.
     """
-    Selects, initializes and returns a model instance that is to be trained
-    :param args: object from the argument parser
-    :param dataset: the dataset that the model will be trained on
-    :return: an instantiated model for future training/evaluation
-    """
+    
     model: pl.LightningModule
     if args.model == 'ARL':
         model = ARL(config=config, # for hparam tuning
@@ -216,13 +243,23 @@ def run_folds(config: Dict[str, Any],
               dataset: FairnessDataset,
               fold_indices: List[Tuple[np.ndarray, np.ndarray]],
               version: Optional[str]=None) -> float:
-    """
-    Function to run kfold cross validation for a given set of parameters
-    :param args: object from the argument parser
-    :dataset: dataset object containing all training examples
-    :fold_indices: list containing tuples of train and val indices
-    :version: used to group runs from a single grid search into the same directory
-    :return: Results from testing the model
+    """Runs kfold cross validation on the given dataset.
+    
+    Executes single training runs on the training set of each fold and evaluates
+    the trained model on the validation set of the same fold.
+    
+    Args:
+        config: Dict with hyperparameters (learning rate, batch size, eta).
+        args: Object from the argument parser that defines various settings of
+            the model, dataset and training.
+        dataset: Dataset instance that will be used for cross validation.
+        fold_indices: Indices to select training and validation subsets for each
+            fold.
+        version: Optional; version used for the logging directory.
+    
+    Returns:
+        Mean of the micro-average AUC of the trained models on the validation
+        sets of the models' corresponding folds.
     """
     
     print(f'Starting run with seed {args.seed} - lr {config["lr"]} - bs {config["batch_size"]}')
@@ -261,6 +298,31 @@ def train(config: Dict[str, Any],
           test_dataset: Optional[FairnessDataset]=None,
           version=str(int(time())),
           fold_nbr=None) -> pl.LightningModule:
+    """Single training run on a given dataset.
+    
+    Inits a model and optimizes its parameters on the given training dataset  
+    with a given set of hyperparameters. Logs various metrics and stops the 
+    training when the micro-average AUC on the validation or test set stops 
+    improving.
+    
+    Args:
+        config: Dict with hyperparameters (learning rate, batch size, eta).
+        args: Object from the argument parser that defines various settings 
+            of the model, dataset and training.
+        train_dataset: Dataset instance to use for training.
+        val_dataset: Optional; dataset instance to use for validation.
+        test_dataset: Optional; dataset instance to use for testing.
+        version: Version used for the logging directory.
+        fold_nbr: Optional; used for the logging directory if training run
+            is part of kfold cross validation.
+    
+    Returns:
+        Model with the highest micro-average AUC on the validation or test 
+        set during the training run.
+            
+    Raises:
+        AssertionError: If no model checkpoint callback exists.
+    """
     
     # create logdir if necessary
     logdir: str = args.log_dir
@@ -279,7 +341,7 @@ def train(config: Dict[str, Any],
     if val_dataset is not None:
         callbacks.append(Logger(val_dataset, 'validation', batch_size=args.eval_batch_size))
         callbacks.append(EarlyStopping(
-            monitor='validation/micro_avg_auc',
+            monitor='validation/micro_avg_auc', # TODO: implement for test set
             min_delta=0.00,
             patience=10,
             verbose=True,
