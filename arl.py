@@ -53,8 +53,10 @@ class ARL(pl.LightningModule):
         elif dataset_type == 'image':
             # only works with [3, 224, 224] images since input shape of fully connected layers must be hard-coded
             assert input_shape == [3, 224, 224], f"Input shape to ARL is {input_shape} and not [3, 224, 224]!"
-            self.learner = CNN_Learner(input_shape=input_shape, hidden_units=prim_hidden, pretrained=pretrained)
-            self.adversary = CNN_Adversary(input_shape=input_shape, hidden_units=adv_hidden, pretrained=pretrained)
+            cnn = models.resnet34(pretrained=pretrained)
+            cnn.fc = nn.Identity()
+            self.learner = CNN_Learner(cnn=cnn, input_shape=input_shape, hidden_units=prim_hidden, pretrained=pretrained)
+            self.adversary = CNN_Adversary(cnn=cnn, input_shape=input_shape, hidden_units=adv_hidden, pretrained=pretrained)
         else:
             raise Exception("ARL was unable to recognize the dataset type.")
 
@@ -322,6 +324,7 @@ class CNN_Learner(nn.Module):
     """
     
     def __init__(self,
+                 cnn: nn.Module,
                  input_shape: int,
                  hidden_units: list = [512, 32],
                  pretrained: bool = False
@@ -331,7 +334,7 @@ class CNN_Learner(nn.Module):
         super().__init__()
 
         # construct network
-        self.net = models.resnet34(pretrained=pretrained)
+        self.cnn = cnn
 
         net_list = []
         num_units = [512] + hidden_units
@@ -340,7 +343,7 @@ class CNN_Learner(nn.Module):
             net_list.append(nn.ReLU())
         net_list.append(nn.Linear(num_units[-1], 1))
 
-        self.net.fc = nn.Sequential(*net_list)
+        self.fc = nn.Sequential(*net_list)
 
     def forward(self, x):
         """Forward propagation of inputs through the primary network.
@@ -351,7 +354,8 @@ class CNN_Learner(nn.Module):
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        out = self.net(x)
+        intermediate = self.cnn(x)
+        out = self.fc(intermediate)
 
         return torch.squeeze(out, dim=-1)
 
@@ -367,6 +371,7 @@ class CNN_Adversary(nn.Module):
     """
     
     def __init__(self,
+                 cnn: nn.Module,
                  input_shape: int,
                  hidden_units: list = [],
                  pretrained: bool = False
@@ -376,8 +381,7 @@ class CNN_Adversary(nn.Module):
         super().__init__()
 
         # construct network and set default fc to identity for appending sample label during forward pass
-        self.net = models.resnet34(pretrained=pretrained)
-        self.net.fc = nn.Identity()
+        self.cnn = cnn
 
         net_list = []
         num_units = [512 + 1] + hidden_units
@@ -401,7 +405,7 @@ class CNN_Adversary(nn.Module):
         """
 
         # compute adversary
-        intermediate = self.net(x)
+        intermediate = self.cnn(x)
         intermediate = torch.cat([intermediate.float(), y.float().unsqueeze(1)], dim=1)
         adv = self.fc(intermediate)
 
