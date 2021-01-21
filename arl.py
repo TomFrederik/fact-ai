@@ -96,8 +96,6 @@ class ARL(pl.LightningModule):
             Adversarially reweighted loss or negative adversarially reweighted
             loss. During pretraining, only return the positive loss.
         """
-
-        print('call training_step arl')
         
         x, y, s = batch         
 
@@ -106,21 +104,15 @@ class ARL(pl.LightningModule):
             
             # logging
             self.log("training/reweighted_loss_learner", loss)
-
-            print('call training_step arl finished 1')
             
             return loss
 
         elif optimizer_idx == 1 and self.global_step > self.hparams.pretrain_steps:
             loss = self.adversary_step(x, y, s)
-
-            print('call training_step arl finished 2')
             
             return loss
 
         else:
-
-            print('call training_step arl finished 3')
             return None
 
 
@@ -137,7 +129,6 @@ class ARL(pl.LightningModule):
         """
         
         # compute unweighted bce
-        print('call forward arl')
         logits = self.learner(x)        
         bce = self.loss_fct(logits, y)
         
@@ -146,7 +137,7 @@ class ARL(pl.LightningModule):
         
         # compute reweighted loss  
         loss = torch.mean(lambdas * bce)
-        print('call forward arl finished')
+        
         return loss
      
         
@@ -163,7 +154,6 @@ class ARL(pl.LightningModule):
         """
         
         # compute unweighted bce
-        print('call adv step arl')
         logits = self.learner(x)        
         bce = self.loss_fct(logits, y)
         
@@ -172,7 +162,6 @@ class ARL(pl.LightningModule):
         
         # compute reweighted loss
         loss = -torch.mean(lambdas * bce)
-        print('call adv step arl finished')
         
         return loss        
         
@@ -216,7 +205,6 @@ class ARL(pl.LightningModule):
             Optimizers.   
             Learning-rate schedulers (currently not used).
         """
-        print('configure_optimizers')
         
         optimizer_learn = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.config["lr"], **self.hparams.opt_kwargs)
         optimizer_adv = self.hparams.optimizer(self.adversary.parameters(), lr=self.hparams.config["lr"], **self.hparams.opt_kwargs)
@@ -402,10 +390,8 @@ class CNN_Learner(nn.Module):
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        print('call forward learner')
         intermediate = self.cnn(x)
         out = self.fc(intermediate)
-        print('call forward learner finished')
 
         return torch.squeeze(out, dim=-1)
 
@@ -456,7 +442,6 @@ class CNN_Adversary(nn.Module):
         """
 
         # compute adversary
-        print('call forward adv')
         intermediate = self.cnn(x)
         intermediate = torch.cat([intermediate.float(), y.float().unsqueeze(1)], dim=1)
         adv = self.fc(intermediate)
@@ -467,5 +452,5 @@ class CNN_Adversary(nn.Module):
 
         # scale and shift
         out = x.shape[0] * adv_norm + torch.ones_like(adv_norm)
-        print('call forward adv finished')
+
         return torch.squeeze(out)

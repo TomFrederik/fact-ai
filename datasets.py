@@ -416,7 +416,6 @@ class ImageDataset(FairnessDataset):
         """
         
         # x = self._images[index].convert('RGB')
-        print('call get_item image dataset')
         x = Image.open(self._img_paths[index]).convert('RGB')
         x = self.to_tensor(x)
         x = self.normalize(x / 255)
@@ -424,8 +423,6 @@ class ImageDataset(FairnessDataset):
         y = float(self._labels[index])
 
         s = self._memberships[index].item()
-
-        print('call get_item image dataset finished')
 
         return x, y, s
 
@@ -481,7 +478,6 @@ class CustomSubset(FairnessDataset):
         self.indices = indices
 
     def __getitem__(self, idx):
-        print('call get_item custom subset')
         return self.dataset[self.indices[idx]]
 
     def __len__(self):
