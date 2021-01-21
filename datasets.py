@@ -40,17 +40,19 @@ DATASET_SETTINGS: Dict[str, Dict[str, Any]] = {
 
 
 class FairnessDataset(ABC, Dataset):
+    """Abstract base class used for CustomDataset."""
+    
     @abstractmethod
     def __getitem__(self, idx) -> Tuple[torch.Tensor, float, int]:
         pass
 
     @abstractmethod
-    def __len__(self):
+    def __len__(self) -> int:
         pass
 
     @property
     @abstractmethod
-    def protected_index2value(self):
+    def protected_index2value(self) -> List[Tuple[str, str]]:
         pass
 
     @property
@@ -86,6 +88,26 @@ class FairnessDataset(ABC, Dataset):
 
 # TODO Rename to TabularDataset
 class CustomDataset(FairnessDataset):
+    """Dataset from tabular data that can provide information about protected
+    groups amongst its elements. 
+
+    Attributes:
+        dataset_name: Identifier of the dataset used to load the data and the
+            corresponding dataset settings.
+        test: Option to use the test dataset.
+        hide_sensitive_columns: Option to remove sensitive columns from the 
+            dataset.
+        binarize_prot_group: Option to binarize the values in sensitive columns.
+            If true, the dataset will only differentiate between sensitive and 
+            non-sensitive values (e.g. 'black' and 'not black') in sensitive 
+            columns.
+        idcs: Optional; indices that specify which rows should be included in 
+            the dataset. If None, all rows are included.
+        sensitive_label: Option to use the joint probability of label and group
+            membership for computing the weights for the IPW (IPW(S+Y)).
+        disable_warnings: Option to show warnings if mean or std of the dataset
+            exceed a certain threshold after normalization.
+    """
 
     def __init__(self, dataset_name: str,
                  test: bool = False,
@@ -94,18 +116,9 @@ class CustomDataset(FairnessDataset):
                  idcs: Optional[List[int]] = None,
                  sensitive_label: bool = False,
                  disable_warnings: bool = False):
-        """
-        Dataset class for creating a dataset
-        :param dataset_name: str, identifier of the dataset
-        :param test: bool, whether to use the test set
-        :param hide_sensitive_columns: bool, whether to hide (delete) sensitive columns
-        :param binarize_prot_group: bool, whether to binarize the protected group. If true, all races other than black will be mapped to 0.
-                                    If false, a unique index for each combination of sensitive column values is created.
-        :param idcs: list, indices indicating which elements to take
-        :param sensitive_label: bool, whether to include the target variable as a protected feature
-        :param disable_warnings: bool, whether to show warnings regarding mean and std of the dataset
-        """
+
         super().__init__()
+        """Inits an instance of CustomDataset with the given attributes."""
 
         base_path = os.path.join("data", dataset_name)
         vocab_path = os.path.join(base_path, "vocabulary.json")
@@ -219,9 +232,21 @@ class CustomDataset(FairnessDataset):
         self._features = torch.stack(tensors, dim=1).float()
 
     def __len__(self):
+        """Returns the number of elements in the dataset."""
         return self.features.size(0)
 
     def __getitem__(self, index):
+        """Returns specified elements of the dataset.
+        
+        Args:
+            index: Indices of elements to return.
+            
+        Returns:
+            x: Features of the specified elements.
+            y: Labels of the specified elements.
+            s: Group memberships of the specified elements.       
+        """
+        
         x = self.features[index]
 
         y = float(self.labels[index])
@@ -234,51 +259,67 @@ class CustomDataset(FairnessDataset):
     def protected_index2value(self):
         """List that turns the index of a protected group into meaningful values.
 
-        Dataset.__getitem__() returns three values, the third of which is an integer
-        index that specifies the protected group the item belongs to.
-        With Dataset.protected_index2value[index] you can turn this into a tuple
-        such as ("White", "Male") that specifies the values of the underlying
-        sensitive attributes. The order of attributes is the same as in the
-        `sensitive_column_names` argument from `DATASET_SETTINGS`."""
+        Dataset.protected_index2value[index] turns the index of a protected group
+        into a tuple such as ("White", "Male") that specifies the values of the 
+        underlying sensitive attributes."""
         return self.index2values
 
     @property
     def features(self):
+        """Features of all elements of the dataset."""
         return self._features
 
     @property
     def dimensionality(self):
+        """Dimensionality of single dataset elements."""
         return self.features.size(1)
 
     @property
     def minority(self):
+        """Index of the protected group with the fewest members."""
         return self._minority
 
     @property
     def group_probs(self):
+        """Empirical observation probabilities of the protected groups."""
         return self._group_probs
 
     @property
     def memberships(self):
+        """Group memberships of all elements of the dataset."""
         return self._memberships
 
     @property
     def labels(self):
+        """Labels of all elements of the dataset."""
         return self._labels
 
 
 class ImageDataset(FairnessDataset):
+    """Dataset from image data that can provide information about protected
+    groups amongst its elements. 
 
-    def __init__(self, dataset_name, test=False, binarize_prot_group=False, idcs=None, sensitive_label=False):
-        """
-        Dataset class for creating a dataset
-        :param dataset_name: str, identifier of the dataset
-        :param test: bool, whether to use the test set
-        :param binarize_prot_group: bool, whether to binarize the protected group. If true, all races other than black will be mapped to 0.
-                                    If false, a unique index for each combination of sensitive column values is created.
-        :param idcs: list, indices indicating which elements to take
-        :param sensitive_label: bool, whether to include the target variable as a protected feature
-        """
+    Attributes:
+        dataset_name: Identifier of the dataset used to load the data and the
+            corresponding dataset settings.
+        test: Option to use the test dataset.
+        binarize_prot_group: Option to binarize the values in sensitive columns.
+            If true, the dataset will only differentiate between sensitive and 
+            non-sensitive values (e.g. 'black' and 'not black') in sensitive 
+            columns.
+        idcs: Optional; indices that specify which rows should be included in 
+            the dataset. If None, all rows are included.
+        sensitive_label: Option to use the joint probability of label and group
+            membership for computing the weights for the IPW (IPW(S+Y)).
+    """
+
+    def __init__(self, dataset_name: str,
+                 test: bool = False,
+                 binarize_prot_group: bool = False,
+                 idcs: Optional[List[int]] = None,
+                 sensitive_label: bool = False):
+        """Inits an instance of ImageDataset with the given attributes."""
+
         super().__init__()
 
         self.base_path = os.path.join("data", dataset_name)
@@ -344,9 +385,22 @@ class ImageDataset(FairnessDataset):
             self._group_probs = torch.true_divide(counts, torch.sum(counts).float())
 
     def __len__(self):
+        """Returns the number of elements in the dataset."""
         return self._labels.size(0)
 
     def __getitem__(self, index):
+        """Opens, converts and normalizes the images of specified elements and 
+        returns the elements.
+        
+        Args:
+            index: Indices of elements to return.
+            
+        Returns:
+            x: Images of the specified elements.
+            y: Labels of the specified elements.
+            s: Group memberships of the specified elements.       
+        """
+        
         # x = self._images[index].convert('RGB')
         print('call get_item image dataset')
         x = Image.open(self._img_paths[index]).convert('RGB')
@@ -365,49 +419,50 @@ class ImageDataset(FairnessDataset):
     def protected_index2value(self):
         """List that turns the index of a protected group into meaningful values.
 
-        Dataset.__getitem__() returns three values, the third of which is an integer
-        index that specifies the protected group the item belongs to.
-        With Dataset.protected_index2value[index] you can turn this into a tuple
-        such as ("White", "Male") that specifies the values of the underlying
-        sensitive attributes. The order of attributes is the same as in the
-        `sensitive_column_names` argument from `DATASET_SETTINGS`."""
+        Dataset.protected_index2value[index] turns the index of a protected group
+        into a tuple such as ("White", "Male") that specifies the values of the 
+        underlying sensitive attributes."""
         return self.index2values
 
-    @property
-    def features(self):
+    @property # deprecated
+    def features(self): 
         return self._images
 
     @property
     def dimensionality(self):
+        """Dimensionality of single images."""
         return self._dimensionality
 
     @property
     def minority(self):
+        """Index of the protected group with the fewest members."""
         return self._minority
 
     @property
     def group_probs(self):
+        """Empirical observation probabilities of the protected groups."""
         return self._group_probs
 
     @property
     def memberships(self):
+        """Group memberships of all elements of the dataset."""
         return self._memberships
 
     @property
     def labels(self):
+        """Labels of all elements of the dataset."""
         return self._labels
 
 
 class CustomSubset(FairnessDataset):
-    """
-    Subset of a dataset at specified indices.
+    """Subset of a dataset at specified indices.
 
     Arguments:
-        dataset (Dataset): The whole CustomDataset
-        indices (sequence): Indices in the whole set selected for subset
+        dataset: The whole CustomDataset.
+        indices: Indices in the whole set selected for subset.
     """
 
-    def __init__(self, dataset, indices):
+    def __init__(self, dataset: Dataset, indices: np.ndarray):
         self.dataset = dataset
         self.indices = indices
 
