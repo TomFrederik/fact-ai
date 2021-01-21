@@ -1,4 +1,4 @@
-from typing import Dict, Type, Optional, Any, List, Tuple
+from typing import Dict, Type, Optional, Any, List, Tuple, Set
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
@@ -16,14 +16,14 @@ class ARL(pl.LightningModule):
         pretrain_steps: Number of pretraining steps before using the DRO loss.
         prim_hidden: Number of hidden units in each layer of the primary network.
         adv_hidden: Number of hidden units in each layer of the adversary network.
-        include_labels: Option to include labels as data inputs to the adversary
-            network.
-        group_based_adversary: Option to use an adversary that has the protected
-            group memberships (but nothing else) as input. Effectively learns one
-            weight per protected group. If True, num_groups must be the set!
-            Not supported for CNN adversary.
-        num_groups: Number of protected groups. Only needs to be set when using
-            group_based_adversary.
+        adv_input: Set with strings describing the input the adversary has access to.
+            May contain any combination of 'X' for features, 'Y' for ground truth labels and 'S'
+            for protected class memberships. E.g. {'X', 'Y'} for the usual ARL method.
+            If 'S' is set, num_groups must be the set as well. This set must not be empty
+            (that would correspond to a constant adversary output, use Baseline instead).
+            Currently only has an effect if dataset_type is 'tabular'.
+        num_groups: Number of protected groups. Only needs to be set when
+            adversary has access to protected group memberships.
         optimizer: Optimizer used to update the model parameters.
         dataset_type: Type of the dataset; 'tabular' or 'image'.
         pretrained: Option to use a pretrained model if the networks are CNNs.
@@ -42,8 +42,7 @@ class ARL(pl.LightningModule):
         pretrain_steps: int,
         prim_hidden: List[int] = [64,32],
         adv_hidden: List[int] = [],
-        include_labels: bool = True,
-        group_based_adversary: bool = False,
+        adv_input: Set[str] = {'X', 'Y'},
         num_groups: Optional[int] = None,
         optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
         dataset_type: str = 'tabular',
@@ -61,11 +60,11 @@ class ARL(pl.LightningModule):
         if dataset_type == 'tabular':
             self.learner = Learner(input_shape=input_shape, hidden_units=prim_hidden)
             self.adversary = Adversary(input_shape=input_shape, hidden_units=adv_hidden,
-                                       include_labels=include_labels, group_based_adversary=group_based_adversary,
+                                       adv_input=adv_input,
                                        num_groups=num_groups)
         elif dataset_type == 'image':
-            if group_based_adversary:
-                print("group_based_adversary was set but doesn't have an effect for the CNN architecture")
+            if adv_input != {'X', 'Y'}:
+                print('CNN architecture currently only supports X+Y as adversary input')
             # only works with [3, 224, 224] images since input shape of fully connected layers must be hard-coded
             assert input_shape == [3, 224, 224], f"Input shape to ARL is {input_shape} and not [3, 224, 224]!"
             cnn = models.resnet34(pretrained=pretrained)
@@ -271,40 +270,39 @@ class Adversary(nn.Module):
     Attributes:
         input_shape: Dimensionality of the data input.
         hidden_units: Number of hidden units in each layer of the network.
-        include_labels: Option to include labels as data inputs to the network;
-            defaults to True.
-        group_based_adversary: Option to use an adversary that has the protected
-            group memberships (but nothing else) as input. Effectively learns one
-            weight per protected group. If set, input_shape is ignored.
-        num_groups: Number of protected groups. Only needs to be set if group_based_adversary
-            is used.
+        adv_input: Set with strings describing the input the adversary has access to.
+            May contain any combination of 'X' for features, 'Y' for ground truth labels and 'S'
+            for protected class memberships. E.g. {'X', 'Y'} for the usual ARL method.
+            If 'S' is set, num_groups must be the set as well. Any strings other than 'X',
+            'Y' and 'S' are ignored.
+            This set must not be empty (that would correspond to a constant adversary output, use Baseline instead).
+        num_groups: Number of protected groups. Only needs to be set if 'S' is used in adv_input.
     """
     
     def __init__(self, 
         input_shape: int,
         hidden_units: List[int] = [],
-        include_labels: bool = True,
-        group_based_adversary: bool = False,
+        adv_input: Set[str] = {'X', 'Y'},
         num_groups: Optional[int] = None,
         ):
         """Inits an instance of the adversary network with the given attributes."""
             
         super().__init__()
 
-        if group_based_adversary and num_groups is None:
-            raise ValueError("num_groups must be set when using group_based_adversary")
+        if len(adv_input) == 0:
+            raise ValueError("Adversary has no inputs!")
         
         # construct network
         net_list: List[nn.Module] = []
-        if group_based_adversary:
-            num_inputs = num_groups
-        else:
-            num_inputs = input_shape
-        if include_labels:
-            # the adversary also takes the label as input, therefore we need the +1
+        num_inputs = 0
+        if 'X' in adv_input:
+            num_inputs += input_shape
+        if 'Y' in adv_input:
             num_inputs += 1
-        self.include_labels = include_labels
-        self.group_based_adversary = group_based_adversary
+        if 'S' in adv_input:
+            assert num_groups is not None, "num_groups must be set when using protected features as input"
+            num_inputs += num_groups
+        self.adv_input = adv_input
         self.num_groups = num_groups
 
         num_units = [num_inputs] + hidden_units
@@ -328,13 +326,16 @@ class Adversary(nn.Module):
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        if self.group_based_adversary:
-            input = nn.functional.one_hot(s.long(), num_classes=self.num_groups).float()
-        else:
-            input = x
+        inputs: List[torch.Tensor] = []
+
+        if 'X' in self.adv_input:
+            inputs.append(x)
+        if 'Y' in self.adv_input:
+            inputs.append(y.unsqueeze(1).float())
+        if 'S' in self.adv_input:
+            inputs.append(nn.functional.one_hot(s.long(), num_classes=self.num_groups).float())
         
-        if self.include_labels:
-            input = torch.cat([input, y.unsqueeze(1).float()], dim=1).float()
+        input = torch.cat(inputs, dim=1).float()
 
         # compute adversary
         adv = self.net(input)
