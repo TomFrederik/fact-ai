@@ -2,7 +2,7 @@ from typing import Dict, Type, Optional, Any, List, Tuple
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
-import torchvision.models as models
+import torchvision.models as models # type: ignore
 
 
 
@@ -18,6 +18,12 @@ class ARL(pl.LightningModule):
         adv_hidden: Number of hidden units in each layer of the adversary network.
         include_labels: Option to include labels as data inputs to the adversary
             network.
+        group_based_adversary: Option to use an adversary that has the protected
+            group memberships (but nothing else) as input. Effectively learns one
+            weight per protected group. If True, num_groups must be the set!
+            Not supported for CNN adversary.
+        num_groups: Number of protected groups. Only needs to be set when using
+            group_based_adversary.
         optimizer: Optimizer used to update the model parameters.
         dataset_type: Type of the dataset; 'tabular' or 'image'.
         pretrained: Option to use a pretrained model if the networks are CNNs.
@@ -27,6 +33,9 @@ class ARL(pl.LightningModule):
         Exception: If the dataset type is neither tabular nor image data.
     """
 
+    learner: nn.Module
+    adversary: nn.Module
+
     def __init__(self, 
         config: Dict[str, Any],
         input_shape: int,
@@ -34,6 +43,8 @@ class ARL(pl.LightningModule):
         prim_hidden: List[int] = [64,32],
         adv_hidden: List[int] = [],
         include_labels: bool = True,
+        group_based_adversary: bool = False,
+        num_groups: Optional[int] = None,
         optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
         dataset_type: str = 'tabular',
         pretrained: bool = False,
@@ -49,8 +60,12 @@ class ARL(pl.LightningModule):
         # init networks
         if dataset_type == 'tabular':
             self.learner = Learner(input_shape=input_shape, hidden_units=prim_hidden)
-            self.adversary = Adversary(input_shape=input_shape, hidden_units=adv_hidden, include_labels=include_labels)
+            self.adversary = Adversary(input_shape=input_shape, hidden_units=adv_hidden,
+                                       include_labels=include_labels, group_based_adversary=group_based_adversary,
+                                       num_groups=num_groups)
         elif dataset_type == 'image':
+            if group_based_adversary:
+                print("group_based_adversary was set but doesn't have an effect for the CNN architecture")
             # only works with [3, 224, 224] images since input shape of fully connected layers must be hard-coded
             assert input_shape == [3, 224, 224], f"Input shape to ARL is {input_shape} and not [3, 224, 224]!"
             cnn = models.resnet34(pretrained=pretrained)
@@ -87,7 +102,7 @@ class ARL(pl.LightningModule):
         x, y, s = batch         
 
         if optimizer_idx == 0:
-            loss = self.learner_step(x, y)
+            loss = self.learner_step(x, y, s)
             
             # logging
             self.log("training/reweighted_loss_learner", loss)
@@ -97,7 +112,7 @@ class ARL(pl.LightningModule):
             return loss
 
         elif optimizer_idx == 1 and self.global_step > self.hparams.pretrain_steps:
-            loss = self.adversary_step(x, y)
+            loss = self.adversary_step(x, y, s)
 
             print('call training_step arl finished 2')
             
@@ -109,12 +124,13 @@ class ARL(pl.LightningModule):
             return None
 
 
-    def learner_step(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def learner_step(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
         """Computes the adversarially reweighted loss on the training set.
     
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
             y: Tensor of shape [batch_size] with labels.
+            s: Tensor of shape [batch_size] with protected group membership indices.
     
         Returns:
             Adversarially reweighted loss on the training dataset.
@@ -126,7 +142,7 @@ class ARL(pl.LightningModule):
         bce = self.loss_fct(logits, y)
         
         # compute lambdas
-        lambdas = self.adversary(x, y)
+        lambdas = self.adversary(x, y, s)
         
         # compute reweighted loss  
         loss = torch.mean(lambdas * bce)
@@ -134,12 +150,13 @@ class ARL(pl.LightningModule):
         return loss
      
         
-    def adversary_step(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def adversary_step(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
         """Computes the negative adversarially reweighted loss on the training set.
     
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
             y: Tensor of shape [batch_size] with labels.
+            s: Tensor of shape [batch_size] with protected group membership indices.
     
         Returns:
             Negative adversarially reweighted loss on the training dataset.
@@ -151,7 +168,7 @@ class ARL(pl.LightningModule):
         bce = self.loss_fct(logits, y)
         
         # compute lambdas
-        lambdas = self.adversary(x, y)
+        lambdas = self.adversary(x, y, s)
         
         # compute reweighted loss
         loss = -torch.mean(lambdas * bce)
@@ -170,7 +187,7 @@ class ARL(pl.LightningModule):
         """
         
         x, y, s = batch        
-        loss = self.learner_step(x, y)
+        loss = self.learner_step(x, y, s)
         
         # logging
         self.log("validation/reweighted_loss_learner", loss)
@@ -185,7 +202,7 @@ class ARL(pl.LightningModule):
         """
         
         x, y, s = batch 
-        loss = self.learner_step(x, y)
+        loss = self.learner_step(x, y, s)
         
         # logging
         self.log("test/reweighted_loss_learner", loss)
@@ -236,7 +253,7 @@ class Learner(nn.Module):
         super().__init__()
         
         # construct network
-        net_list: List[torch.nn.Module] = []
+        net_list: List[nn.Module] = []
         num_units = [input_shape] + hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
@@ -268,25 +285,41 @@ class Adversary(nn.Module):
         hidden_units: Number of hidden units in each layer of the network.
         include_labels: Option to include labels as data inputs to the network;
             defaults to True.
+        group_based_adversary: Option to use an adversary that has the protected
+            group memberships (but nothing else) as input. Effectively learns one
+            weight per protected group. If set, input_shape is ignored.
+        num_groups: Number of protected groups. Only needs to be set if group_based_adversary
+            is used.
     """
     
     def __init__(self, 
         input_shape: int,
         hidden_units: List[int] = [],
-        include_labels: bool = True
+        include_labels: bool = True,
+        group_based_adversary: bool = False,
+        num_groups: Optional[int] = None,
         ):
         """Inits an instance of the adversary network with the given attributes."""
             
         super().__init__()
+
+        if group_based_adversary and num_groups is None:
+            raise ValueError("num_groups must be set when using group_based_adversary")
         
         # construct network
-        net_list: List[torch.nn.Module] = []
+        net_list: List[nn.Module] = []
+        if group_based_adversary:
+            num_inputs = num_groups
+        else:
+            num_inputs = input_shape
         if include_labels:
             # the adversary also takes the label as input, therefore we need the +1
-            input_shape += 1
+            num_inputs += 1
         self.include_labels = include_labels
+        self.group_based_adversary = group_based_adversary
+        self.num_groups = num_groups
 
-        num_units = [input_shape] + hidden_units
+        num_units = [num_inputs] + hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
@@ -295,23 +328,26 @@ class Adversary(nn.Module):
 
         self.net = nn.Sequential(*net_list)
         
-    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
         """Forward propagation of inputs and labels (optional) through the 
         adversary network.
     
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
             y: Tensor of shape [batch_size] with labels.
+            s: Tensor of shape [batch_size] with protected group membership indices.
     
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        
-        if self.include_labels:
-            input = torch.cat([x, y.unsqueeze(1).float()], dim=1).float()
+        if self.group_based_adversary:
+            input = nn.functional.one_hot(s.long(), num_classes=self.num_groups).float()
         else:
             input = x
         
+        if self.include_labels:
+            input = torch.cat([input, y.unsqueeze(1).float()], dim=1).float()
+
         # compute adversary
         adv = self.net(input)
         
@@ -348,7 +384,7 @@ class CNN_Learner(nn.Module):
         # construct network
         self.cnn = cnn
 
-        net_list = []
+        net_list: List[nn.Module] = []
         num_units = [512] + hidden_units
         for i in range(len(num_units) - 1):
             net_list.append(nn.Linear(num_units[i], num_units[i + 1]))
@@ -397,7 +433,7 @@ class CNN_Adversary(nn.Module):
         # construct network and set default fc to identity for appending sample label during forward pass
         self.cnn = cnn
 
-        net_list = []
+        net_list: List[nn.Module] = []
         num_units = [512 + 1] + hidden_units
         for i in range(len(num_units) - 1):
             net_list.append(nn.Linear(num_units[i], num_units[i + 1]))
@@ -406,13 +442,14 @@ class CNN_Adversary(nn.Module):
 
         self.fc = nn.Sequential(*net_list)
 
-    def forward(self, x, y):
+    def forward(self, x, y, s):
         """Forward propagation of inputs and labels (optional) through the 
         adversary network.
     
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
             y: Tensor of shape [batch_size] with labels.
+            s: Tensor of shape [batch_size] with protected group membership indices (unused).
     
         Returns:
             Tensor of shape [batch_size] with predicted logits.
