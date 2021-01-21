@@ -32,7 +32,10 @@ print(f'Cuda available? {torch.cuda.is_available()}')
 
 
 # dict to access optimizers by name, if we need to use different opts.
-OPT_BY_NAME: Dict[str, Type[torch.optim.Optimizer]] = {'Adagrad': torch.optim.Adagrad}
+OPT_BY_NAME: Dict[str, Type[torch.optim.Optimizer]] = {
+    'Adagrad': torch.optim.Adagrad,
+    'Adam': torch.optim.Adam
+}
 
 # obscure bug fix to get ray + slurm + ptl to cooperate
 os.environ["SLURM_JOB_NAME"] = "bash"
