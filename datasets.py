@@ -9,7 +9,7 @@ import numpy as np  # type: ignore
 import json
 import itertools
 from torchvision import transforms, datasets  # type: ignore
-from PIL import Image
+from PIL import Image # type: ignore
 
 DATASET_SETTINGS: Dict[str, Dict[str, Any]] = {
     "Adult": {
@@ -190,7 +190,7 @@ class CustomDataset(FairnessDataset):
                     for i, val in enumerate(sensitive_column_values)
                 ) for index, vals in enumerate(index2values)}
         else:
-            self.index2values = index2values
+            self.index2values = {i: val for i, val in enumerate(index2values)}
 
         # remove target variable from features
         columns.remove(target_variable)
