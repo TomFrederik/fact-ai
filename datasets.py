@@ -52,7 +52,7 @@ class FairnessDataset(ABC, Dataset):
 
     @property
     @abstractmethod
-    def protected_index2value(self) -> List[Tuple[str, str]]:
+    def protected_index2value(self) -> Dict[int, Any]:
         pass
 
     @property
@@ -177,7 +177,7 @@ class CustomDataset(FairnessDataset):
         # create a list of tuples of such values. This corresponds to a list of all protected groups
         index2values = list(itertools.product(*uniques))
         # create the inverse dictionary:
-        self.values2index = {vals: index for index, vals in enumerate(index2values)}
+        values2index = {vals: index for index, vals in enumerate(index2values)}
         if binarize_prot_group:
             # We want a dictionary that assigns each protected group index
             # (e.g. 0, 1, 2, 3) to its meaning (e.g. ("Black", "Male")).
@@ -205,7 +205,7 @@ class CustomDataset(FairnessDataset):
         self._memberships = torch.empty(len(features), dtype=int) # type: ignore
         for i in range(len(self.memberships)):
             s = tuple(self.sensitives.iloc[i])
-            self._memberships[i] = self.values2index[s]
+            self._memberships[i] = values2index[s]
 
         # compute the minority group (the one with the fewest members) and group probabilities
         vals, counts = self.memberships.unique(return_counts=True)
@@ -370,11 +370,11 @@ class ImageDataset(FairnessDataset):
 
         # turn protected group memberships into a single index
         # first create lists of all the values the sensitive columns can take:
-        uniques = [tuple(features[col].unique()) for col in sensitive_column_names]
+        uniques = [tuple(frame[col].unique()) for col in sensitive_column_names]
         # create a list of tuples of such values. This corresponds to a list of all protected groups
         index2values = list(itertools.product(*uniques))
         # create the inverse dictionary:
-        self.values2index = {vals: index for index, vals in enumerate(index2values)}
+        values2index = {vals: index for index, vals in enumerate(index2values)}
         if binarize_prot_group:
             # We want a dictionary that assigns each protected group index
             # (e.g. 0, 1, 2, 3) to its meaning (e.g. ("Black", "Male")).
