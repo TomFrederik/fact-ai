@@ -370,11 +370,24 @@ class ImageDataset(FairnessDataset):
 
         # turn protected group memberships into a single index
         # first create lists of all the values the sensitive columns can take:
-        uniques = [tuple(frame[col].unique()) for col in sensitive_column_names]
+        uniques = [tuple(features[col].unique()) for col in sensitive_column_names]
         # create a list of tuples of such values. This corresponds to a list of all protected groups
-        self.index2values = itertools.product(*uniques)
+        index2values = list(itertools.product(*uniques))
         # create the inverse dictionary:
-        values2index = {vals: index for index, vals in enumerate(self.index2values)}
+        self.values2index = {vals: index for index, vals in enumerate(index2values)}
+        if binarize_prot_group:
+            # We want a dictionary that assigns each protected group index
+            # (e.g. 0, 1, 2, 3) to its meaning (e.g. ("Black", "Male")).
+            # If we have binarized protected groups, this isn't possible
+            # but we can at least get descriptions such as ("Black", "Other")
+            # i.e. the sensitive value or else "Other".
+            self.index2values = {
+                index: tuple(
+                    val if vals[i] == 1 else "Other"
+                    for i, val in enumerate(sensitive_column_values)
+                ) for index, vals in enumerate(index2values)}
+        else:
+            self.index2values = {i: val for i, val in enumerate(index2values)}
 
         sensitives = frame[sensitive_column_names]
 
