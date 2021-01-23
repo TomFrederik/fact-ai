@@ -35,6 +35,13 @@ DATASET_SETTINGS: Dict[str, Dict[str, Any]] = {
         "target_variable": "gender",
         "target_value": "Female",
         "dimensionality": [3, 224, 224]
+    },
+    "FairFace_reduced": {
+        "sensitive_column_names": ['race'],
+        "sensitive_column_values": [''],
+        "target_variable": "gender",
+        "target_value": "Female",
+        "dimensionality": [3, 80, 80]
     }
 }
 
@@ -345,6 +352,7 @@ class ImageDataset(FairnessDataset):
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
         self.test = test
+        self.dataset_name = dataset_name
         self.to_tensor = transforms.ToTensor()
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -411,6 +419,17 @@ class ImageDataset(FairnessDataset):
             vals, counts = self._memberships.unique(return_counts=True)
             self._group_probs = torch.true_divide(counts, torch.sum(counts).float())
 
+        if self.dataset_name != 'FairFace':
+            print(f'Loading Dataset {self.dataset_name} to RAM...')
+            self._imgs = []
+            for p in self._img_paths:
+                img = Image.open(p).convert('RGB')
+                img = self.to_tensor(img)
+                img = self.normalize(img / 255.0).float()
+                self._imgs.append(img)
+            print('Dataset successfully loaded.')
+
+
     def __len__(self):
         """Returns the number of elements in the dataset."""
         return self._labels.size(0)
@@ -429,9 +448,12 @@ class ImageDataset(FairnessDataset):
         """
         
         # x = self._images[index].convert('RGB')
-        x = Image.open(self._img_paths[index]).convert('RGB')
-        x = self.to_tensor(x)
-        x = self.normalize(x / 255)
+        if self.dataset_name == 'FairFace':
+            x = Image.open(self._img_paths[index]).convert('RGB')
+            x = self.to_tensor(x)
+            x = self.normalize(x / 255)
+        else:
+            x = self._imgs[index]
 
         y = float(self._labels[index])
 
