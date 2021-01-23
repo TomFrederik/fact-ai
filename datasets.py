@@ -425,8 +425,6 @@ class ImageDataset(FairnessDataset):
 
         s = self._memberships[index].item()
 
-        print('call get_item image dataset finished')
-
         return x, y, s
 
     @property
@@ -481,7 +479,6 @@ class CustomSubset(FairnessDataset):
         self.indices = indices
 
     def __getitem__(self, idx):
-        print('call get_item custom subset')
         return self.dataset[self.indices[idx]]
 
     def __len__(self):
