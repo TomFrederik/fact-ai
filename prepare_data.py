@@ -4,6 +4,9 @@ import json
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from PIL import Image
+from tqdm import tqdm
+from face_detection import RetinaFace
 
 def convert_object_type_to_category(df):
     """Converts columns of type object to category."""
@@ -197,3 +200,38 @@ del train_df['age']
 del test_df['age']
 
 save_results(train_df, test_df, base_dir, contains_numeric=False)
+
+####################
+# FairFace Reduced #
+####################
+BASE_PATH = "data/FairFace"
+BASE_PATH_NEW = "data/FairFace_reduced"
+THRESHOLD = 0.987
+
+for TEST in [False, True]:
+    idx = []
+
+    frame = pd.read_csv(os.path.join(BASE_PATH, "test.csv" if TEST else "train.csv"))
+    detector = RetinaFace()
+
+    # select images with high confidence that face is contained (prefers full front shots)
+    for i in tqdm(range(len(frame))):
+        img = Image.open(os.path.join(BASE_PATH, "images", "test" if TEST else "train", frame.iloc[i].file)).convert('RGB')
+        np_img = np.array(img)
+
+        try:
+            # moved this into try/catch as detector is sometimes unstable
+            all_faces = detector([np_img])
+            box, landmarks, score = all_faces[0][0]
+
+            if score > THRESHOLD:
+                idx.append(i)
+                resized_img = img.resize((80, 80), Image.ANTIALIAS)
+                resized_img.save(os.path.join(BASE_PATH_NEW, "images", "test" if TEST else "train", frame.iloc[i].file), quality=60)
+
+        except:
+            pass
+
+
+    sub_frame = frame.iloc[idx]
+    sub_frame.to_csv(os.path.join(BASE_PATH_NEW, "test.csv" if TEST else "train.csv"), index=False)

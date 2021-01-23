@@ -35,6 +35,13 @@ DATASET_SETTINGS: Dict[str, Dict[str, Any]] = {
         "target_variable": "gender",
         "target_value": "Female",
         "dimensionality": [3, 224, 224]
+    },
+    "FairFace_reduced": {
+        "sensitive_column_names": ['race'],
+        "sensitive_column_values": [''],
+        "target_variable": "gender",
+        "target_value": "Female",
+        "dimensionality": [3, 80, 80]
     }
 }
 
@@ -130,6 +137,7 @@ class CustomDataset(FairnessDataset):
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
         self.hide_sensitive_columns = hide_sensitive_columns
+        self.sensitive_label = sensitive_label
 
         # load data
         features = pd.read_csv(path, ',', header=0)
@@ -344,7 +352,10 @@ class ImageDataset(FairnessDataset):
         target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
+        self.sensitive_label = sensitive_label
+
         self.test = test
+        self.dataset_name = dataset_name
         self.to_tensor = transforms.ToTensor()
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -411,6 +422,17 @@ class ImageDataset(FairnessDataset):
             vals, counts = self._memberships.unique(return_counts=True)
             self._group_probs = torch.true_divide(counts, torch.sum(counts).float())
 
+        if self.dataset_name != 'FairFace':
+            print(f'Loading Dataset {self.dataset_name} to RAM...')
+            self._imgs = []
+            for p in self._img_paths:
+                img = Image.open(p).convert('RGB')
+                img = self.to_tensor(img)
+                img = self.normalize(img / 255.0).float()
+                self._imgs.append(img)
+            print('Dataset successfully loaded.')
+
+
     def __len__(self):
         """Returns the number of elements in the dataset."""
         return self._labels.size(0)
@@ -427,13 +449,12 @@ class ImageDataset(FairnessDataset):
             y: Labels of the specified elements.
             s: Group memberships of the specified elements.       
         """
-        
-        # x = self._images[index].convert('RGB')
-        x = Image.open(self._img_paths[index]).convert('RGB')
-        
-        x = self.to_tensor(x)
-        
-        x = self.normalize(x / 255)
+        if self.dataset_name == 'FairFace':
+            x = Image.open(self._img_paths[index]).convert('RGB')
+            x = self.to_tensor(x)
+            x = self.normalize(x / 255)
+        else:
+            x = self._imgs[index]
         
         y = float(self._labels[index])
         
@@ -492,6 +513,16 @@ class CustomSubset(FairnessDataset):
         self.dataset = dataset
         self.indices = indices
 
+        # calculate group probabilities for IPW
+        if self.dataset.sensitive_label:
+            prob_identifier = torch.stack([self.memberships, self.labels], dim=1)
+            vals, counts = prob_identifier.unique(return_counts=True, dim=0)
+            probs = torch.true_divide(counts, torch.sum(counts))
+            self._group_probs = probs.reshape(-1, 2)
+        else:
+            vals, counts = self.memberships.unique(return_counts=True)
+            self._group_probs = torch.true_divide(counts, torch.sum(counts).float())
+
     def __getitem__(self, idx):
         return self.dataset[self.indices[idx]]
 
@@ -516,7 +547,7 @@ class CustomSubset(FairnessDataset):
 
     @property
     def group_probs(self):
-        return self.dataset.group_probs
+        return self.group_probs
 
     @property
     def memberships(self):

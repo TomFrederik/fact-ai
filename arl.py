@@ -153,6 +153,7 @@ class ARL(pl.LightningModule):
         """
         
         # compute unweighted bce
+        
         logits = self.learner(x)        
         bce = self.loss_fct(logits, y)
         
@@ -453,5 +454,5 @@ class CNN_Adversary(nn.Module):
 
         # scale and shift
         out = x.shape[0] * adv_norm + torch.ones_like(adv_norm)
-
+        
         return torch.squeeze(out)
