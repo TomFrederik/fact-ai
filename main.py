@@ -12,6 +12,7 @@ from arl import ARL
 from dro import DRO
 from ipw import IPW
 from baseline_model import BaselineModel
+from baseline_model_cnn import BaselineModel as Baseline_CNN
 from metrics import Logger, get_all_auc_scores
 
 import argparse
@@ -245,6 +246,14 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
                               opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
         args.pretrain_steps = 0  # NO PRETRAINING
 
+    elif args.model == 'baseline_cnn':
+        model = Baseline_CNN(config=config, # for hparam tuning
+                              num_features=dataset.dimensionality,
+                              hidden_units=args.prim_hidden,
+                              optimizer=OPT_BY_NAME[args.opt],
+                              opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
+        args.pretrain_steps = 0  # NO PRETRAINING
+
 
     # if Tensorflow mode is active, we use the TF default initialization,
     # which means Xavier/Glorot uniform (with gain 1) for the weights
@@ -443,7 +452,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Model settings
-    parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required=True)
+    parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW', 'baseline_cnn'], required=True)
     parser.add_argument('--prim_hidden', nargs='*', type=int, default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', nargs='*', type=int, default=[], help='Number of hidden units in adversarial network')
     parser.add_argument('--eta', default=0.5, type=float, help='Threshold for single losses that contribute to learning objective')
