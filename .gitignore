@@ -11,3 +11,4 @@ __pycache__
 **/FairFace/**/*.jpg
 **/FairFace_reduced/**/*.jpg
 **/.vscode/**
+**/*.jpg
