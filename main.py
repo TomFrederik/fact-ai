@@ -410,8 +410,10 @@ def train(config: Dict[str, Any],
     
     # Training
     fit_time = time()
-    trainer.fit(model, train_loader, val_dataloaders=DataLoader(val_dataset, batch_size=args.eval_batch_size) if val_dataset is not None
-                                                     else DataLoader(test_dataset, batch_size=args.eval_batch_size))
+    if val_dataset is not None:
+        trainer.fit(model, train_loader, val_dataloaders=DataLoader(val_dataset, batch_size=args.eval_batch_size))
+    else:
+        trainer.fit(model, train_loader)
     print(f'time to fit was {time()-fit_time}')
 
     # necessary to make the type checker happy and since this is only run once,

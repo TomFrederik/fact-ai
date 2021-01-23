@@ -8,6 +8,6 @@ __pycache__
 /grid_search
 /grid_search_gpu_example
 /env
-**/fairface/**/*.jpg
 **/FairFace/**/*.jpg
-
+**/FairFace_reduced/**/*.jpg
+**/.vscode/**
