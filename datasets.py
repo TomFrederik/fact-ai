@@ -9,7 +9,7 @@ import numpy as np  # type: ignore
 import json
 import itertools
 from torchvision import transforms, datasets  # type: ignore
-from PIL import Image
+from PIL import Image # type: ignore
 
 DATASET_SETTINGS: Dict[str, Dict[str, Any]] = {
     "Adult": {
@@ -52,7 +52,7 @@ class FairnessDataset(ABC, Dataset):
 
     @property
     @abstractmethod
-    def protected_index2value(self) -> List[Tuple[str, str]]:
+    def protected_index2value(self) -> Dict[int, Any]:
         pass
 
     @property
@@ -177,7 +177,7 @@ class CustomDataset(FairnessDataset):
         # create a list of tuples of such values. This corresponds to a list of all protected groups
         index2values = list(itertools.product(*uniques))
         # create the inverse dictionary:
-        self.values2index = {vals: index for index, vals in enumerate(index2values)}
+        values2index = {vals: index for index, vals in enumerate(index2values)}
         if binarize_prot_group:
             # We want a dictionary that assigns each protected group index
             # (e.g. 0, 1, 2, 3) to its meaning (e.g. ("Black", "Male")).
@@ -190,7 +190,7 @@ class CustomDataset(FairnessDataset):
                     for i, val in enumerate(sensitive_column_values)
                 ) for index, vals in enumerate(index2values)}
         else:
-            self.index2values = index2values
+            self.index2values = {i: val for i, val in enumerate(index2values)}
 
         # remove target variable from features
         columns.remove(target_variable)
@@ -205,7 +205,7 @@ class CustomDataset(FairnessDataset):
         self._memberships = torch.empty(len(features), dtype=int) # type: ignore
         for i in range(len(self.memberships)):
             s = tuple(self.sensitives.iloc[i])
-            self._memberships[i] = self.values2index[s]
+            self._memberships[i] = values2index[s]
 
         # compute the minority group (the one with the fewest members) and group probabilities
         vals, counts = self.memberships.unique(return_counts=True)
@@ -372,9 +372,22 @@ class ImageDataset(FairnessDataset):
         # first create lists of all the values the sensitive columns can take:
         uniques = [tuple(frame[col].unique()) for col in sensitive_column_names]
         # create a list of tuples of such values. This corresponds to a list of all protected groups
-        self.index2values = itertools.product(*uniques)
+        index2values = list(itertools.product(*uniques))
         # create the inverse dictionary:
-        values2index = {vals: index for index, vals in enumerate(self.index2values)}
+        values2index = {vals: index for index, vals in enumerate(index2values)}
+        if binarize_prot_group:
+            # We want a dictionary that assigns each protected group index
+            # (e.g. 0, 1, 2, 3) to its meaning (e.g. ("Black", "Male")).
+            # If we have binarized protected groups, this isn't possible
+            # but we can at least get descriptions such as ("Black", "Other")
+            # i.e. the sensitive value or else "Other".
+            self.index2values = {
+                index: tuple(
+                    val if vals[i] == 1 else "Other"
+                    for i, val in enumerate(sensitive_column_values)
+                ) for index, vals in enumerate(index2values)}
+        else:
+            self.index2values = {i: val for i, val in enumerate(index2values)}
 
         sensitives = frame[sensitive_column_names]
 
@@ -416,7 +429,6 @@ class ImageDataset(FairnessDataset):
         """
         
         # x = self._images[index].convert('RGB')
-        print('call get_item image dataset')
         x = Image.open(self._img_paths[index]).convert('RGB')
         x = self.to_tensor(x)
         x = self.normalize(x / 255)

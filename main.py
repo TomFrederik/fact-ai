@@ -68,8 +68,8 @@ def main(args: argparse.Namespace):
 
     # create datasets
     if args.dataset_type == 'image':
-        dataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label)
-        test_dataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
+        dataset: FairnessDataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label)
+        test_dataset: FairnessDataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
     elif args.dataset_type == 'tabular':
         dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
         test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
@@ -209,13 +209,12 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
         model = ARL(config=config, # for hparam tuning
                     input_shape=dataset.dimensionality,
                     pretrain_steps=args.pretrain_steps,
-                    include_labels=not args.exclude_labels,
                     prim_hidden=args.prim_hidden, 
                     adv_hidden=args.adv_hidden, 
                     optimizer=OPT_BY_NAME[args.opt],
                     dataset_type=args.dataset_type,
                     pretrained=args.pretrained,
-                    group_based_adversary=args.group_based_adversary,
+                    adv_input=set(args.adv_input),
                     num_groups=len(dataset.protected_index2value),
                     opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
 
@@ -449,9 +448,8 @@ if __name__ == '__main__':
     parser.add_argument('--adv_hidden', nargs='*', type=int, default=[], help='Number of hidden units in adversarial network')
     parser.add_argument('--eta', default=0.5, type=float, help='Threshold for single losses that contribute to learning objective')
     parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
-    parser.add_argument('--exclude_labels', default=False, action='store_true', help='Don\'t pass labels to adversary. Only relevant for ARL')
-    parser.add_argument('--group_based_adversary', default=False, action='store_true', help='Give the adversary the protected group memberships (and only those) as input. Currently only has an effect for tabular data.')
     parser.add_argument('--pretrained', action='store_true', help='Whether to load a pretrained dataset from torchvision where applicable')
+    parser.add_argument('--adv_input', nargs='+', default=['X', 'Y'], help='Inputs to use for the adversary. Any combination of X (features), Y (labels) and S (protected group memberships)')
 
     # Single run settings
     parser.add_argument('--batch_size', default=256, type=int)
