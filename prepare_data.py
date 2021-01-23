@@ -7,6 +7,9 @@ from sklearn.model_selection import train_test_split
 from PIL import Image
 from tqdm import tqdm
 from face_detection import RetinaFace
+from torchvision import datasets
+import numpy as np
+import random
 
 def convert_object_type_to_category(df):
     """Converts columns of type object to category."""
@@ -235,3 +238,30 @@ for TEST in [False, True]:
 
     sub_frame = frame.iloc[idx]
     sub_frame.to_csv(os.path.join(BASE_PATH_NEW, "test.csv" if TEST else "train.csv"), index=False)
+
+#########
+# MNIST #
+#########
+mnist_trainset = datasets.MNIST(root='data', train=True, download=True, transform=None)
+mnist_testset = datasets.MNIST(root='data', train=False, download=True, transform=None)
+
+mnist_trainset_np = []
+mnist_testset_np = []
+
+for i in tqdm(range(len(mnist_trainset))):
+    img, label = mnist_trainset.__getitem__(i)
+    if (label == 8 or label == 5) and random.random() <= 0.6:
+        sample = [np.array(img), label]
+        mnist_trainset_np.append(sample)
+
+for i in tqdm(range(len(mnist_testset))):
+    img, label = mnist_testset.__getitem__(i)
+    if (label == 8 or label == 5) and random.random() <= 0.6:
+        sample = [np.array(img), label]
+        mnist_testset_np.append(sample)
+
+np.save(os.path.join('data', 'MNIST', 'mnist_trainset'), np.array(mnist_trainset_np, dtype=object))
+np.save(os.path.join('data', 'MNIST', 'mnist_testset'), np.array(mnist_testset_np, dtype=object))
+
+os.system('rm -r data/MNIST/processed')
+os.system('rm -r data/MNIST/raw')
