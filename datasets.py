@@ -430,13 +430,15 @@ class ImageDataset(FairnessDataset):
         
         # x = self._images[index].convert('RGB')
         x = Image.open(self._img_paths[index]).convert('RGB')
+        
         x = self.to_tensor(x)
+        
         x = self.normalize(x / 255)
-
+        
         y = float(self._labels[index])
-
+        
         s = self._memberships[index].item()
-
+        
         return x, y, s
 
     @property
