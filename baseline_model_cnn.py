@@ -33,14 +33,16 @@ class BaselineModel(pl.LightningModule):
 
         # construct network
         self.cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=32, kernel_size=(3, 3)),
-                                nn.MaxPool2d(kernel_size=(3, 3)),
+                                nn.MaxPool2d(kernel_size=(2, 2)),
                                 nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(3, 3)),
-                                nn.MaxPool2d(kernel_size=(3, 3)),
+                                nn.MaxPool2d(kernel_size=(2, 2)),
                                 nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3, 3)),
-                                nn.MaxPool2d(kernel_size=(3, 3)),
+                                nn.MaxPool2d(kernel_size=(2, 2)),
+                                nn.Conv2d(in_channels=128, out_channels=256, kernel_size=(3, 3)),
+                                nn.MaxPool2d(kernel_size=(2, 2)),
                                 nn.Flatten())
         net_list: List[torch.nn.Module] = []
-        num_units = [self.hparams.num_features] + self.hparams.hidden_units
+        num_units = [2304] + self.hparams.hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
@@ -61,8 +63,7 @@ class BaselineModel(pl.LightningModule):
             Tensor of shape [batch_size] with predicted logits.
         """
         intermediate = self.cnn(input)
-        print(intermediate.shape)
-        out = self.net(input).squeeze(dim=-1)
+        out = self.net(intermediate).squeeze(dim=-1)
         return out
     
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
