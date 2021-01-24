@@ -16,53 +16,64 @@ import json
 
 class Linear(pl.LightningModule):
 
-    def __init__(self, num_features, lr, index2value):
+    def __init__(self, num_features, lr, index2value, target_grp):
         super().__init__()
 
-        self.save_hyperparameters()
+        #self.save_hyperparameters()
 
         self.lr = lr
         self.index2value = index2value
-        print(index2value)
+        self.target_grp = target_grp
+        #print(index2value)
+        # {0: ('Other', 'Other'), 1: ('Other', 'Female'), 2: ('Black', 'Other'), 3: ('Black', 'Female')}
+
+        # define the mapping from s -> binary target vector
+        self.idx_mapping = self._define_idx_mapping(target_grp)
+        
 
         self.net = nn.Linear(num_features, 1)
             
         # init loss
         self.loss_fct = nn.BCEWithLogitsLoss()
 
+
+
     def forward(self, x, y):
 
         input = torch.cat([x, y.unsqueeze(1)], dim=1).float()
 
-        out = self.net(input)
+        out = self.net(input).squeeze(dim=-1)
 
         return out
     
     def training_step(self, batch, batch_idx):
 
         x, y, s = batch
-        print(s)
-        raise ValueError
+
         pred = self.forward(x, y)
 
-        loss = self.loss_fct(pred, s) # CHECK THIS
+        targets = self.idx_mapping(s).float()
+
+        loss = self.loss_fct(pred, targets) # CHECK THIS
+
+        accuracy = torch.sum(torch.round(torch.sigmoid(pred)) == targets) / targets.shape[0]
 
         self.log('training/loss', loss)
+        self.log('training/accuracy', accuracy)
 
         return loss
     
     def validation_step(self, batch, batch_idx):
 
         x, y, s = batch
-        print(s)
-        for i in s:
-            print(self.index2value[i])
-            
 
         pred = self.forward(x, y)
 
-        loss = self.loss_fct(pred, s) # CHECK THIS
-        accuracy = torch.sum(torch.round(torch.sigmoid(pred)) == s) / s.shape[0]
+        targets = self.idx_mapping(s).float()
+
+        loss = self.loss_fct(pred, targets) # CHECK THIS
+
+        accuracy = torch.sum(torch.round(torch.sigmoid(pred)) == targets) / targets.shape[0]
 
         self.log('validation/loss', loss)
         self.log('validation/accuracy', accuracy)
@@ -76,8 +87,11 @@ class Linear(pl.LightningModule):
 
         pred = self.forward(x, y)
 
-        loss = self.loss_fct(pred, s) # CHECK THIS
-        accuracy = torch.sum(torch.round(torch.sigmoid(pred)) == s) / s.shape[0]
+        targets = self.idx_mapping(s).float()
+
+        loss = self.loss_fct(pred, targets) # CHECK THIS
+
+        accuracy = torch.sum(torch.round(torch.sigmoid(pred)) == targets) / targets.shape[0]
 
         self.log('test/loss', loss)
         self.log('test/accuracy', accuracy)
@@ -89,6 +103,22 @@ class Linear(pl.LightningModule):
         optimizer = torch.optim.Adagrad(self.net.parameters(), lr=self.lr)
 
         return optimizer
+
+    def _define_idx_mapping(self, target_grp):
+        if self.target_grp == 'race':
+            def idx_mapping(x):
+                x[x == 1] = 0
+                x[x > 1] = 1
+                return x
+        elif self.target_grp == 'sex':
+            def idx_mapping(x):
+                x[x == 2] = 0
+                x[x > 0] = 1
+                return x
+        else:
+            raise ValueError(f'Unexpected value for target_grp: {self.target_group}')
+    
+        return idx_mapping
 
 
 def main(args):
@@ -122,7 +152,8 @@ def main(args):
     # set up model
     model = Linear(num_features=dataset.dimensionality + 1, # + 1 for labels
                    lr=args.learning_rate,
-                   index2value=dataset.protected_index2value) 
+                   index2value=dataset.protected_index2value,
+                   target_grp=args.target_grp) 
 
     if args.tf_mode:
         def init_weights(layer):
@@ -132,7 +163,7 @@ def main(args):
         model.apply(init_weights)
     
     # set up logger
-    logdir=f'training_logs/{args.dataset}/identifiability/version_{args.version}'
+    logdir=f'training_logs/{args.dataset}/identifiability/{args.target_grp}_version_{args.version}'
     logger = TensorBoardLogger(
         save_dir='./',
         name=logdir,
@@ -168,8 +199,11 @@ def main(args):
     print(f'time to fit was {time()-fit_time}')
 
     # load best checkpoint
+    #model = Linear.load_from_checkpoint(trainer.checkpoint.best_model_path)
     
     # eval on test set
+    #for (x,y,s) in iter(test_loader):
+    trainer.test(test_dataloaders=test_loader, ckpt_path='best')
 
 
 
@@ -181,6 +215,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
+    parser.add_argument('--target_grp', choices=['race', 'sex'], required=True, help='Whether to predict race or sex of a person')
     parser.add_argument('--seed', default=0, type=int, help='seed for reproducibility')
     parser.add_argument('--learning_rate', default=1e-3, type=float)
     parser.add_argument('--batch_size', default=256, type=int)

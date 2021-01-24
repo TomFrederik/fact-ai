@@ -137,6 +137,7 @@ class CustomDataset(FairnessDataset):
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
         self.hide_sensitive_columns = hide_sensitive_columns
+        self.sensitive_label = sensitive_label
 
         # load data
         features = pd.read_csv(path, ',', header=0)
@@ -351,6 +352,8 @@ class ImageDataset(FairnessDataset):
         target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
+        self.sensitive_label = sensitive_label
+
         self.test = test
         self.dataset_name = dataset_name
         self.to_tensor = transforms.ToTensor()
@@ -446,19 +449,17 @@ class ImageDataset(FairnessDataset):
             y: Labels of the specified elements.
             s: Group memberships of the specified elements.       
         """
-        
-        # x = self._images[index].convert('RGB')
         if self.dataset_name == 'FairFace':
             x = Image.open(self._img_paths[index]).convert('RGB')
             x = self.to_tensor(x)
             x = self.normalize(x / 255)
         else:
             x = self._imgs[index]
-
+        
         y = float(self._labels[index])
-
+        
         s = self._memberships[index].item()
-
+        
         return x, y, s
 
     @property
@@ -512,6 +513,16 @@ class CustomSubset(FairnessDataset):
         self.dataset = dataset
         self.indices = indices
 
+        # calculate group probabilities for IPW
+        if self.dataset.sensitive_label:
+            prob_identifier = torch.stack([self.memberships, self.labels], dim=1)
+            vals, counts = prob_identifier.unique(return_counts=True, dim=0)
+            probs = torch.true_divide(counts, torch.sum(counts))
+            self._group_probs = probs.reshape(-1, 2)
+        else:
+            vals, counts = self.memberships.unique(return_counts=True)
+            self._group_probs = torch.true_divide(counts, torch.sum(counts).float())
+
     def __getitem__(self, idx):
         return self.dataset[self.indices[idx]]
 
@@ -536,7 +547,7 @@ class CustomSubset(FairnessDataset):
 
     @property
     def group_probs(self):
-        return self.dataset.group_probs
+        return self.group_probs
 
     @property
     def memberships(self):
