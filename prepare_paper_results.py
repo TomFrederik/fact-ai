@@ -37,4 +37,4 @@ for item in files:
     results["minority_auc"] = raw["subgroups"][-1]
 
     with item.open('w') as f:
-        json.dump(results, f)
+        json.dump(results, f, indent=4)
