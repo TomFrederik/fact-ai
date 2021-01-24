@@ -265,3 +265,32 @@ np.save(os.path.join('data', 'MNIST', 'mnist_testset'), np.array(mnist_testset_n
 
 os.system('rm -r data/MNIST/processed')
 os.system('rm -r data/MNIST/raw')
+
+######################
+# EMNIST with Colors #
+######################
+mnist_trainset = datasets.EMNIST(root='data', split='balanced', train=True, download=True, transform=None)
+mnist_testset = datasets.EMNIST(root='data', split='balanced', train=False, download=True, transform=None)
+
+for t in ['train', 'test']:
+    dataset = mnist_trainset if t == 'train' else mnist_testset
+    new_dataset = []
+    for i in tqdm(range(len(dataset))):
+        x, original_label = dataset.__getitem__(i)
+        y = int(original_label >= 24)
+
+        if (original_label % 2 == 0 and random.random() <= 0.9) or (original_label % 2 == 1 and random.random() <= 0.1):
+            if random.random() <= 0.3:
+                continue
+
+            r, g, b = x.convert('RGB').split()
+            r = Image.fromarray(np.array(r) * 0)
+            s = Image.merge('RGB', (r, g, b))
+
+        else:
+            s = x.convert('RGB')
+
+        new_dataset.append([x, y, s])
+
+    np.save(os.path.join("data", "EMNIST", t + '_prepared'), np.array(new_dataset, dtype=object))
+
