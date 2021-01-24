@@ -113,6 +113,7 @@ class TabularDataset(FairnessDataset):
             membership for computing the weights for the IPW (IPW(S+Y)).
         disable_warnings: Option to show warnings if mean or std of the dataset
             exceed a certain threshold after normalization.
+        suffix: Option to specify suffix of dataset files
     """
 
     def __init__(self, dataset_name: str,
@@ -121,14 +122,15 @@ class TabularDataset(FairnessDataset):
                  binarize_prot_group: bool = True,
                  idcs: Optional[List[int]] = None,
                  sensitive_label: bool = False,
-                 disable_warnings: bool = False):
+                 disable_warnings: bool = False,
+                 suffix: str = ''):
 
         super().__init__()
         """Inits an instance of TabularDataset with the given attributes."""
 
         base_path = os.path.join("data", dataset_name)
         vocab_path = os.path.join(base_path, "vocabulary.json")
-        path = os.path.join(base_path, "test.csv" if test else "train.csv")
+        path = os.path.join(base_path, f"test{suffix}.csv" if test else f"train{suffix}.csv")
         mean_std_path = os.path.join(base_path, "mean_std.json")
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"].copy()
         sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"].copy()
