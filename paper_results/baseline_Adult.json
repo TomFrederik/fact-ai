@@ -1,18 +1,18 @@
 {
-  "min_auc": {
-    "mean": 0.875,
-    "std": 0.0241
-  },
-  "macro_avg_auc": {
-    "mean": 0.88725,
-    "std": 0.0038
-  },
-  "micro_avg_auc": {
-    "mean": 0.898,
-    "std": 0.0005
-  },
-  "minority_auc": {
-    "mean": 0.875,
-    "std": 0.0241
-  }
+    "min_auc": {
+        "mean": 0.875,
+        "std": 0.0241
+    },
+    "macro_avg_auc": {
+        "mean": 0.88725,
+        "std": 0.0038
+    },
+    "micro_avg_auc": {
+        "mean": 0.898,
+        "std": 0.0005
+    },
+    "minority_auc": {
+        "mean": 0.875,
+        "std": 0.0241
+    }
 }
