@@ -268,7 +268,7 @@ class CustomDataset(FairnessDataset):
             y: Labels of the specified elements.
             s: Group memberships of the specified elements.       
         """
-        
+
         x = self.features[index]
 
         y = float(self.labels[index])
@@ -317,7 +317,7 @@ class CustomDataset(FairnessDataset):
         return self._labels
 
 
-class ImageDataset(FairnessDataset):
+class colorMNISTDataset(FairnessDataset):
     """Dataset from image data that can provide information about protected
     groups amongst its elements. 
 
@@ -344,6 +344,124 @@ class ImageDataset(FairnessDataset):
 
         super().__init__()
 
+
+        self.sensitive_label = sensitive_label
+
+        self.test = test
+        self.dataset_name = dataset_name
+        self.to_tensor = transforms.ToTensor()
+        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+        if self.test:
+            self._data = list(np.load(os.path.join('data', 'EMNIST', 'test_prepared.npy'), allow_pickle=True))
+        else:
+            self._data = list(np.load(os.path.join('data', 'EMNIST', 'train_prepared.npy'), allow_pickle=True))
+
+        self._dimensionality = np.array(self._data[0][0]).shape
+        self._features = torch.stack([self.to_tensor(d[0]) for d in self._data])
+        self.index2values = ['protected', 'unprotected']
+        protected_prob = np.mean([d[3] for d in self._data])
+        self._group_probs = np.array([protected_prob, 1 - protected_prob])
+        self._memberships = torch.Tensor([d[3] for d in self._data])
+        self._labels = torch.Tensor([d[2] for d in self._data])
+
+    def __len__(self):
+        """Returns the number of elements in the dataset."""
+        return len(self._data)
+
+    def __getitem__(self, index):
+        """Opens, converts and normalizes the images of specified elements and 
+        returns the elements.
+        
+        Args:
+            index: Indices of elements to return.
+            
+        Returns:
+            x: Images of the specified elements.
+            y: Labels of the specified elements.
+            s: Group memberships of the specified elements.       
+        """
+        
+        # x = self._images[index].convert('RGB')
+        x, x_protected, y, s = self._data[index]
+
+        x = self.to_tensor(x)
+
+        y = float(y)
+
+        x_protected = self.to_tensor(x_protected)
+
+        input = torch.stack([x, x_protected])
+
+        return input, y, s
+
+    @property
+    def protected_index2value(self):
+        """List that turns the index of a protected group into meaningful values.
+
+        Dataset.protected_index2value[index] turns the index of a protected group
+        into a tuple such as ("White", "Male") that specifies the values of the 
+        underlying sensitive attributes."""
+        return self.index2values
+
+    @property # deprecated
+    def features(self): 
+        return self._features
+
+    @property
+    def dimensionality(self):
+        """Dimensionality of single images."""
+        return self._dimensionality
+
+    @property
+    def minority(self):
+        """Index of the protected group with the fewest members."""
+        return 0
+        # return self._minority
+
+    @property
+    def group_probs(self):
+        """Empirical observation probabilities of the protected groups."""
+        return self._group_probs
+
+    @property
+    def memberships(self):
+        """Group memberships of all elements of the dataset."""
+        return self._memberships
+
+    @property
+    def labels(self):
+        """Labels of all elements of the dataset."""
+        return self._labels
+
+
+class ImageDataset(FairnessDataset):
+    """Dataset from image data that can provide information about protected
+    groups amongst its elements.
+
+    Attributes:
+        dataset_name: Identifier of the dataset used to load the data and the
+            corresponding dataset settings.
+        test: Option to use the test dataset.
+        binarize_prot_group: Option to binarize the values in sensitive columns.
+            If true, the dataset will only differentiate between sensitive and
+            non-sensitive values (e.g. 'black' and 'not black') in sensitive
+            columns.
+        idcs: Optional; indices that specify which rows should be included in
+            the dataset. If None, all rows are included.
+        sensitive_label: Option to use the joint probability of label and group
+            membership for computing the weights for the IPW (IPW(S+Y)).
+    """
+
+    def __init__(self, dataset_name: str,
+                 test: bool = False,
+                 binarize_prot_group: bool = False,
+                 idcs: Optional[List[int]] = None,
+                 sensitive_label: bool = False):
+        """Inits an instance of ImageDataset with the given attributes."""
+
+        super().__init__()
+
         self.base_path = os.path.join("data", dataset_name)
         path = os.path.join(self.base_path, "test.csv" if test else "train.csv")
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"].copy()
@@ -351,8 +469,6 @@ class ImageDataset(FairnessDataset):
         self._dimensionality = DATASET_SETTINGS[dataset_name]["dimensionality"].copy()
         target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
-
-        self.sensitive_label = sensitive_label
 
         self.test = test
         self.dataset_name = dataset_name
@@ -372,7 +488,7 @@ class ImageDataset(FairnessDataset):
         self._labels = torch.from_numpy(self._labels)
 
         self._img_paths = [os.path.join(os.getcwd(), self.base_path, 'images', 'test' if self.test else 'train', img_path) for img_path in
-                          frame['file'].to_list()]
+                           frame['file'].to_list()]
 
         # if set, will binarize group values in the sensitive columns. If not set, check if values should be transformed to numbers instead
         if binarize_prot_group:
@@ -432,22 +548,21 @@ class ImageDataset(FairnessDataset):
                 self._imgs.append(img)
             print('Dataset successfully loaded.')
 
-
     def __len__(self):
         """Returns the number of elements in the dataset."""
         return self._labels.size(0)
 
     def __getitem__(self, index):
-        """Opens, converts and normalizes the images of specified elements and 
+        """Opens, converts and normalizes the images of specified elements and
         returns the elements.
-        
+
         Args:
             index: Indices of elements to return.
-            
+
         Returns:
             x: Images of the specified elements.
             y: Labels of the specified elements.
-            s: Group memberships of the specified elements.       
+            s: Group memberships of the specified elements.
         """
         if self.dataset_name == 'FairFace':
             x = Image.open(self._img_paths[index]).convert('RGB')
@@ -467,12 +582,12 @@ class ImageDataset(FairnessDataset):
         """List that turns the index of a protected group into meaningful values.
 
         Dataset.protected_index2value[index] turns the index of a protected group
-        into a tuple such as ("White", "Male") that specifies the values of the 
+        into a tuple such as ("White", "Male") that specifies the values of the
         underlying sensitive attributes."""
         return self.index2values
 
-    @property # deprecated
-    def features(self): 
+    @property  # deprecated
+    def features(self):
         return self._images
 
     @property
@@ -573,5 +688,7 @@ if __name__ == '__main__':
 
     # fairface_dataset = ImageDataset("FairFace")
     # print('\n\nExample 1 of FairFace set: \n',fairface_dataset[1][0].shape)
+
+    mnist_dataset = MNISTDataset("MNIST")
 
     pass

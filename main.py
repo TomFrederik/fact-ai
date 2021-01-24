@@ -7,7 +7,7 @@ from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
-from datasets import CustomDataset, CustomSubset, FairnessDataset, ImageDataset
+from datasets import CustomDataset, CustomSubset, FairnessDataset, ImageDataset, colorMNISTDataset
 from arl import ARL
 from dro import DRO
 from ipw import IPW
@@ -68,7 +68,10 @@ def main(args: argparse.Namespace):
     np.random.seed(args.seed)
 
     # create datasets
-    if args.dataset_type == 'image':
+    if args.dataset == 'colorMNIST':
+        dataset: FairnessDataset = colorMNISTDataset(args.dataset, sensitive_label=args.sensitive_label)
+        test_dataset: FairnessDataset = colorMNISTDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
+    elif args.dataset_type == 'image':
         dataset: FairnessDataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label)
         test_dataset: FairnessDataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
     elif args.dataset_type == 'tabular':
@@ -480,7 +483,7 @@ if __name__ == '__main__':
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced', 'colorMNIST'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--sensitive_label', default=False, action='store_true', help='If True, target label will be included in list of sensitive columns; used for IPW(S+Y)')
@@ -491,7 +494,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['FairFace', 'FairFace_reduced'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['FairFace', 'FairFace_reduced', 'colorMNIST'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop
