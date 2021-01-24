@@ -2,12 +2,13 @@
 
 #SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:0
-#SBATCH --job-name=baseline_adult_gridsearch
+#SBATCH --job-name=IPWS_adult_seed_avg
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
+#SBATCH --cpus-per-task=3
+#SBATCH --array=1-10%2
 #SBATCH --time=04:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=outputs/baseline_Adult_gridsearch_%A.out
+#SBATCH --output=outputs/IPWS_Adult_avg_%a_%A.out
 
 module purge
 module load 2019
@@ -23,6 +24,8 @@ cd $HOME/fact-ai/
 # Activate environment
 source activate fact-ai-lisa
 
+HPARAMS_FILE=./job_scripts/100k_runs/hparams/IPWS_Adult.txt
+
 # Run code
-srun python -u main.py --model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --tf_mode --train_steps 100000
+srun python -u main.py $(head -$SLURM_ARRAY_TASK_ID $HPARAMS_FILE | tail -1)
 

@@ -35,6 +35,8 @@ def get_max_per_dataset(dataset, index2key, results):
 
     # load results in to np array
     for i, model in enumerate(models):
+        if model == 'DRO' and dataset == 'Adult':
+            continue
         model_results = results[f'{model}_{dataset}']
         for j in range(len(index2key)):
             key = index2key[j]
@@ -71,15 +73,17 @@ def main(args):
     # create table
     table = ''
     for dataset in datasets:
-        max_idcs = get_max_per_dataset(dataset, index2key)
+        max_idcs = get_max_per_dataset(dataset, index2key, results)
         for i, model in enumerate(models):
+            if model == 'DRO' and dataset == 'Adult':
+                continue
             result_entry = results[f'{model}_{dataset}']
             new_line = create_line(model, dataset, result_entry, max_idcs[i], index2key)
             table += new_line
 
 
     # save table
-    with open('table_1.txt','w') as f:
+    with open(f'table_1_seed_run_version_{args.seed_run_version}.txt','w') as f:
         f.write(table)
 
 

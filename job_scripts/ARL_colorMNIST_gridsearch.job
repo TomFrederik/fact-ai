@@ -1,13 +1,13 @@
 #!/bin/bash
 
 #SBATCH --partition=gpu_shared_course
-#SBATCH --gres=gpu:0
-#SBATCH --job-name=baseline_adult_gridsearch
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=ARL_colorMNIST_gridsearch
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
+#SBATCH --cpus-per-task=4
 #SBATCH --time=04:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=outputs/baseline_Adult_gridsearch_%A.out
+#SBATCH --output=outputs/ARL_colorMNIST_gridsearch_%A.out
 
 module purge
 module load 2019
@@ -24,5 +24,4 @@ cd $HOME/fact-ai/
 source activate fact-ai-lisa
 
 # Run code
-srun python -u main.py --model baseline --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --tf_mode --train_steps 100000
-
+srun python -u main.py --model ARL --dataset colorMNIST --num_cpus 2

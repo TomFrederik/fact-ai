@@ -374,7 +374,7 @@ class CNN_Learner(nn.Module):
                                  nn.MaxPool2d(kernel_size=(2, 2)),
                                  nn.Flatten())
         net_list: List[torch.nn.Module] = []
-        num_units = [3200] + hidden_units
+        num_units = [10816] + hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
@@ -421,7 +421,7 @@ class CNN_Adversary(nn.Module):
                                  nn.MaxPool2d(kernel_size=(2, 2)),
                                  nn.Flatten())
         net_list: List[torch.nn.Module] = []
-        num_units = [3200] + hidden_units
+        num_units = [10816] + hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())

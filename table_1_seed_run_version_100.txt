@@ -1,0 +1,8 @@
+Adult & baseline & \textbf{0.9106} $\pm$ \textbf{0.0009} & \textbf{0.9197} $\pm$ \textbf{0.0015} & \textbf{0.8854} $\pm$ \textbf{0.0010} & \textbf{0.9430} $\pm$ \textbf{0.0042} & 0.8523 $\pm$ 0.0049\\
+Adult & ARL & 0.9098 $\pm$ 0.0007 & 0.9182 $\pm$ 0.0006 & 0.8852 $\pm$ 0.0009 & 0.9400 $\pm$ 0.0025 & \textbf{0.8540} $\pm$ \textbf{0.0020}\\
+LSAC & baseline & \textbf{0.8370} $\pm$ \textbf{0.0037} & \textbf{0.8295} $\pm$ \textbf{0.0044} & \textbf{0.8151} $\pm$ \textbf{0.0045} & \textbf{0.8347} $\pm$ \textbf{0.0086} & \textbf{0.8655} $\pm$ \textbf{0.0036}\\
+LSAC & DRO & 0.8291 $\pm$ 0.0043 & 0.8219 $\pm$ 0.0048 & 0.8084 $\pm$ 0.0063 & 0.8284 $\pm$ 0.0148 & 0.8587 $\pm$ 0.0041\\
+LSAC & ARL & 0.8208 $\pm$ 0.0052 & 0.8130 $\pm$ 0.0058 & 0.7983 $\pm$ 0.0067 & 0.8227 $\pm$ 0.0087 & 0.8025 $\pm$ 0.0147\\
+COMPAS & baseline & 0.7356 $\pm$ 0.0024 & 0.7340 $\pm$ 0.0030 & 0.6998 $\pm$ 0.0027 & \textbf{0.7552} $\pm$ \textbf{0.0071} & 0.6731 $\pm$ 0.0054\\
+COMPAS & DRO & 0.7361 $\pm$ 0.0031 & \textbf{0.7348} $\pm$ \textbf{0.0032} & 0.7004 $\pm$ 0.0028 & 0.7509 $\pm$ 0.0101 & 0.6697 $\pm$ 0.0075\\
+COMPAS & ARL & \textbf{0.7364} $\pm$ \textbf{0.0026} & 0.7347 $\pm$ 0.0032 & \textbf{0.7008} $\pm$ \textbf{0.0023} & 0.7481 $\pm$ 0.0080 & \textbf{0.6756} $\pm$ \textbf{0.0091}\\
