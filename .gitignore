@@ -13,3 +13,4 @@ __pycache__
 **/.vscode/**
 **/*.jpg
 /data/EMNIST/
+/data/colorMNIST/
