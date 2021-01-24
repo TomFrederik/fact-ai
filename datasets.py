@@ -657,7 +657,7 @@ class CustomSubset(FairnessDataset):
 
     @property
     def group_probs(self):
-        return self.group_probs
+        return self._group_probs
 
     @property
     def memberships(self):
