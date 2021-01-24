@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import DataLoader
-from datasets import CustomDataset, CustomSubset
+from datasets import TabularDataset, CustomSubset
 
 import numpy as np
 
@@ -134,8 +134,8 @@ def main(args):
 
     ## create train, val, test dataset
     # TODO: do this for images as well?
-    dataset = CustomDataset(args.dataset, disable_warnings=args.disable_warnings)
-    test_dataset = CustomDataset(args.dataset, test=True, disable_warnings=args.disable_warnings)
+    dataset = TabularDataset(args.dataset, disable_warnings=args.disable_warnings)
+    test_dataset = TabularDataset(args.dataset, test=True, disable_warnings=args.disable_warnings)
     
     # train val split
     all_idcs = np.random.permutation(np.arange(0, len(dataset), 1))

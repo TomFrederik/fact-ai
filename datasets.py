@@ -47,7 +47,7 @@ DATASET_SETTINGS: Dict[str, Dict[str, Any]] = {
 
 
 class FairnessDataset(ABC, Dataset):
-    """Abstract base class used for CustomDataset."""
+    """Abstract base class used for TabularDataset."""
     
     @abstractmethod
     def __getitem__(self, idx) -> Tuple[torch.Tensor, float, int]:
@@ -93,8 +93,7 @@ class FairnessDataset(ABC, Dataset):
         pass
 
 
-# TODO Rename to TabularDataset
-class CustomDataset(FairnessDataset):
+class TabularDataset(FairnessDataset):
     """Dataset from tabular data that can provide information about protected
     groups amongst its elements. 
 
@@ -125,7 +124,7 @@ class CustomDataset(FairnessDataset):
                  disable_warnings: bool = False):
 
         super().__init__()
-        """Inits an instance of CustomDataset with the given attributes."""
+        """Inits an instance of TabularDataset with the given attributes."""
 
         base_path = os.path.join("data", dataset_name)
         vocab_path = os.path.join(base_path, "vocabulary.json")
@@ -335,12 +334,11 @@ class colorMNISTDataset(FairnessDataset):
             membership for computing the weights for the IPW (IPW(S+Y)).
     """
 
-    def __init__(self, dataset_name: str,
+    def __init__(self,
                  test: bool = False,
-                 binarize_prot_group: bool = False,
                  idcs: Optional[List[int]] = None,
                  sensitive_label: bool = False):
-        """Inits an instance of ImageDataset with the given attributes."""
+        """Inits an instance of FairFaceDataset with the given attributes."""
 
         super().__init__()
 
@@ -348,16 +346,18 @@ class colorMNISTDataset(FairnessDataset):
         self.sensitive_label = sensitive_label
 
         self.test = test
-        self.dataset_name = dataset_name
         self.to_tensor = transforms.ToTensor()
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         if self.test:
-            self._data = list(np.load(os.path.join('data', 'EMNIST', 'test_prepared.npy'), allow_pickle=True))
+            self._data = np.load(os.path.join('data', 'EMNIST', 'test_prepared.npy'), allow_pickle=True)
         else:
-            self._data = list(np.load(os.path.join('data', 'EMNIST', 'train_prepared.npy'), allow_pickle=True))
+            self._data = np.load(os.path.join('data', 'EMNIST', 'train_prepared.npy'), allow_pickle=True)
 
-        self._dimensionality = np.array(self._data[0][0]).shape
+        if idcs is not None:
+            self._data = self._data[idcs]
+
+        self._dimensionality = np.array(self._data[0, 0]).shape
         self._features = torch.stack([self.to_tensor(d[0]) for d in self._data])
         self.index2values = ['protected', 'unprotected']
         protected_prob = np.mean([d[3] for d in self._data])
@@ -435,7 +435,7 @@ class colorMNISTDataset(FairnessDataset):
         return self._labels
 
 
-class ImageDataset(FairnessDataset):
+class FairFaceDataset(FairnessDataset):
     """Dataset from image data that can provide information about protected
     groups amongst its elements.
 
@@ -458,7 +458,7 @@ class ImageDataset(FairnessDataset):
                  binarize_prot_group: bool = False,
                  idcs: Optional[List[int]] = None,
                  sensitive_label: bool = False):
-        """Inits an instance of ImageDataset with the given attributes."""
+        """Inits an instance of FairFaceDataset with the given attributes."""
 
         super().__init__()
 
@@ -620,7 +620,7 @@ class CustomSubset(FairnessDataset):
     """Subset of a dataset at specified indices.
 
     Arguments:
-        dataset: The whole CustomDataset.
+        dataset: The whole TabularDataset.
         indices: Indices in the whole set selected for subset.
     """
 
@@ -674,21 +674,19 @@ class CustomSubset(FairnessDataset):
 
 
 if __name__ == '__main__':
-    # adult_dataset = CustomDataset("Adult")
+    # adult_dataset = TabularDataset("Adult")
     # print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
 
-    # compas_dataset = CustomDataset('COMPAS')
+    # compas_dataset = TabularDataset('COMPAS')
     # print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
 
-    # lsac_dataset = CustomDataset('LSAC')
+    # lsac_dataset = TabularDataset('LSAC')
     # print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
     # indices = [1,2,3,4]
     # subsetloader = DataLoader(lsac_dataset, batch_size=3, sampler=SubsetRandomSampler(indices))
     # print('\n\nFirst batch in subsetloader:\n',next(enumerate(subsetloader)))
 
-    # fairface_dataset = ImageDataset("FairFace")
+    # fairface_dataset = FairFaceDataset("FairFace")
     # print('\n\nExample 1 of FairFace set: \n',fairface_dataset[1][0].shape)
-
-    mnist_dataset = MNISTDataset("MNIST")
 
     pass

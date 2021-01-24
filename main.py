@@ -7,7 +7,7 @@ from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
-from datasets import CustomDataset, CustomSubset, FairnessDataset, ImageDataset, colorMNISTDataset
+from datasets import TabularDataset, CustomSubset, FairnessDataset, FairFaceDataset, colorMNISTDataset
 from arl import ARL
 from dro import DRO
 from ipw import IPW
@@ -69,14 +69,14 @@ def main(args: argparse.Namespace):
 
     # create datasets
     if args.dataset == 'colorMNIST':
-        dataset: FairnessDataset = colorMNISTDataset(args.dataset, sensitive_label=args.sensitive_label)
-        test_dataset: FairnessDataset = colorMNISTDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
-    elif args.dataset_type == 'image':
-        dataset: FairnessDataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label)
-        test_dataset: FairnessDataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
-    elif args.dataset_type == 'tabular':
-        dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
-        test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
+        dataset: FairnessDataset = colorMNISTDataset()
+        test_dataset: FairnessDataset = colorMNISTDataset(test=True)
+    elif args.dataset == 'FairFace':
+        dataset: FairnessDataset = FairFaceDataset(args.dataset, sensitive_label=args.sensitive_label)
+        test_dataset: FairnessDataset = FairFaceDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
+    else:
+        dataset = TabularDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
+        test_dataset = TabularDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
     
     # init config dictionary
     config: Dict[str, Any] = {}
