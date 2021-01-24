@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import DataLoader
-from datasets import CustomDataset, CustomSubset
+from datasets import TabularDataset, CustomSubset
 
 import numpy as np
 
