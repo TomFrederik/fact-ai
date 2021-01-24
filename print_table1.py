@@ -60,10 +60,29 @@ def get_max_per_dataset(dataset):
             means[i,j] = model_results[key]['mean']
     
     # compute argmax
-    idcs[np.argmax(means, axis=0)] = 1
-
+    idcs[np.argmax(means, axis=0), np.arange(len(index2key))] = 1
     return idcs
 
+
+models = ['baseline', 'DRO', 'ARL']
+datasets = ['Adult', 'LSAC', 'COMPAS']
+
+# load results
+results = {}
+
+for (model, dataset) in itertools.product(models, datasets):
+    path = get_path('./training_logs', model, dataset)
+    with open(path) as f:
+        new_dict = json.load(f)
+    results[f'{model}_{dataset}'] = new_dict
+
+key2index = {'micro_avg_auc':0, 'macro_avg_auc':1, 'min_auc':2, 'minority_auc':3, 'accuracy':4}
+index2key = [0]*len(key2index)
+for key in key2index:
+    index2key[key2index[key]] = key
+
+
+# create table
 table = ''
 for dataset in datasets:
     max_idcs = get_max_per_dataset(dataset)

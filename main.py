@@ -12,6 +12,7 @@ from arl import ARL
 from dro import DRO
 from ipw import IPW
 from baseline_model import BaselineModel
+from arl_cnn_test import ARL as ARL_CNN
 from baseline_model_cnn import BaselineModel as Baseline_CNN
 from metrics import Logger, get_all_auc_scores
 
@@ -209,7 +210,20 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
     """
     
     model: pl.LightningModule
-    if args.model == 'ARL':
+    if args.model == 'ARL' and args.dataset == 'colorMNIST':
+        model = ARL_CNN(config=config, # for hparam tuning
+                    input_shape=dataset.dimensionality,
+                    pretrain_steps=args.pretrain_steps,
+                    prim_hidden=args.prim_hidden,
+                    adv_hidden=args.adv_hidden,
+                    optimizer=OPT_BY_NAME[args.opt],
+                    dataset_type=args.dataset_type,
+                    pretrained=args.pretrained,
+                    adv_input=set(args.adv_input),
+                    num_groups=len(dataset.protected_index2value),
+                    opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
+
+    elif args.model == 'ARL':
         model = ARL(config=config, # for hparam tuning
                     input_shape=dataset.dimensionality,
                     pretrain_steps=args.pretrain_steps,
