@@ -372,8 +372,6 @@ class CNN_Learner(nn.Module):
         # construct network
         self.cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=64, kernel_size=(3, 3)),
                                  nn.MaxPool2d(kernel_size=(2, 2)),
-                                 nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3, 3)),
-                                 nn.MaxPool2d(kernel_size=(2, 2)),
                                  nn.Flatten())
         net_list: List[torch.nn.Module] = []
         num_units = [3200] + hidden_units
@@ -420,8 +418,6 @@ class CNN_Adversary(nn.Module):
 
         # construct network
         self.cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=64, kernel_size=(3, 3)),
-                                 nn.MaxPool2d(kernel_size=(2, 2)),
-                                 nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3, 3)),
                                  nn.MaxPool2d(kernel_size=(2, 2)),
                                  nn.Flatten())
         net_list: List[torch.nn.Module] = []
