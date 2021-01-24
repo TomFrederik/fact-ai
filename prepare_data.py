@@ -47,7 +47,7 @@ def build_vocab(df, base_dir):
     with open(output_file_path, mode="w") as output_file:
         json.dump(vocab_dict, output_file)
 
-def build_mean_std(df, base_dir):
+def build_mean_std(df, base_dir, suffix=''):
     description = df.describe().to_dict()
     mean_std_dict = {}
     for key, value in description.items():
@@ -55,7 +55,7 @@ def build_mean_std(df, base_dir):
         print(value)
         mean_std_dict[key] = [value['mean'], value['std']]
 
-    output_file_path = os.path.join(base_dir, 'mean_std.json')
+    output_file_path = os.path.join(base_dir, f'mean_std{suffix}.json')
     with open(output_file_path, mode="w") as output_file:
         json.dump(mean_std_dict, output_file)
 
@@ -65,9 +65,8 @@ def save_results(train_df, test_df, base_dir, contains_numeric=True, suffix='', 
 
     if not skip_vocab:
         build_vocab(train_df, base_dir)
-    
     if contains_numeric:
-        build_mean_std(train_df, base_dir)
+        build_mean_std(train_df, base_dir, suffix)
     
 
 ##########
@@ -177,13 +176,23 @@ test_df = load_df(test_file, columns=columns, skiprows=1)
 # Remove the dot in the income column
 test_df['income'] = test_df['income'].apply(lambda x: x[:-1])
 
-save_results(train_df, test_df, base_dir, skip_vocab=True)
+print('Frequencies sex in train:')
+print(train_df.groupby('sex').count() / len(train_df))
+print('Frequencies sex in test:')
+print(test_df.groupby('sex').count() / len(test_df))
 
+save_results(train_df, test_df, base_dir)
+
+'''
 ### approach 1: throw away test file and re-split train file
 all_idcs = np.random.permutation(np.arange(len(train_df)))
 train_idcs, test_idcs = all_idcs[:int(len(all_idcs) * 0.7)], all_idcs[int(len(all_idcs) * 0.7):]
 train_only_test_df = train_df.iloc[test_idcs,:]
 train_only_train_df = train_df.iloc[train_idcs,:]
+print('Frequencies sex in only_train train:')
+print(train_only_train_df.groupby('sex').count()/len(train_only_train_df))
+print('Frequencies sex in only_train test:')
+print(train_only_test_df.groupby('sex').count()/len(train_only_test_df))
 
 save_results(train_only_train_df, train_only_test_df, base_dir, suffix='_only_train', skip_vocab=True)
 ###
@@ -194,11 +203,15 @@ all_idcs = np.random.permutation(np.arange(len(concat_df)))
 train_idcs, test_idcs = all_idcs[:int(len(all_idcs) * 0.7)], all_idcs[int(len(all_idcs) * 0.7):]
 concat_test_df = concat_df.iloc[test_idcs,:]
 concat_train_df = concat_df.iloc[train_idcs,:]
+print('Frequencies sex in train:')
+print(concat_train_df.groupby('sex').count()/len(concat_train_df))
+print('Frequencies sex in test:')
+print(concat_test_df.groupby('sex').count()/len(concat_test_df))
 
 save_results(concat_train_df, concat_test_df, base_dir, suffix='_concat', skip_vocab=True)
 ###
 
-
+'''
 ############
 # FairFace #
 ############
@@ -321,4 +334,3 @@ for t in ['train', 'test']:
     np.save(os.path.join("data", "EMNIST", t + '_prepared'), np.array(new_dataset, dtype=object))
 
 os.system("mv data/EMNIST data/colorMNIST")
-
