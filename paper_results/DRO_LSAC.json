@@ -1,0 +1,18 @@
+{
+    "min_auc": {
+        "mean": 0.683,
+        "std": 0.0002
+    },
+    "macro_avg_auc": {
+        "mean": 0.71,
+        "std": 0.0005
+    },
+    "micro_avg_auc": {
+        "mean": 0.709,
+        "std": 0.0002
+    },
+    "minority_auc": {
+        "mean": 0.729,
+        "std": 0.0015
+    }
+}

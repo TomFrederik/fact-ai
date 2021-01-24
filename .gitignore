@@ -12,3 +12,9 @@ __pycache__
 **/FairFace_reduced/**/*.jpg
 **/.vscode/**
 **/*.jpg
+/data/EMNIST/
+<<<<<<< HEAD
+/tSNE_results
+=======
+/data/colorMNIST/
+>>>>>>> cb689ad669a0c2e68f19ac45a568b619d9251e45

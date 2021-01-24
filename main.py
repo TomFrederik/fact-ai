@@ -7,11 +7,12 @@ from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
-from datasets import CustomDataset, CustomSubset, FairnessDataset, ImageDataset
+from datasets import TabularDataset, CustomSubset, FairnessDataset, FairFaceDataset, colorMNISTDataset
 from arl import ARL
 from dro import DRO
 from ipw import IPW
 from baseline_model import BaselineModel
+from arl_cnn_test import ARL as ARL_CNN
 from baseline_model_cnn import BaselineModel as Baseline_CNN
 from metrics import Logger, get_all_auc_scores
 
@@ -68,12 +69,15 @@ def main(args: argparse.Namespace):
     np.random.seed(args.seed)
 
     # create datasets
-    if args.dataset_type == 'image':
-        dataset: FairnessDataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label)
-        test_dataset: FairnessDataset = ImageDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
-    elif args.dataset_type == 'tabular':
-        dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
-        test_dataset = CustomDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
+    if args.dataset == 'colorMNIST':
+        dataset: FairnessDataset = colorMNISTDataset()
+        test_dataset: FairnessDataset = colorMNISTDataset(test=True)
+    elif args.dataset == 'FairFace':
+        dataset: FairnessDataset = FairFaceDataset(args.dataset, sensitive_label=args.sensitive_label)
+        test_dataset: FairnessDataset = FairFaceDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
+    else:
+        dataset = TabularDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
+        test_dataset = TabularDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
     
     # init config dictionary
     config: Dict[str, Any] = {}
@@ -206,7 +210,20 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
     """
     
     model: pl.LightningModule
-    if args.model == 'ARL':
+    if args.model == 'ARL' and args.dataset == 'colorMNIST':
+        model = ARL_CNN(config=config, # for hparam tuning
+                    input_shape=dataset.dimensionality,
+                    pretrain_steps=args.pretrain_steps,
+                    prim_hidden=args.prim_hidden,
+                    adv_hidden=args.adv_hidden,
+                    optimizer=OPT_BY_NAME[args.opt],
+                    dataset_type=args.dataset_type,
+                    pretrained=args.pretrained,
+                    adv_input=set(args.adv_input),
+                    num_groups=len(dataset.protected_index2value),
+                    opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
+
+    elif args.model == 'ARL':
         model = ARL(config=config, # for hparam tuning
                     input_shape=dataset.dimensionality,
                     pretrain_steps=args.pretrain_steps,
@@ -480,7 +497,7 @@ if __name__ == '__main__':
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced', 'colorMNIST'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--sensitive_label', default=False, action='store_true', help='If True, target label will be included in list of sensitive columns; used for IPW(S+Y)')
@@ -491,7 +508,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['FairFace', 'FairFace_reduced'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['FairFace', 'FairFace_reduced', 'colorMNIST'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop

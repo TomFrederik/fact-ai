@@ -47,7 +47,7 @@ DATASET_SETTINGS: Dict[str, Dict[str, Any]] = {
 
 
 class FairnessDataset(ABC, Dataset):
-    """Abstract base class used for CustomDataset."""
+    """Abstract base class used for TabularDataset."""
     
     @abstractmethod
     def __getitem__(self, idx) -> Tuple[torch.Tensor, float, int]:
@@ -93,8 +93,7 @@ class FairnessDataset(ABC, Dataset):
         pass
 
 
-# TODO Rename to TabularDataset
-class CustomDataset(FairnessDataset):
+class TabularDataset(FairnessDataset):
     """Dataset from tabular data that can provide information about protected
     groups amongst its elements. 
 
@@ -114,6 +113,7 @@ class CustomDataset(FairnessDataset):
             membership for computing the weights for the IPW (IPW(S+Y)).
         disable_warnings: Option to show warnings if mean or std of the dataset
             exceed a certain threshold after normalization.
+        suffix: Option to specify suffix of dataset files
     """
 
     def __init__(self, dataset_name: str,
@@ -122,14 +122,15 @@ class CustomDataset(FairnessDataset):
                  binarize_prot_group: bool = True,
                  idcs: Optional[List[int]] = None,
                  sensitive_label: bool = False,
-                 disable_warnings: bool = False):
+                 disable_warnings: bool = False,
+                 suffix: str = ''):
 
         super().__init__()
-        """Inits an instance of CustomDataset with the given attributes."""
+        """Inits an instance of TabularDataset with the given attributes."""
 
         base_path = os.path.join("data", dataset_name)
         vocab_path = os.path.join(base_path, "vocabulary.json")
-        path = os.path.join(base_path, "test.csv" if test else "train.csv")
+        path = os.path.join(base_path, f"test{suffix}.csv" if test else f"train{suffix}.csv")
         mean_std_path = os.path.join(base_path, "mean_std.json")
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"].copy()
         sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"].copy()
@@ -268,7 +269,7 @@ class CustomDataset(FairnessDataset):
             y: Labels of the specified elements.
             s: Group memberships of the specified elements.       
         """
-        
+
         x = self.features[index]
 
         y = float(self.labels[index])
@@ -317,7 +318,7 @@ class CustomDataset(FairnessDataset):
         return self._labels
 
 
-class ImageDataset(FairnessDataset):
+class colorMNISTDataset(FairnessDataset):
     """Dataset from image data that can provide information about protected
     groups amongst its elements. 
 
@@ -335,12 +336,124 @@ class ImageDataset(FairnessDataset):
             membership for computing the weights for the IPW (IPW(S+Y)).
     """
 
+    def __init__(self,
+                 test: bool = False,
+                 idcs: Optional[List[int]] = None):
+        """Inits an instance of FairFaceDataset with the given attributes."""
+
+        super().__init__()
+
+        self.test = test
+        self.to_tensor = transforms.ToTensor()
+
+        if self.test:
+            self._data = np.load(os.path.join('data', 'colorMNIST', 'test_prepared.npy'), allow_pickle=True)
+        else:
+            self._data = np.load(os.path.join('data', 'colorMNIST', 'train_prepared.npy'), allow_pickle=True)
+
+        if idcs is not None:
+            self._data = self._data[idcs]
+
+        self._dimensionality = np.array(self._data[0, 0]).shape
+        self._features = torch.stack([self.to_tensor(d[0]) for d in self._data])
+        self.index2values = ['protected', 'unprotected']
+        protected_prob = np.mean([d[3] for d in self._data])
+        self._group_probs = np.array([protected_prob, 1 - protected_prob])
+        self._memberships = torch.Tensor([d[3] for d in self._data])
+        self._labels = torch.Tensor([d[2] for d in self._data])
+
+    def __len__(self):
+        """Returns the number of elements in the dataset."""
+        return len(self._data)
+
+    def __getitem__(self, index):
+        """Opens, converts and normalizes the images of specified elements and 
+        returns the elements.
+        
+        Args:
+            index: Indices of elements to return.
+            
+        Returns:
+            x: Images of the specified elements.
+            y: Labels of the specified elements.
+            s: Group memberships of the specified elements.       
+        """
+        
+        x, x_protected, y, s = self._data[index]
+
+        x = self.to_tensor(x)
+        x_protected = self.to_tensor(x_protected)
+
+        y = float(y)
+
+        input = torch.stack([x, x_protected])
+
+        return input, y, s
+
+    @property
+    def protected_index2value(self):
+        """List that turns the index of a protected group into meaningful values.
+
+        Dataset.protected_index2value[index] turns the index of a protected group
+        into a tuple such as ("White", "Male") that specifies the values of the 
+        underlying sensitive attributes."""
+        return self.index2values
+
+    @property # deprecated
+    def features(self): 
+        return self._features
+
+    @property
+    def dimensionality(self):
+        """Dimensionality of single images."""
+        return self._dimensionality
+
+    @property
+    def minority(self):
+        """Index of the protected group with the fewest members."""
+        return 0
+        # return self._minority
+
+    @property
+    def group_probs(self):
+        """Empirical observation probabilities of the protected groups."""
+        return self._group_probs
+
+    @property
+    def memberships(self):
+        """Group memberships of all elements of the dataset."""
+        return self._memberships
+
+    @property
+    def labels(self):
+        """Labels of all elements of the dataset."""
+        return self._labels
+
+
+class FairFaceDataset(FairnessDataset):
+    """Dataset from image data that can provide information about protected
+    groups amongst its elements.
+
+    Attributes:
+        dataset_name: Identifier of the dataset used to load the data and the
+            corresponding dataset settings.
+        test: Option to use the test dataset.
+        binarize_prot_group: Option to binarize the values in sensitive columns.
+            If true, the dataset will only differentiate between sensitive and
+            non-sensitive values (e.g. 'black' and 'not black') in sensitive
+            columns.
+        idcs: Optional; indices that specify which rows should be included in
+            the dataset. If None, all rows are included.
+        sensitive_label: Option to use the joint probability of label and group
+            membership for computing the weights for the IPW (IPW(S+Y)).
+    """
+
     def __init__(self, dataset_name: str,
                  test: bool = False,
                  binarize_prot_group: bool = False,
                  idcs: Optional[List[int]] = None,
                  sensitive_label: bool = False):
-        """Inits an instance of ImageDataset with the given attributes."""
+        """Inits an instance of FairFaceDataset with the given attributes."""
 
         super().__init__()
 
@@ -351,8 +464,6 @@ class ImageDataset(FairnessDataset):
         self._dimensionality = DATASET_SETTINGS[dataset_name]["dimensionality"].copy()
         target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
-
-        self.sensitive_label = sensitive_label
 
         self.test = test
         self.dataset_name = dataset_name
@@ -372,7 +483,7 @@ class ImageDataset(FairnessDataset):
         self._labels = torch.from_numpy(self._labels)
 
         self._img_paths = [os.path.join(os.getcwd(), self.base_path, 'images', 'test' if self.test else 'train', img_path) for img_path in
-                          frame['file'].to_list()]
+                           frame['file'].to_list()]
 
         # if set, will binarize group values in the sensitive columns. If not set, check if values should be transformed to numbers instead
         if binarize_prot_group:
@@ -432,22 +543,21 @@ class ImageDataset(FairnessDataset):
                 self._imgs.append(img)
             print('Dataset successfully loaded.')
 
-
     def __len__(self):
         """Returns the number of elements in the dataset."""
         return self._labels.size(0)
 
     def __getitem__(self, index):
-        """Opens, converts and normalizes the images of specified elements and 
+        """Opens, converts and normalizes the images of specified elements and
         returns the elements.
-        
+
         Args:
             index: Indices of elements to return.
-            
+
         Returns:
             x: Images of the specified elements.
             y: Labels of the specified elements.
-            s: Group memberships of the specified elements.       
+            s: Group memberships of the specified elements.
         """
         if self.dataset_name == 'FairFace':
             x = Image.open(self._img_paths[index]).convert('RGB')
@@ -467,12 +577,12 @@ class ImageDataset(FairnessDataset):
         """List that turns the index of a protected group into meaningful values.
 
         Dataset.protected_index2value[index] turns the index of a protected group
-        into a tuple such as ("White", "Male") that specifies the values of the 
+        into a tuple such as ("White", "Male") that specifies the values of the
         underlying sensitive attributes."""
         return self.index2values
 
-    @property # deprecated
-    def features(self): 
+    @property  # deprecated
+    def features(self):
         return self._images
 
     @property
@@ -505,7 +615,7 @@ class CustomSubset(FairnessDataset):
     """Subset of a dataset at specified indices.
 
     Arguments:
-        dataset: The whole CustomDataset.
+        dataset: The whole TabularDataset.
         indices: Indices in the whole set selected for subset.
     """
 
@@ -559,19 +669,19 @@ class CustomSubset(FairnessDataset):
 
 
 if __name__ == '__main__':
-    # adult_dataset = CustomDataset("Adult")
+    # adult_dataset = TabularDataset("Adult")
     # print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
 
-    # compas_dataset = CustomDataset('COMPAS')
+    # compas_dataset = TabularDataset('COMPAS')
     # print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
 
-    # lsac_dataset = CustomDataset('LSAC')
+    # lsac_dataset = TabularDataset('LSAC')
     # print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
     # indices = [1,2,3,4]
     # subsetloader = DataLoader(lsac_dataset, batch_size=3, sampler=SubsetRandomSampler(indices))
     # print('\n\nFirst batch in subsetloader:\n',next(enumerate(subsetloader)))
 
-    # fairface_dataset = ImageDataset("FairFace")
+    # fairface_dataset = FairFaceDataset("FairFace")
     # print('\n\nExample 1 of FairFace set: \n',fairface_dataset[1][0].shape)
 
     pass

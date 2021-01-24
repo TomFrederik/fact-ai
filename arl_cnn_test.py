@@ -66,31 +66,17 @@ class ARL(pl.LightningModule):
             if adv_input != {'X', 'Y'}:
                 print('CNN architecture currently only supports X+Y as adversary input')
             # only works with [3, 224, 224] images since input shape of fully connected layers must be hard-coded
-            assert input_shape == [3, 224, 224], f"Input shape to ARL is {input_shape} and not [3, 224, 224]!"
-            cnn = models.resnet34(pretrained=pretrained)
-            cnn.fc = nn.Identity()
-            self.learner = CNN_Learner(cnn=cnn, input_shape=input_shape, hidden_units=prim_hidden, pretrained=pretrained)
-            self.adversary = CNN_Adversary(cnn=cnn, input_shape=input_shape, hidden_units=adv_hidden, pretrained=pretrained)
+            # assert input_shape == [3, 224, 224], f"Input shape to ARL is {input_shape} and not [3, 224, 224]!"
+            # cnn = models.resnet34(pretrained=pretrained)
+            # cnn.fc = nn.Identity()
+            self.learner = CNN_Learner(input_shape=input_shape, hidden_units=prim_hidden, pretrained=pretrained)
+            self.adversary = CNN_Adversary(input_shape=input_shape, hidden_units=adv_hidden, pretrained=pretrained)
         else:
             raise Exception("ARL was unable to recognize the dataset type.")
 
         # init loss function
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
 
-    def get_cnn(self):
-        cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=32, kernel_size=(3,3)),
-                            nn.MaxPool2d(kernel_size=(3,3)),
-                            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(3,3)),
-                            nn.MaxPool2d(kernel_size=(3,3)),
-                            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3,3)),
-                            nn.MaxPool2d(kernel_size=(3,3)),
-                            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3,3)),
-                            nn.MaxPool2d(kernel_size=(3,3)),
-                            nn.Flatten())
-
-        return cnn
-
-    
     def training_step(self,
                       batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
                       batch_idx: int,
@@ -252,7 +238,7 @@ class Learner(nn.Module):
         """Inits an instance of the primary network with the given attributes."""
             
         super().__init__()
-        
+
         # construct network
         net_list: List[nn.Module] = []
         num_units = [input_shape] + hidden_units
@@ -375,7 +361,6 @@ class CNN_Learner(nn.Module):
     """
     
     def __init__(self,
-                 cnn: nn.Module,
                  input_shape: int,
                  hidden_units: list = [512, 32],
                  pretrained: bool = False
@@ -385,12 +370,13 @@ class CNN_Learner(nn.Module):
         super().__init__()
 
         # construct network
-        self.cnn = cnn
-
-        net_list: List[nn.Module] = []
-        num_units = [512] + hidden_units
-        for i in range(len(num_units) - 1):
-            net_list.append(nn.Linear(num_units[i], num_units[i + 1]))
+        self.cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=64, kernel_size=(3, 3)),
+                                 nn.MaxPool2d(kernel_size=(2, 2)),
+                                 nn.Flatten())
+        net_list: List[torch.nn.Module] = []
+        num_units = [3200] + hidden_units
+        for num_in, num_out in zip(num_units[:-1], num_units[1:]):
+            net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
         net_list.append(nn.Linear(num_units[-1], 1))
 
@@ -405,7 +391,7 @@ class CNN_Learner(nn.Module):
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        intermediate = self.cnn(x)
+        intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[0])
         out = self.fc(intermediate)
 
         return torch.squeeze(out, dim=-1)
@@ -422,7 +408,6 @@ class CNN_Adversary(nn.Module):
     """
     
     def __init__(self,
-                 cnn: nn.Module,
                  input_shape: int,
                  hidden_units: list = [],
                  pretrained: bool = False
@@ -431,13 +416,14 @@ class CNN_Adversary(nn.Module):
 
         super().__init__()
 
-        # construct network and set default fc to identity for appending sample label during forward pass
-        self.cnn = cnn
-
-        net_list: List[nn.Module] = []
-        num_units = [512 + 1] + hidden_units
-        for i in range(len(num_units) - 1):
-            net_list.append(nn.Linear(num_units[i], num_units[i + 1]))
+        # construct network
+        self.cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=64, kernel_size=(3, 3)),
+                                 nn.MaxPool2d(kernel_size=(2, 2)),
+                                 nn.Flatten())
+        net_list: List[torch.nn.Module] = []
+        num_units = [3200] + hidden_units
+        for num_in, num_out in zip(num_units[:-1], num_units[1:]):
+            net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
         net_list.append(nn.Linear(num_units[-1], 1))
 
@@ -457,8 +443,8 @@ class CNN_Adversary(nn.Module):
         """
 
         # compute adversary
-        intermediate = self.cnn(x)
-        intermediate = torch.cat([intermediate.float(), y.float().unsqueeze(1)], dim=1)
+        intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[1])
+        # intermediate = torch.cat([intermediate.float(), y.float().unsqueeze(1)], dim=1)
         adv = self.fc(intermediate)
 
         # normalize adversary across batch

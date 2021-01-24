@@ -6,7 +6,10 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from PIL import Image
 from tqdm import tqdm
-from face_detection import RetinaFace
+#from face_detection import RetinaFace
+from torchvision import datasets
+import numpy as np
+import random
 
 def convert_object_type_to_category(df):
     """Converts columns of type object to category."""
@@ -56,11 +59,13 @@ def build_mean_std(df, base_dir):
     with open(output_file_path, mode="w") as output_file:
         json.dump(mean_std_dict, output_file)
 
-def save_results(train_df, test_df, base_dir, contains_numeric=True):
-    train_df.to_csv(os.path.join(base_dir, 'train.csv'), index=False, header=True)
-    test_df.to_csv(os.path.join(base_dir, 'test.csv'), index=False, header=True)
+def save_results(train_df, test_df, base_dir, contains_numeric=True, suffix='', skip_vocab=False):
+    train_df.to_csv(os.path.join(base_dir, f'train{suffix}.csv'), index=False, header=True)
+    test_df.to_csv(os.path.join(base_dir, f'test{suffix}.csv'), index=False, header=True)
 
-    build_vocab(train_df, base_dir)
+    if not skip_vocab:
+        build_vocab(train_df, base_dir)
+    
     if contains_numeric:
         build_mean_std(train_df, base_dir)
     
@@ -172,7 +177,27 @@ test_df = load_df(test_file, columns=columns, skiprows=1)
 # Remove the dot in the income column
 test_df['income'] = test_df['income'].apply(lambda x: x[:-1])
 
-save_results(train_df, test_df, base_dir)
+save_results(train_df, test_df, base_dir, skip_vocab=True)
+
+### approach 1: throw away test file and re-split train file
+all_idcs = np.random.permutation(np.arange(len(train_df)))
+train_idcs, test_idcs = all_idcs[:int(len(all_idcs) * 0.7)], all_idcs[int(len(all_idcs) * 0.7):]
+train_only_test_df = train_df.iloc[test_idcs,:]
+train_only_train_df = train_df.iloc[train_idcs,:]
+
+save_results(train_only_train_df, train_only_test_df, base_dir, suffix='_only_train', skip_vocab=True)
+###
+
+### approach 2: combine both files
+concat_df = pd.concat([train_df, test_df])
+all_idcs = np.random.permutation(np.arange(len(concat_df)))
+train_idcs, test_idcs = all_idcs[:int(len(all_idcs) * 0.7)], all_idcs[int(len(all_idcs) * 0.7):]
+concat_test_df = concat_df.iloc[test_idcs,:]
+concat_train_df = concat_df.iloc[train_idcs,:]
+
+save_results(concat_train_df, concat_test_df, base_dir, suffix='_concat', skip_vocab=True)
+###
+
 
 ############
 # FairFace #
@@ -200,6 +225,7 @@ del train_df['age']
 del test_df['age']
 
 save_results(train_df, test_df, base_dir, contains_numeric=False)
+
 
 ####################
 # FairFace Reduced #
@@ -235,3 +261,64 @@ for TEST in [False, True]:
 
     sub_frame = frame.iloc[idx]
     sub_frame.to_csv(os.path.join(BASE_PATH_NEW, "test.csv" if TEST else "train.csv"), index=False)
+
+#########
+# MNIST #
+#########
+mnist_trainset = datasets.MNIST(root='data', train=True, download=True, transform=None)
+mnist_testset = datasets.MNIST(root='data', train=False, download=True, transform=None)
+
+mnist_trainset_np = []
+mnist_testset_np = []
+
+for i in tqdm(range(len(mnist_trainset))):
+    img, label = mnist_trainset.__getitem__(i)
+    if (label == 8 or label == 5) and random.random() <= 0.6:
+        sample = [np.array(img), label]
+        mnist_trainset_np.append(sample)
+
+for i in tqdm(range(len(mnist_testset))):
+    img, label = mnist_testset.__getitem__(i)
+    if (label == 8 or label == 5) and random.random() <= 0.6:
+        sample = [np.array(img), label]
+        mnist_testset_np.append(sample)
+
+np.save(os.path.join('data', 'MNIST', 'mnist_trainset'), np.array(mnist_trainset_np, dtype=object))
+np.save(os.path.join('data', 'MNIST', 'mnist_testset'), np.array(mnist_testset_np, dtype=object))
+
+os.system('rm -r data/MNIST/processed')
+os.system('rm -r data/MNIST/raw')
+
+######################
+# EMNIST with Colors #
+######################
+mnist_trainset = datasets.EMNIST(root='data', split='balanced', train=True, download=True, transform=None)
+mnist_testset = datasets.EMNIST(root='data', split='balanced', train=False, download=True, transform=None)
+
+for t in ['train', 'test']:
+    dataset = mnist_trainset if t == 'train' else mnist_testset
+    new_dataset = []
+    for i in tqdm(range(len(dataset))):
+        x, original_label = dataset.__getitem__(i)
+        x = x.convert('RGB')
+        y = int(original_label >= 24)
+
+        if (original_label % 2 == 0 and random.random() <= 0.9) or (original_label % 2 == 1 and random.random() <= 0.1):
+            if random.random() <= 0.3:
+                continue
+
+            r, g, b = x.split()
+            r = Image.fromarray(np.array(r) * 0)
+            x_protected = Image.merge('RGB', (r, g, b))
+            s = 1
+
+        else:
+            x_protected = x
+            s = 0
+
+        new_dataset.append([x, x_protected, y, s])
+
+    np.save(os.path.join("data", "EMNIST", t + '_prepared'), np.array(new_dataset, dtype=object))
+
+os.system("mv data/EMNIST data/colorMNIST")
+

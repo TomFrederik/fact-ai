@@ -7,6 +7,26 @@ def get_path(base_path, model, dataset, seed_run_version=0):
     path = os.path.join(base_path, dataset, model, f'seed_run_version_{seed_run_version}', 'mean_std.json')
     return path
 
+models = ['baseline', 'DRO', 'ARL']
+datasets = ['Adult', 'LSAC', 'COMPAS']
+
+# load results
+results = {}
+
+for (model, dataset) in itertools.product(models, datasets):
+    path = get_path('./training_logs', model, dataset)
+    with open(path) as f:
+        new_dict = json.load(f)
+    results[f'{model}_{dataset}'] = new_dict
+
+key2index = {'min_auc':2, 'macro_avg_auc':1, 'micro_avg_auc':0, 'minority_auc':3, 'accuracy':4}
+index2key = [0]*len(key2index.keys())
+for key in key2index:
+    index2key[key2index[key]] = key
+
+
+
+# create line
 def create_line(model, dataset, result_entry, max_idcs):
     string = f'{dataset} & {model}'
     for i in range(len(index2key)):

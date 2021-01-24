@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import DataLoader
-from datasets import CustomDataset, CustomSubset
+from datasets import TabularDataset, CustomSubset
 
 import numpy as np
 
@@ -13,10 +13,12 @@ from time import time
 import json
 
 
+OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad, 'Adam': torch.optim.Adam}
+
 
 class Linear(pl.LightningModule):
 
-    def __init__(self, num_features, lr, index2value, target_grp):
+    def __init__(self, num_features, lr, index2value, target_grp, optimizer):
         super().__init__()
 
         #self.save_hyperparameters()
@@ -24,6 +26,7 @@ class Linear(pl.LightningModule):
         self.lr = lr
         self.index2value = index2value
         self.target_grp = target_grp
+        self.optimizer = optimizer
         #print(index2value)
         # {0: ('Other', 'Other'), 1: ('Other', 'Female'), 2: ('Black', 'Other'), 3: ('Black', 'Female')}
 
@@ -100,7 +103,7 @@ class Linear(pl.LightningModule):
     
     def configure_optimizers(self):
 
-        optimizer = torch.optim.Adagrad(self.net.parameters(), lr=self.lr)
+        optimizer = self.optimizer(self.net.parameters(), lr=self.lr)
 
         return optimizer
 
@@ -134,8 +137,8 @@ def main(args):
 
     ## create train, val, test dataset
     # TODO: do this for images as well?
-    dataset = CustomDataset(args.dataset, disable_warnings=args.disable_warnings)
-    test_dataset = CustomDataset(args.dataset, test=True, disable_warnings=args.disable_warnings)
+    dataset = CustomDataset(args.dataset, disable_warnings=args.disable_warnings, suffix=args.suffix)
+    test_dataset = CustomDataset(args.dataset, test=True, disable_warnings=args.disable_warnings, suffix=args.suffix)
     
     # train val split
     all_idcs = np.random.permutation(np.arange(0, len(dataset), 1))
@@ -153,7 +156,8 @@ def main(args):
     model = Linear(num_features=dataset.dimensionality + 1, # + 1 for labels
                    lr=args.learning_rate,
                    index2value=dataset.protected_index2value,
-                   target_grp=args.target_grp) 
+                   target_grp=args.target_grp,
+                   optimizer=OPT_BY_NAME[args.optimizer]) 
 
     if args.tf_mode:
         def init_weights(layer):
@@ -198,14 +202,8 @@ def main(args):
     trainer.fit(model, train_loader, val_dataloaders=val_loader)
     print(f'time to fit was {time()-fit_time}')
 
-    # load best checkpoint
-    #model = Linear.load_from_checkpoint(trainer.checkpoint.best_model_path)
-    
-    # eval on test set
-    #for (x,y,s) in iter(test_loader):
+    # eval best model on test set
     trainer.test(test_dataloaders=test_loader, ckpt_path='best')
-
-
 
 
 
@@ -215,7 +213,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
+    parser.add_argument('--optimizer', choices=['Adagrad', 'Adam'], default='Adagrad')
     parser.add_argument('--target_grp', choices=['race', 'sex'], required=True, help='Whether to predict race or sex of a person')
+    parser.add_argument('--suffix', default='', help='Dataset suffix to specify other datasets than the defaults')
     parser.add_argument('--seed', default=0, type=int, help='seed for reproducibility')
     parser.add_argument('--learning_rate', default=1e-3, type=float)
     parser.add_argument('--batch_size', default=256, type=int)
