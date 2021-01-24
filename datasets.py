@@ -350,9 +350,9 @@ class colorMNISTDataset(FairnessDataset):
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         if self.test:
-            self._data = np.load(os.path.join('data', 'EMNIST', 'test_prepared.npy'), allow_pickle=True)
+            self._data = np.load(os.path.join('data', 'colorMNIST', 'test_prepared.npy'), allow_pickle=True)
         else:
-            self._data = np.load(os.path.join('data', 'EMNIST', 'train_prepared.npy'), allow_pickle=True)
+            self._data = np.load(os.path.join('data', 'colorMNIST', 'train_prepared.npy'), allow_pickle=True)
 
         if idcs is not None:
             self._data = self._data[idcs]
