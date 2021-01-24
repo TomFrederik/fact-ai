@@ -18,21 +18,18 @@ OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad, 'Adam': torch.optim.Adam}
 
 class Linear(pl.LightningModule):
 
-    def __init__(self, num_features, lr, index2value, target_grp, optimizer):
+    def __init__(self, num_features, lr, train_index2value, test_index2value, target_grp, optimizer):
         super().__init__()
 
         #self.save_hyperparameters()
 
         self.lr = lr
-        self.index2value = index2value
+        self.train_index2value = train_index2value
+        self.test_index2value = test_index2value
         self.target_grp = target_grp
         self.optimizer = optimizer
         #print(index2value)
         # {0: ('Other', 'Other'), 1: ('Other', 'Female'), 2: ('Black', 'Other'), 3: ('Black', 'Female')}
-
-        # define the mapping from s -> binary target vector
-        self.idx_mapping = self._define_idx_mapping(target_grp)
-        
 
         self.net = nn.Linear(num_features, 1)
             
@@ -90,7 +87,7 @@ class Linear(pl.LightningModule):
 
         pred = self.forward(x, y)
 
-        targets = self.idx_mapping(s).float()
+        targets = self.idx_mapping(s, test=True).float()
 
         loss = self.loss_fct(pred, targets) # CHECK THIS
 
@@ -107,21 +104,36 @@ class Linear(pl.LightningModule):
 
         return optimizer
 
-    def _define_idx_mapping(self, target_grp):
-        if self.target_grp == 'race':
-            def idx_mapping(x):
-                x[x == 1] = 0
-                x[x > 1] = 1
-                return x
-        elif self.target_grp == 'sex':
-            def idx_mapping(x):
-                x[x == 2] = 0
-                x[x > 0] = 1
-                return x
+    def idx_mapping(self, x, test=False):
+        out = torch.zeros_like(x)
+
+        if test:
+            if self.target_grp == 'race':
+                for key in self.test_index2value:
+                    if self.test_index2value[key][0] == 'Black':
+                        out[x == key] = 1
+                return out
+            elif self.target_grp == 'sex':
+                for key in self.test_index2value:
+                    if self.test_index2value[key][1] == 'Female':
+                        out[x == key] = 1
+                return out
+            else:
+                raise ValueError(f'Unexpected value for target_grp: {self.target_group}')
         else:
-            raise ValueError(f'Unexpected value for target_grp: {self.target_group}')
-    
-        return idx_mapping
+            if self.target_grp == 'race':
+                for key in self.train_index2value:
+                    if self.train_index2value[key][0] == 'Black':
+                        out[x == key] = 1
+                return out
+            elif self.target_grp == 'sex':
+                for key in self.train_index2value:
+                    if self.train_index2value[key][1] == 'Female':
+                        out[x == key] = 1
+                return out
+            else:
+                raise ValueError(f'Unexpected value for target_grp: {self.target_group}')
+        
 
 
 def main(args):
@@ -137,8 +149,8 @@ def main(args):
 
     ## create train, val, test dataset
     # TODO: do this for images as well?
-    dataset = CustomDataset(args.dataset, disable_warnings=args.disable_warnings, suffix=args.suffix)
-    test_dataset = CustomDataset(args.dataset, test=True, disable_warnings=args.disable_warnings, suffix=args.suffix)
+    dataset = TabularDataset(args.dataset, disable_warnings=args.disable_warnings, suffix=args.suffix)
+    test_dataset = TabularDataset(args.dataset, test=True, disable_warnings=args.disable_warnings, suffix=args.suffix)
     
     # train val split
     all_idcs = np.random.permutation(np.arange(0, len(dataset), 1))
@@ -155,7 +167,8 @@ def main(args):
     # set up model
     model = Linear(num_features=dataset.dimensionality + 1, # + 1 for labels
                    lr=args.learning_rate,
-                   index2value=dataset.protected_index2value,
+                   train_index2value=dataset.protected_index2value,
+                   test_index2value=test_dataset.protected_index2value,
                    target_grp=args.target_grp,
                    optimizer=OPT_BY_NAME[args.optimizer]) 
 
