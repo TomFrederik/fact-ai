@@ -131,7 +131,7 @@ class TabularDataset(FairnessDataset):
         base_path = os.path.join("data", dataset_name)
         vocab_path = os.path.join(base_path, "vocabulary.json")
         path = os.path.join(base_path, f"test{suffix}.csv" if test else f"train{suffix}.csv")
-        mean_std_path = os.path.join(base_path, "mean_std.json")
+        mean_std_path = os.path.join(base_path, f"mean_std{suffix}.json")
         sensitive_column_names = DATASET_SETTINGS[dataset_name]["sensitive_column_names"].copy()
         sensitive_column_values = DATASET_SETTINGS[dataset_name]["sensitive_column_values"].copy()
         target_variable = DATASET_SETTINGS[dataset_name]["target_variable"]
@@ -343,6 +343,7 @@ class colorMNISTDataset(FairnessDataset):
 
         super().__init__()
 
+        self.sensitive_label = False
         self.test = test
         self.to_tensor = transforms.ToTensor()
 

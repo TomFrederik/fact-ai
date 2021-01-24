@@ -1,5 +1,5 @@
 import torch
-from datasets import CustomDataset, CustomSubset
+from datasets import TabularDataset, CustomSubset
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,15 +8,20 @@ from time import time
 import json
 import os
 
-def idx_mapping(x, target_grp):
+def idx_mapping(x, target_grp, index2value):
+    out = torch.zeros_like(x)
     if target_grp == 'race':
-        x[x == 1] = 0
-        x[x > 1] = 1
-        return x
+        for key in index2value:
+            if index2value[key][0] == 'Black':
+                out[x == key] = 1
+        return out
+    elif target_grp == 'sex':
+        for key in index2value:
+            if index2value[key][1] == 'Female':
+                out[x == key] = 1
+        return out
     else:
-        x[x == 2] = 0
-        x[x > 0] = 1
-        return x
+        raise ValueError(f'Unexpected value for target_grp: {target_grp}')
 
 def mem2label(target_grp):
     if target_grp == 'race':
@@ -40,22 +45,24 @@ def main(args):
     torch.manual_seed(args.seed)
 
     # create dataset
-    train_dataset = CustomDataset(args.dataset, suffix=args.suffix)
-    test_dataset = CustomDataset(args.dataset, test=True, suffix=args.suffix)
-
+    train_dataset = TabularDataset(args.dataset, suffix=args.suffix)
+    test_dataset = TabularDataset(args.dataset, test=True, suffix=args.suffix)
+    print(train_dataset.index2values)
+    print(test_dataset.index2values)
     # mapping memberships to 0/1
     print('Binarizing memberships...')
-    train_memberships = idx_mapping(train_dataset.memberships, args.target_grp)
-    test_memberships = idx_mapping(test_dataset.memberships, args.target_grp)
-
+    train_memberships = idx_mapping(train_dataset.memberships, args.target_grp, train_dataset.index2values)
+    test_memberships = idx_mapping(test_dataset.memberships, args.target_grp, test_dataset.index2values)
+    print(train_memberships)
+    print(test_memberships)
     # compute percentage of 0/1 group in train and test
     train_mean = torch.mean(train_memberships.float())
     test_mean = torch.mean(test_memberships.float())
     train_std = torch.std(train_memberships.float())
     test_std = torch.std(test_memberships.float())
 
-    print(f'Percentage of {mem2label_dict[0]} in train: {train_mean} +- {train_std}')
-    print(f'Percentage of {mem2label_dict[0]} in test: {test_mean} +- {test_std}')
+    print(f'Percentage of {mem2label_dict[1]} in train: {train_mean} +- {train_std}')
+    print(f'Percentage of {mem2label_dict[1]} in test: {test_mean} +- {test_std}')
 
 
 if __name__=='__main__':

@@ -24,5 +24,5 @@ cd $HOME/fact-ai/
 source activate fact-ai-lisa
 
 # Run code
-srun python -u main.py --model ARL --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --tf_mode
+srun python -u main.py --model ARL --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --tf_mode --train_steps 100000
 

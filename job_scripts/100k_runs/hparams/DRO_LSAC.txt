@@ -1,0 +1,10 @@
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 1 --seed_run --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 2 --seed_run --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 3 --seed_run --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 4 --seed_run --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 5 --seed_run --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 6 --seed_run --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 7 --seed_run --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 8 --seed_run --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 9 --seed_run --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 1 --batch_size 32 --eta 0.5 --seed 10  --seed_run --tf_mode --train_steps 100000 --seed_run_version 100

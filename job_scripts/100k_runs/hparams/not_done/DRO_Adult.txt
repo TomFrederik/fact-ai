@@ -1,0 +1,12 @@
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 1 --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 2 --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 3 --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 4 --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 5 --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 6 --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 7 --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 8 --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 9 --tf_mode --train_steps 100000 --seed_run_version 100
+--model DRO --dataset Adult --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --batch_size 128 --prim_lr 1 --eta 0.5 --seed_run --seed 10 --tf_mode --train_steps 100000 --seed_run_version 100
+
+

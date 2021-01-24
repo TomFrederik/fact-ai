@@ -449,6 +449,9 @@ def train(config: Dict[str, Any],
     # Load best checkpoint after training
     if args.model == 'baseline':
         model = BaselineModel.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+
+    elif args.model == 'ARL' and args.dataset == 'colorMNIST':
+        model = ARL_CNN.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
         
     elif args.model == 'ARL':
         model = ARL.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
