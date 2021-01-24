@@ -277,18 +277,19 @@ for t in ['train', 'test']:
     new_dataset = []
     for i in tqdm(range(len(dataset))):
         x, original_label = dataset.__getitem__(i)
+        x = x.convert('RGB')
         y = int(original_label >= 24)
 
         if (original_label % 2 == 0 and random.random() <= 0.9) or (original_label % 2 == 1 and random.random() <= 0.1):
             if random.random() <= 0.3:
                 continue
 
-            r, g, b = x.convert('RGB').split()
+            r, g, b = x.split()
             r = Image.fromarray(np.array(r) * 0)
             s = Image.merge('RGB', (r, g, b))
 
         else:
-            s = x.convert('RGB')
+            s = x
 
         new_dataset.append([x, y, s])
 
