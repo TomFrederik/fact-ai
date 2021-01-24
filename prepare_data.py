@@ -297,3 +297,5 @@ for t in ['train', 'test']:
 
     np.save(os.path.join("data", "EMNIST", t + '_prepared'), np.array(new_dataset, dtype=object))
 
+os.system("mv data/EMNIST data/colorMNIST")
+
