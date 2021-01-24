@@ -10,7 +10,7 @@ from face_detection import RetinaFace
 from torchvision import datasets
 import numpy as np
 import random
-'''
+
 def convert_object_type_to_category(df):
     """Converts columns of type object to category."""
     df = pd.concat(
@@ -265,7 +265,7 @@ np.save(os.path.join('data', 'MNIST', 'mnist_testset'), np.array(mnist_testset_n
 
 os.system('rm -r data/MNIST/processed')
 os.system('rm -r data/MNIST/raw')
-'''
+
 ######################
 # EMNIST with Colors #
 ######################
