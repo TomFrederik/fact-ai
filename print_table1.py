@@ -20,7 +20,7 @@ for (model, dataset) in itertools.product(models, datasets):
     results[f'{model}_{dataset}'] = new_dict
 
 key2index = {'min_auc':2, 'macro_avg_auc':1, 'micro_avg_auc':0, 'minority_auc':3, 'accuracy':4}
-index2key = [0]*len(key2index.keys)
+index2key = [0]*len(key2index.keys())
 for key in key2index:
     index2key[key2index[key]] = key
 
@@ -49,8 +49,8 @@ def get_max_per_dataset(dataset):
     Returns:
         idcs: Binary Numpy array of shape (num_models, num_metrics) indicating which method achieves the best result for the given dataset on a metric
     """
-    idcs = np.zeros(len(models), len(index2key))
-    means = np.zeros(len(models), len(index2key))
+    idcs = np.zeros((len(models), len(index2key)))
+    means = np.zeros((len(models), len(index2key)))
 
     # load results in to np array
     for i, model in enumerate(models):
