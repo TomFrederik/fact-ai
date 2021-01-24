@@ -338,18 +338,13 @@ class colorMNISTDataset(FairnessDataset):
 
     def __init__(self,
                  test: bool = False,
-                 idcs: Optional[List[int]] = None,
-                 sensitive_label: bool = False):
+                 idcs: Optional[List[int]] = None):
         """Inits an instance of FairFaceDataset with the given attributes."""
 
         super().__init__()
 
-
-        self.sensitive_label = sensitive_label
-
         self.test = test
         self.to_tensor = transforms.ToTensor()
-        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         if self.test:
             self._data = np.load(os.path.join('data', 'colorMNIST', 'test_prepared.npy'), allow_pickle=True)
@@ -384,14 +379,12 @@ class colorMNISTDataset(FairnessDataset):
             s: Group memberships of the specified elements.       
         """
         
-        # x = self._images[index].convert('RGB')
         x, x_protected, y, s = self._data[index]
 
         x = self.to_tensor(x)
+        x_protected = self.to_tensor(x_protected)
 
         y = float(y)
-
-        x_protected = self.to_tensor(x_protected)
 
         input = torch.stack([x, x_protected])
 

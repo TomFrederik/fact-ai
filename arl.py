@@ -77,6 +77,19 @@ class ARL(pl.LightningModule):
         # init loss function
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
 
+    def get_cnn(self):
+        cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=32, kernel_size=(3,3)),
+                            nn.MaxPool2d(kernel_size=(3,3)),
+                            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(3,3)),
+                            nn.MaxPool2d(kernel_size=(3,3)),
+                            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3,3)),
+                            nn.MaxPool2d(kernel_size=(3,3)),
+                            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3,3)),
+                            nn.MaxPool2d(kernel_size=(3,3)),
+                            nn.Flatten())
+
+        return cnn
+
     
     def training_step(self,
                       batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
