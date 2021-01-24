@@ -91,5 +91,6 @@ for dataset in datasets:
         result_entry = relative_errors[(model, dataset)]
         new_line = create_line(model, dataset, result_entry)
         table += new_line
+    table += r'\hline' + '\n'
 
 print(table)
