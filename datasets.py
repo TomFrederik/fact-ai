@@ -343,6 +343,7 @@ class colorMNISTDataset(FairnessDataset):
 
         super().__init__()
 
+        self.sensitive_label = False
         self.test = test
         self.to_tensor = transforms.ToTensor()
 
