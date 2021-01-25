@@ -101,7 +101,7 @@ def main(args: argparse.Namespace):
     plt.ylabel('%s' % SETTINGS[args.metric])
     plt.xlabel('Number of steps')  
     plt.legend()
-    plt.savefig(f'{args.dataset}_{args.metric}.pdf')
+    plt.savefig(f'{args.dataset}_{args.split}_{args.metric}.pdf')
     
 
 if __name__ == '__main__':
