@@ -18,7 +18,8 @@ SETTINGS = {
         'min_auc': 'Minimum group AUC',
         'micro_avg_auc': 'Micro-average AUC',
         'macro_avg_auc': 'Macro-average AUC',
-        'minority_auc': 'AUC of minority group'
+        'minority_auc': 'AUC of minority group',
+        'accuracy': 'Accuracy'
     }
 
 
@@ -112,7 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced', 'colorMNIST'], default='LSAC')
     parser.add_argument('--log_dir', default='final_logs', type=str)
     parser.add_argument('--split', choices=['training', 'validation', 'test'], default='validation')
-    parser.add_argument('--metric', choices=['min_auc', 'macro_avg_auc', 'micro_avg_auc', 'minority_auc'], default='min_auc')    
+    parser.add_argument('--metric', choices=['min_auc', 'macro_avg_auc', 'micro_avg_auc', 'minority_auc', 'accuracy'], default='min_auc')    
     
     args: argparse.Namespace = parser.parse_args()
     
