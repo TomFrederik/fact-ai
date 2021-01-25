@@ -8,17 +8,23 @@ def get_path(base_path, model, dataset, seed_run_version=0):
     path = os.path.join(base_path, dataset, model, f'seed_run_version_{seed_run_version}', 'mean_std.json')
     return path
 
-def create_line(model, dataset, result_entry, max_idcs, index2key):
+def create_line(model, dataset, result_entry, max_idcs, index2key, short_table=False):
     string = f'{dataset} & {model}'
     for i in range(len(index2key)):
         key = index2key[i]
         mean = result_entry[key]['mean']
-        std = result_entry[key]['std']
-        if max_idcs[i] == 1: # print max values in bold font
-            string += r' & \textbf{'+f'{mean:1.4f}' + r'} $\pm$ \textbf{' + f'{std:1.4f}' + r'}'
+        if short_table:
+                if max_idcs[i] == 1: # print max values in bold font
+                    string += r' & \textbf{'+f'{mean:1.3f}' + r'}'
+                else:
+                    string += f' & {mean:1.3f}'
         else:
-            string += f' & {mean:1.4f}' + r' $\pm$ ' + f'{std:1.4f}'
-    
+            std = result_entry[key]['std']
+            if max_idcs[i] == 1: # print max values in bold font
+                string += r' & \textbf{'+f'{mean:1.4f}' + r'} $\pm$ \textbf{' + f'{std:1.4f}' + r'}'
+            else:
+                string += f' & {mean:1.4f}' + r' $\pm$ ' + f'{std:1.4f}'
+        
     string += '\\\\\n'
     return string
 
@@ -28,13 +34,13 @@ def get_max_per_dataset(dataset, index2key, results, seed_run_version):
     Args:
         dataset: String specifying the dataset
     Returns:
-        idcs: Binary Numpy array of shape (num_models, num_metrics) indicating which method achieves the best result for the given dataset on a metric
+        idcs: Binary Numpy array of shape (num_MODELS, num_metrics) indicating which method achieves the best result for the given dataset on a metric
     """
-    idcs = np.zeros((len(models), len(index2key)))
-    means = np.zeros((len(models), len(index2key)))
+    idcs = np.zeros((len(MODELS), len(index2key)))
+    means = np.zeros((len(MODELS), len(index2key)))
 
     # load results in to np array
-    for i, model in enumerate(models):
+    for i, model in enumerate(MODELS):
         if args.seed_run_version == 100 and model == 'DRO' and dataset == 'Adult':
             continue
         model_results = results[f'{model}_{dataset}']
@@ -46,8 +52,8 @@ def get_max_per_dataset(dataset, index2key, results, seed_run_version):
     idcs[np.argmax(means, axis=0), np.arange(len(index2key))] = 1
     return idcs
 
-models = ['baseline', 'DRO', 'ARL']
-datasets = ['Adult', 'LSAC', 'COMPAS']
+MODELS = ['baseline', 'DRO', 'ARL']
+DATASETS = ['Adult', 'LSAC', 'COMPAS']
 
 def main(args):
     
@@ -55,7 +61,7 @@ def main(args):
     # load results
     results = {}
 
-    for (model, dataset) in itertools.product(models, datasets):
+    for (model, dataset) in itertools.product(MODELS, DATASETS):
         if args.seed_run_version == 100 and model == 'DRO' and dataset == 'Adult': # REMOVE LATER, DRO/ADULT not trained yet
             continue
         
@@ -72,19 +78,23 @@ def main(args):
 
     # create table
     table = ''
-    for dataset in datasets:
+    for dataset in DATASETS:
         max_idcs = get_max_per_dataset(dataset, index2key, results, args.seed_run_version)
-        for i, model in enumerate(models):
+        for i, model in enumerate(MODELS):
             if args.seed_run_version == 100 and  model == 'DRO' and dataset == 'Adult':
                 continue
             result_entry = results[f'{model}_{dataset}']
-            new_line = create_line(model, dataset, result_entry, max_idcs[i], index2key)
+            new_line = create_line(model, dataset, result_entry, max_idcs[i], index2key, args.short_table)
             table += new_line
 
 
     # save table
-    with open(f'table_1_seed_run_version_{args.seed_run_version}.txt','w') as f:
-        f.write(table)
+    if args.short_table:
+        with open(f'table_1_seed_run_version_{args.seed_run_version}_short.txt','w') as f:
+            f.write(table)
+    else:
+        with open(f'table_1_seed_run_version_{args.seed_run_version}.txt','w') as f:
+            f.write(table)
 
 
 if __name__ == '__main__':
@@ -92,6 +102,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--seed_run_version', default=0)
+    parser.add_argument('--short_table', action='store_true', default=False, help='Whether to only create a short version of the table')
 
     args = parser.parse_args()
 
