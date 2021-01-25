@@ -2,12 +2,14 @@ import numpy as np
 import os
 import json
 import itertools
+import argparse
 
 def get_path(base_path, model, dataset, seed_run_version=0):
     path = os.path.join(base_path, dataset, model, f'seed_run_version_{seed_run_version}', 'mean_std.json')
     return path
 
-def create_line(model, dataset, result_entry, max_idcs):
+
+def create_line(model, dataset, result_entry, max_idcs, index2key):
     string = f'{dataset} & {model}'
     for i in range(len(index2key)):
         key = index2key[i]
@@ -22,7 +24,7 @@ def create_line(model, dataset, result_entry, max_idcs):
     return string
 
 
-def get_max_per_dataset(dataset):
+def get_max_per_dataset(dataset, index2key, results, seed_run_version):
     """computes indices of maximum values over all methods for a given dataset"
     Args:
         dataset: String specifying the dataset
@@ -34,6 +36,8 @@ def get_max_per_dataset(dataset):
 
     # load results in to np array
     for i, model in enumerate(models):
+        if args.seed_run_version == 100 and model == 'DRO' and dataset == 'Adult':
+            continue
         model_results = results[f'{model}_{dataset}']
         for j in range(len(index2key)):
             key = index2key[j]
@@ -46,30 +50,47 @@ def get_max_per_dataset(dataset):
 models = ['ARL', 'IPW(S)', 'IPW(S+Y)']
 datasets = ['Adult', 'LSAC', 'COMPAS']
 
-# load results
-results = {}
+def main(args):
+    
+    # load results
+    results = {}
 
-for (model, dataset) in itertools.product(models, datasets):
-    path = get_path('./training_logs', model, dataset)
-    with open(path) as f:
-        new_dict = json.load(f)
-    results[f'{model}_{dataset}'] = new_dict
+    for (model, dataset) in itertools.product(models, datasets):        
+        path = get_path('./training_logs', model, dataset, args.seed_run_version)
+        with open(path) as f:
+            new_dict = json.load(f)
+        results[f'{model}_{dataset}'] = new_dict
 
-key2index = {'micro_avg_auc':0, 'macro_avg_auc':1, 'min_auc':2, 'minority_auc':3, 'accuracy':4}
-index2key = [0]*len(key2index)
-for key in key2index:
-    index2key[key2index[key]] = key
+    key2index = {'micro_avg_auc':0, 'macro_avg_auc':1, 'min_auc':2, 'minority_auc':3, 'accuracy':4}
+    index2key = [0]*len(key2index)
+    for key in key2index:
+        index2key[key2index[key]] = key
 
 
-# create table
-table = ''
-for dataset in datasets:
-    max_idcs = get_max_per_dataset(dataset)
-    for i, model in enumerate(models):
-        result_entry = results[f'{model}_{dataset}']
-        new_line = create_line(model, dataset, result_entry, max_idcs[i])
-        table += new_line
-# save table
-with open('table_2.txt','w') as f:
-    f.write(table)
+    # create table
+    table = ''
+    for dataset in datasets:
+        max_idcs = get_max_per_dataset(dataset, index2key, results, args.seed_run_version)
+        for i, model in enumerate(models):
+            if args.seed_run_version == 100 and  model == 'DRO' and dataset == 'Adult':
+                continue
+            result_entry = results[f'{model}_{dataset}']
+            new_line = create_line(model, dataset, result_entry, max_idcs[i], index2key)
+            table += new_line
+
+
+    # save table
+    with open(f'table_2_seed_run_version_{args.seed_run_version}.txt','w') as f:
+        f.write(table)
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--seed_run_version', default=0)
+
+    args = parser.parse_args()
+
+    main(args)
 

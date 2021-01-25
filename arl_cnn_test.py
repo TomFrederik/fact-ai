@@ -77,6 +77,8 @@ class ARL(pl.LightningModule):
         # init loss function
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
 
+        print(self)
+
     def training_step(self,
                       batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
                       batch_idx: int,
