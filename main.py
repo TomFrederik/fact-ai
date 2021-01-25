@@ -164,10 +164,10 @@ def main(args: argparse.Namespace):
             else:
                 path = f'./{args.log_dir}/{args.dataset}/{args.model}/version_{args.version}'
 
+        path = f'./{args.log_dir}/{args.model}_{args.dataset}_{args.prim_lr}_{args.batch_size}_{args.train_steps}'
         print(f'creating dir {path}')
         os.makedirs(path, exist_ok=True)
 
-    path = f'./{args.log_dir}/{args.model}_{args.dataset}_{args.prim_lr}_{args.batch_size}_{args.train_steps}'
     # set log_dir
     args.log_dir = path
 
