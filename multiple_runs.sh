@@ -1,24 +1,23 @@
 #!/bin/bash
 
-lr=0.01
-bs=32
-dataset=LSAC
-model=baseline
-steps=100
+lr=0.1
+bs=128
+dataset="$1"
+model="$2"
+steps=1000
 
 function run {
     echo "Starting run with seed $1"
     python &>/dev/null \
 	   main.py \
 	   --train_steps "$steps" \
-	   --test_steps 100 \
 	   --prim_lr "$lr" \
-	   --adv_lr "$lr" \
 	   --batch_size "$bs" \
 	   --dataset "$dataset" \
 	   --model "$model" \
 	   --seed "$1" \
-	   --no_grid_search
+	   --no_grid_search \
+	   --tf_mode
     echo "Finished run with seed $1"
 }
 
