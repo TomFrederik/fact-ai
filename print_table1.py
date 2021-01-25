@@ -23,7 +23,7 @@ def create_line(model, dataset, result_entry, max_idcs, index2key):
     return string
 
 
-def get_max_per_dataset(dataset, index2key, results):
+def get_max_per_dataset(dataset, index2key, results, seed_run_version):
     """computes indices of maximum values over all methods for a given dataset"
     Args:
         dataset: String specifying the dataset
@@ -35,7 +35,7 @@ def get_max_per_dataset(dataset, index2key, results):
 
     # load results in to np array
     for i, model in enumerate(models):
-        if model == 'DRO' and dataset == 'Adult':
+        if args.seed_run_version == 100 and model == 'DRO' and dataset == 'Adult':
             continue
         model_results = results[f'{model}_{dataset}']
         for j in range(len(index2key)):
@@ -56,7 +56,7 @@ def main(args):
     results = {}
 
     for (model, dataset) in itertools.product(models, datasets):
-        if model == 'DRO' and dataset == 'Adult': # REMOVE LATER, DRO/ADULT not trained yet
+        if args.seed_run_version == 100 and model == 'DRO' and dataset == 'Adult': # REMOVE LATER, DRO/ADULT not trained yet
             continue
         
         path = get_path('./training_logs', model, dataset, args.seed_run_version)
@@ -73,9 +73,9 @@ def main(args):
     # create table
     table = ''
     for dataset in datasets:
-        max_idcs = get_max_per_dataset(dataset, index2key, results)
+        max_idcs = get_max_per_dataset(dataset, index2key, results, args.seed_run_version)
         for i, model in enumerate(models):
-            if model == 'DRO' and dataset == 'Adult':
+            if args.seed_run_version == 100 and  model == 'DRO' and dataset == 'Adult':
                 continue
             result_entry = results[f'{model}_{dataset}']
             new_line = create_line(model, dataset, result_entry, max_idcs[i], index2key)
