@@ -235,6 +235,51 @@ class ARL(pl.LightningModule):
         """
 
         return self.learner(x)
+
+    def get_lambda(self, dataloader: torch.utils.data.DataLoader) -> Tuple[torch.Tensor]:
+        """
+        Evaluate the adversary on the given dataset
+
+        Args:
+            dataloader: An instance of torch.utils.data.DataLoader, e.g. the test dataloader
+        
+        Returns:
+            lambdas: Tensor of shape [num_samples] containing the adversary scores lambda
+            predictions: Tensor of shape [num_samples] containing predicted labels in the same order as the lambdas
+            true_labels: Tensor of shape [num_samples] containing true labels in the same order as the lambdas
+            memberships: Tensor of shape [num_samples] containing group memberships in the same order as the lambdas
+        """
+
+        lambdas = []
+        true_labels = []
+        predictions = []
+        memberships = []
+
+        for x, y, s in iter(dataloader):
+            # put batch on correct device
+            x = x.to(self.device)
+            y = y.to(self.device)
+            s = s.to(self.device)
+
+            # put through adversary
+            batch_lambdas = self.adversary(x, y, s)
+
+            # put through learner
+            batch_pred = torch.round(torch.sigmoid(self.learner(x)))
+
+            # store results
+            predictions.append(batch_pred)
+            true_labels.append(y)
+            lambdas.append(batch_lambdas)
+            memberships.append(s)
+
+        # cat tensors
+        lambdas = torch.cat(lambdas, dim=0)
+        predictions = torch.cat(predictions, dim=0)
+        true_labels = torch.cat(true_labels, dim=0)
+        memberships = torch.cat(memberships, dim=0)
+
+        return lambdas, predictions, true_labels, memberships
     
     
 class Learner(nn.Module):
@@ -338,7 +383,7 @@ class Adversary(nn.Module):
             s: Tensor of shape [batch_size] with protected group membership indices.
     
         Returns:
-            Tensor of shape [batch_size] with predicted logits.
+            Tensor of shape [batch_size] with reweighting scores.
         """
         inputs: List[torch.Tensor] = []
 
