@@ -167,6 +167,7 @@ def main(args: argparse.Namespace):
         print(f'creating dir {path}')
         os.makedirs(path, exist_ok=True)
 
+    path = f'./{args.log_dir}/{args.model}_{args.dataset}_{args.prim_lr}_{args.batch_size}_{args.train_steps}'
     # set log_dir
     args.log_dir = path
 
@@ -176,6 +177,7 @@ def main(args: argparse.Namespace):
     train_idcs, val_idcs = permuted_idcs[:int(0.9*len(permuted_idcs))], permuted_idcs[int(0.9*len(permuted_idcs)):] 
     train_dataset, val_dataset = CustomSubset(dataset, train_idcs), CustomSubset(dataset, val_idcs)
     
+        
     # single training run
     model: pl.LightningModule = train(config, args, train_dataset=train_dataset, val_dataset=val_dataset, test_dataset=test_dataset)
     
@@ -187,7 +189,8 @@ def main(args: argparse.Namespace):
     print(f'Results = {auc_scores}')
     
     # save results
-    with open(os.path.join(path, 'auc_scores.json'),'w') as f:
+    os.makedirs(path, exist_ok=True)
+    with open(os.path.join(path, f'auc_scores_{args.seed}.json'),'w') as f:
         json.dump(auc_scores, f)
     
 
@@ -395,8 +398,8 @@ def train(config: Dict[str, Any],
             mode='max'
         ))
     
-    if test_dataset is not None:
-        callbacks.append(Logger(test_dataset, 'test', batch_size=args.eval_batch_size))
+    #if test_dataset is not None:
+        #callbacks.append(Logger(test_dataset, 'test', batch_size=args.eval_batch_size))
         
     # Select model and instantiate
     model: pl.LightningModule = get_model(config, args, train_dataset)
