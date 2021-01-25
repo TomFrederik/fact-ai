@@ -157,10 +157,6 @@ def main(args: argparse.Namespace):
         lam = lambdas[(predictions == 0) & (true_labels == 0) & (memberships == i)][:, np.newaxis]
         kde_00 = kde.fit(lam)
         density_00 = np.exp(kde_00.score_samples(lam))
-        #print(lam)
-        #print(density_00)
-        #print(lam.shape)
-        #print(density_00.shape)
         plt.plot(lam[:,0], density_00, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
     plt.legend()
     plt.savefig(os.path.join(path, 'lambda_0_0.pdf'))
