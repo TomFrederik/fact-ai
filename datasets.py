@@ -364,12 +364,12 @@ class colorMNISTDataset(FairnessDataset):
         self._labels = torch.Tensor([d[2] for d in self._data])
         '''
         self._dimensionality = np.array(self._data[0, 0]).shape
-        self._features = torch.stack([torch.Tensor(d[0] / 255).float() for d in self._data])
+        self._features = torch.stack([torch.Tensor(d[0] / 255).float().unsqueeze(0) for d in self._data])
         self.index2values = ['protected', 'unprotected']
         protected_prob = np.mean([d[2] for d in self._data])
         self._group_probs = np.array([protected_prob, 1 - protected_prob])
         self._memberships = torch.Tensor([d[2] for d in self._data])
-        self._labels = torch.Tensor([d[1] for d in self._data])
+        self._labels = torch.Tensor([d[1] for d in self._data]).float()
 
     def __len__(self):
         """Returns the number of elements in the dataset."""
@@ -389,12 +389,16 @@ class colorMNISTDataset(FairnessDataset):
         """
         
         # x, x_protected, y, s = self._data[index]
-        x, y, s = self._data[index]
+        # x, y, s = self._data[index]
 
-        x = self.to_tensor(x)
+        # x = self.to_tensor(x)
         # x_protected = self.to_tensor(x_protected)
 
-        y = float(y)
+        # y = float(y)
+        x = self._features[index]
+        y = self._labels[index]
+        s = self._memberships[index]
+
 
         # input = torch.stack([x, x_protected])
 
