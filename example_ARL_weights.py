@@ -142,7 +142,7 @@ def main(args: argparse.Namespace):
 
     print('Plotting adversary scores..')
     # init KD
-    kde = KernelDensity(bandwidth=0.4)
+    kde = KernelDensity(bandwidth=0.3)
 
     # get idx2val dict from test dataset
     # e.g. {0: ('Other', 'Other'), 1: ('Other', 'Female'), 2: ('Black', 'Other'), 3: ('Black', 'Female')}
@@ -150,14 +150,17 @@ def main(args: argparse.Namespace):
     race_dict = {'Black':'Black', 'Other':'White'}
     sex_dict = {'Female':'Female', 'Other':'Male'}
 
+    #
+    score_ticks = np.linspace(0,5,100).reshape((100,1))
+
     # plot 0 - 0
     plt.figure()
     for i in idx2val:
         combi = idx2val[i]
         lam = lambdas[(predictions == 0) & (true_labels == 0) & (memberships == i)][:, np.newaxis]
         kde_00 = kde.fit(lam)
-        density_00 = np.exp(kde_00.score_samples(lam))
-        plt.plot(lam[:,0], density_00, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
+        density_00 = np.exp(kde_00.score_samples(score_ticks))
+        plt.plot(score_ticks[:,0], density_00, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
     plt.legend()
     plt.savefig(os.path.join(path, 'lambda_0_0.pdf'))
     
@@ -167,8 +170,8 @@ def main(args: argparse.Namespace):
         combi = idx2val[i]
         lam = lambdas[(predictions == 1) & (true_labels == 0) & (memberships == i)][:, np.newaxis]
         kde_01 = kde.fit(lam)
-        density_01 = np.exp(kde_01.score_samples(lam))
-        plt.plot(lam, density_01, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
+        density_01 = np.exp(kde_01.score_samples(score_ticks))
+        plt.plot(score_ticks, density_01, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
     plt.legend()
     plt.savefig(os.path.join(path, 'lambda_0_1.pdf'))
 
@@ -178,8 +181,8 @@ def main(args: argparse.Namespace):
         combi = idx2val[i]
         lam = lambdas[(predictions == 0) & (true_labels == 1) & (memberships == i)][:, np.newaxis]
         kde_10 = kde.fit(lam)
-        density_10 = np.exp(kde_10.score_samples(lam))
-        plt.plot(lam, density_10, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
+        density_10 = np.exp(kde_10.score_samples(score_ticks))
+        plt.plot(score_ticks, density_10, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
     plt.legend()
     plt.savefig(os.path.join(path, 'lambda_1_0.pdf'))
 
@@ -189,8 +192,8 @@ def main(args: argparse.Namespace):
         combi = idx2val[i]
         lam = lambdas[(predictions == 1) & (true_labels == 1) & (memberships == i)][:, np.newaxis]
         kde_11 = kde.fit(lam)
-        density_11 = np.exp(kde_11.score_samples(lam))
-        plt.plot(lam, density_11, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
+        density_11 = np.exp(kde_11.score_samples(score_ticks))
+        plt.plot(score_ticks, density_11, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
     plt.legend()
     plt.savefig(os.path.join(path, 'lambda_1_1.pdf'))
 
@@ -205,8 +208,8 @@ def main(args: argparse.Namespace):
             combi = idx2val[idx]
             lam = lambdas[(predictions == plt_settings[i][1]) & (true_labels == plt_settings[i][0]) & (memberships == idx)][:, np.newaxis]
             kde_combined = kde.fit(lam)
-            density_combined = np.exp(kde_combined.score_samples(lam))
-            axes[i].plot(lam, density_combined, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
+            density_combined = np.exp(kde_combined.score_samples(score_ticks))
+            axes[i].plot(score_ticks, density_combined, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
             if i == 0 or i == 2:
                 axes[i].set_ylabel('density')
             if i == 2 or i == 3:
