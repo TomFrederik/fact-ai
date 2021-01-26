@@ -234,7 +234,7 @@ class CNN_Learner(nn.Module):
         super().__init__()
 
         # construct network
-        self.cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=64, kernel_size=(3, 3)),
+        self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
                                  nn.MaxPool2d(kernel_size=(2, 2)),
                                  nn.Flatten())
         net_list: List[torch.nn.Module] = []
@@ -281,7 +281,7 @@ class CNN_Adversary(nn.Module):
         super().__init__()
 
         # construct network
-        self.cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=64, kernel_size=(3, 3)),
+        self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
                                  nn.MaxPool2d(kernel_size=(2, 2)),
                                  nn.Flatten())
         net_list: List[torch.nn.Module] = []
@@ -307,7 +307,7 @@ class CNN_Adversary(nn.Module):
         """
 
         # compute adversary
-        intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[1])
+        intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[0])
         intermediate = torch.cat([intermediate.float(), y.float().unsqueeze(1)], dim=1)
         adv = self.fc(intermediate)
 
