@@ -185,7 +185,7 @@ def main(args: argparse.Namespace):
     # compute final test scores
     dataloader = DataLoader(test_dataset, batch_size=args.eval_batch_size)
     auc_scores: Dict[str, float] = get_all_auc_scores(model, dataloader, test_dataset.minority)
-        
+
     # print results
     print(f'Results = {auc_scores}')
     
@@ -457,6 +457,7 @@ def train(config: Dict[str, Any],
 
     elif args.model == 'ARL' and args.dataset == 'colorMNIST':
         model = ARL_CNN.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+        print(f"best performance: {trainer.checkpoint_callback.best_model_score}, batch_size: {args.batch_size}, lr: {args.prim_lr}")
         
     elif args.model == 'ARL':
         model = ARL.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
@@ -466,6 +467,10 @@ def train(config: Dict[str, Any],
         
     elif args.model == 'IPW':
         model = IPW.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+
+    elif args.model == 'baseline_cnn':
+        model = Baseline_CNN.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+        print(f"best performance: {trainer.checkpoint_callback.best_model_score}, batch_size: {args.batch_size}, lr: {args.prim_lr}")
 
     return model
 
