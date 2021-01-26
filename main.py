@@ -60,6 +60,9 @@ def main(args: argparse.Namespace):
         args: Object from the argument parser that defines various settings of
             the model, dataset and training.
     """
+
+    # make a copy so we don't change the args object
+    args = argparse.Namespace(**vars(args))
     
     # set run version
     args.version = str(int(time()))
@@ -189,6 +192,8 @@ def main(args: argparse.Namespace):
     # save results
     with open(os.path.join(path, 'auc_scores.json'),'w') as f:
         json.dump(auc_scores, f)
+
+    return auc_scores
     
 
 def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: FairnessDataset) -> pl.LightningModule:
