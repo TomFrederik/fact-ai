@@ -49,6 +49,29 @@ def load_result_dict(base_path, datasets, models, path_func):
             results[(dataset, model)] = json.load(f)
     return results
 
+def is_max(result_dict, metrics):
+    # list of all datasets
+    datasets = set(dataset for dataset, model in result_dict)
+    # for each dataset, find the maximum over all models with that dataset
+    max_vals = {
+        dataset: {
+            metric: max(
+                result_dict[(ds, model)][metric]["mean"]
+                for ds, model in result_dict
+                if ds == dataset)
+            for metric in metrics
+        }
+        for dataset in datasets
+    }
+    # now for each item, check whether it is the maximum
+    return {
+        (dataset, model): {
+            metric: v[metric]["mean"] == max_vals[dataset][metric]
+            for metric in metrics
+        }
+        for (dataset, model), v in result_dict.items()
+    }
+
 def create_latex_line(model, dataset, result_entry, keys, bold_mask):
     string = f'{dataset} & {model}'
     for key in keys:
