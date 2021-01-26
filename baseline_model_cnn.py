@@ -32,7 +32,7 @@ class BaselineModel(pl.LightningModule):
         self.optimizer = optimizer
 
         # construct network
-        self.cnn = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=64, kernel_size=(3, 3)),
+        self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
                                  nn.MaxPool2d(kernel_size=(2, 2)),
                                  nn.Flatten())
         net_list: List[torch.nn.Module] = []
@@ -57,7 +57,8 @@ class BaselineModel(pl.LightningModule):
             Tensor of shape [batch_size] with predicted logits.
         """
 
-        intermediate = self.cnn(input.permute((1, 0, 2, 3, 4))[0])
+        # intermediate = self.cnn(input.permute((1, 0, 2, 3, 4))[0])
+        intermediate = self.cnn(input)
         out = self.net(intermediate).squeeze(dim=-1)
         return out
     
