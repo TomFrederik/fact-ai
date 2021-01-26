@@ -255,7 +255,8 @@ class CNN_Learner(nn.Module):
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[0])
+        # intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[0])
+        intermediate = self.cnn(x)
         out = self.fc(intermediate)
 
         return torch.squeeze(out, dim=-1)
@@ -307,7 +308,8 @@ class CNN_Adversary(nn.Module):
         """
 
         # compute adversary
-        intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[0])
+        # intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[0])
+        intermediate = self.cnn(x)
         intermediate = torch.cat([intermediate.float(), y.float().unsqueeze(1)], dim=1)
         adv = self.fc(intermediate)
 

@@ -354,7 +354,7 @@ class colorMNISTDataset(FairnessDataset):
 
         if idcs is not None:
             self._data = self._data[idcs]
-
+        '''
         self._dimensionality = np.array(self._data[0, 0]).shape
         self._features = torch.stack([torch.stack([self.to_tensor(d[0]), self.to_tensor(d[1])]) for d in self._data])
         self.index2values = ['protected', 'unprotected']
@@ -362,6 +362,14 @@ class colorMNISTDataset(FairnessDataset):
         self._group_probs = np.array([protected_prob, 1 - protected_prob])
         self._memberships = torch.Tensor([d[3] for d in self._data])
         self._labels = torch.Tensor([d[2] for d in self._data])
+        '''
+        self._dimensionality = np.array(self._data[0, 0]).shape
+        self._features = torch.stack([torch.Tensor(d[0] / 255).float() for d in self._data])
+        self.index2values = ['protected', 'unprotected']
+        protected_prob = np.mean([d[2] for d in self._data])
+        self._group_probs = np.array([protected_prob, 1 - protected_prob])
+        self._memberships = torch.Tensor([d[2] for d in self._data])
+        self._labels = torch.Tensor([d[1] for d in self._data])
 
     def __len__(self):
         """Returns the number of elements in the dataset."""
@@ -380,16 +388,19 @@ class colorMNISTDataset(FairnessDataset):
             s: Group memberships of the specified elements.       
         """
         
-        x, x_protected, y, s = self._data[index]
+        # x, x_protected, y, s = self._data[index]
+        x, y, s = self._data[index]
 
         x = self.to_tensor(x)
-        x_protected = self.to_tensor(x_protected)
+        # x_protected = self.to_tensor(x_protected)
 
         y = float(y)
 
-        input = torch.stack([x, x_protected])
+        # input = torch.stack([x, x_protected])
 
-        return input, y, s
+        # return input, y, s
+
+        return x, y, s
 
     @property
     def protected_index2value(self):
