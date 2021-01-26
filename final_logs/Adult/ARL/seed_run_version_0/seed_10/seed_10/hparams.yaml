@@ -1,0 +1,16 @@
+adv_hidden: []
+config:
+  batch_size: 128
+  eta: 0.5
+  lr: 0.1
+dataset_type: tabular
+include_labels: true
+input_shape: 101
+opt_kwargs:
+  initial_accumulator_value: 0.1
+optimizer: !!python/name:torch.optim.adagrad.Adagrad ''
+pretrain_steps: 250
+pretrained: false
+prim_hidden:
+- 64
+- 32
