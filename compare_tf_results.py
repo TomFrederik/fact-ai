@@ -5,7 +5,7 @@ import json
 import itertools
 
 def get_path(base_path, model, dataset, lr, bs, num_steps):
-    path = os.path.join(base_path, f'{dataset}_{model}_{lr}_{bs}_{num_steps}')
+    path = os.path.join(base_path, f'{model}_{dataset}_{lr}_{bs}_{num_steps}')
     return path
 
 def subtract(dict1, dict2):
@@ -47,24 +47,36 @@ our_stds = {}
 their_means = {}
 their_stds = {}
 
+key_dict = {
+    "accuracy": "accuracy",
+    "micro_avg_auc": "auc",
+    "minority_auc": "auc subgroup 1"
+}
+
 for model, dataset in itertools.product(models, datasets):
     path = get_path('./training_logs', model, dataset, 0.1, 128, 1000)
     with open(os.path.join(path, 'average.txt')) as f:
         our_means[(model, dataset)] = json.load(f)
+        del our_means[(model, dataset)]["macro_avg_auc"]
+        del our_means[(model, dataset)]["min_auc"]
     with open(os.path.join(path, 'std.txt')) as f:
         our_stds[(model, dataset)] = json.load(f)
+        del our_stds[(model, dataset)]["macro_avg_auc"]
+        del our_stds[(model, dataset)]["min_auc"]
 
-    path = get_path('../google_research/group_agnostic_fairness/results', model, dataset, 0.1, 128, 1000)
+    path = get_path('../google-research/group_agnostic_fairness/results/', model, dataset, 0.1, 128, 1000)
     with open(os.path.join(path, 'average.txt')) as f:
-        their_means[(model, dataset)] = json.load(f)
+        data = json.load(f)
+        their_means[(model, dataset)] = {k: data[key_dict[k]] for k in key_dict}
     with open(os.path.join(path, 'std.txt')) as f:
-        their_stds[(model, dataset)] = json.load(f)
+        data = json.load(f)
+        their_stds[(model, dataset)] = {k: data[key_dict[k]] for k in key_dict}
 
 absolute_errors = subtract(our_means, their_means)
 total_stds = valmap(add(square(our_stds), square(their_stds)), math.sqrt)
 relative_errors = div(absolute_errors, total_stds)
 
-key2index = {'min_auc':2, 'macro_avg_auc':1, 'micro_avg_auc':0, 'minority_auc':3}
+key2index = {'micro_avg_auc':0, 'minority_auc':1, 'accuracy': 2}
 index2key = [0]*len(key2index.keys())
 for key in key2index:
     index2key[key2index[key]] = key
@@ -75,9 +87,9 @@ def create_line(model, dataset, result_entry):
         key = index2key[i]
         val = result_entry[key]
         if abs(val) > 2:
-            string += r' & \textbf{' + f'{val:1.4f}' + r'}'
+            string += r' & \textbf{' + f'{val:1.2f}' + r'}'
         else:
-            string += f' & {val:1.4f}'
+            string += f' & {val:1.2f}'
     string += '\\\\\n'
     return string
 

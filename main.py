@@ -175,11 +175,11 @@ def main(args: argparse.Namespace):
     permuted_idcs = np.random.permutation(np.arange(0, len(dataset)))
     # create an option to set the split percentage?
     train_idcs, val_idcs = permuted_idcs[:int(0.9*len(permuted_idcs))], permuted_idcs[int(0.9*len(permuted_idcs)):] 
-    train_dataset, val_dataset = CustomSubset(dataset, train_idcs), CustomSubset(dataset, val_idcs)
+    #train_dataset, val_dataset = CustomSubset(dataset, train_idcs), CustomSubset(dataset, val_idcs)
     
         
     # single training run
-    model: pl.LightningModule = train(config, args, train_dataset=train_dataset, val_dataset=val_dataset, test_dataset=test_dataset)
+    model: pl.LightningModule = train(config, args, train_dataset=dataset, test_dataset=test_dataset)
     
     # compute final test scores
     dataloader = DataLoader(test_dataset, batch_size=args.eval_batch_size)
@@ -424,7 +424,7 @@ def train(config: Dict[str, Any],
                                 mode='max', 
                                 verbose=False,
                                 monitor='validation/micro_avg_auc')
-    callbacks.append(checkpoint)
+    #callbacks.append(checkpoint)
     
     # Create a PyTorch Lightning trainer
     trainer = pl.Trainer(logger=logger,
