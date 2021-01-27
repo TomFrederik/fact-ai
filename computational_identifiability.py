@@ -237,9 +237,10 @@ def main(args):
 
     # set up trainer
     trainer = pl.Trainer(logger=logger,
-                        max_steps=args.train_steps,
-                        callbacks=callbacks
-                        )
+                         max_steps=args.train_steps,
+                         callbacks=callbacks,
+                         progress_bar_refresh_rate=1 if args.p_bar else 0,
+                         )
     
     # train model
     fit_time = time()
@@ -247,7 +248,7 @@ def main(args):
     print(f'time to fit was {time()-fit_time}')
 
     # eval best model on test set
-    trainer.test(test_dataloaders=test_loader, ckpt_path='best')
+    return trainer.test(test_dataloaders=test_loader, ckpt_path='best')
 
 
 
@@ -267,6 +268,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', default=0, type=int)
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
+    parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     
     args = parser.parse_args()
 
