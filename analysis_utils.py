@@ -85,7 +85,7 @@ def create_latex_line(row_key, result_entry, keys, bold_mask):
     else:
         string = f'{row_key}'
     for key in keys:
-        val = result_entry[key]
+        val = result_entry[key]['mean']
         if bold_mask[key]:
             string += r' & \textbf{' + f'{val:1.2f}' + r'}'
         else:
@@ -120,7 +120,7 @@ def create_markdown_line(row_key, result_entry, keys, bold_mask):
     else:
         string = f'| {row_key}'
     for key in keys:
-        val = result_entry[key]
+        val = result_entry[key]['mean']
         if bold_mask[key]:
             string += f' | **{val:1.2f}**'
         else:
