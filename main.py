@@ -232,7 +232,7 @@ def main(args: argparse.Namespace):
         return auc_scores, analysis.best_config
     
     elif args.grid_search and args.dataset_type == 'image':
-        return auc_scores, {'lr': best_lr, 'batch_size': batch_size}
+        return auc_scores, {'lr': best_lr, 'batch_size': best_batch_size}
 
     else:
         return auc_scores
