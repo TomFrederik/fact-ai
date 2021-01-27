@@ -62,9 +62,10 @@ def main(args: argparse.Namespace):
     # make a copy so we don't change the args object
     args = argparse.Namespace(**vars(args))
     
-    # set run version
-    args.version = str(int(time()))
-    
+    if args.version is not None:
+        # set run version
+        args.version = str(int(time()))
+        
     # seed
     pl.seed_everything(args.seed)
     np.random.seed(args.seed)
@@ -191,7 +192,10 @@ def main(args: argparse.Namespace):
     with open(os.path.join(path, 'auc_scores.json'),'w') as f:
         json.dump(auc_scores, f)
 
-    return auc_scores
+    if args.grid_search:
+        return auc_scores, analysis.best_config
+    else:
+        return auc_scores
     
 
 def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: FairnessDataset) -> pl.LightningModule:
@@ -478,7 +482,8 @@ if __name__ == '__main__':
     #parser.add_argument('--nbr_seeds', default=2, type=int, help='Number of independent training runs') # TODO: not implemented yet
     parser.add_argument('--eval_batch_size', default=512, type=int, help='Batch size for evaluation. No effect on training or results, set as large as memory allows to maximize performance')
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
-    
+    parser.add_argument('--version', default=None, type=str, help='Override version. Default is the current time. Will be used in other scripts which call main.main().')
+
     # Dataset settings
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced', 'EMNIST'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
