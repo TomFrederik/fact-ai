@@ -20,6 +20,7 @@ class BaselineModel(pl.LightningModule):
         num_features: int,
         hidden_units: List[int] = [64,32],
         optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
+        dataset_type: str = 'tabular',
         opt_kwargs: Dict[str, Any] = {}
         ):
         """Inits an instance of the network with the given attributes."""
@@ -32,14 +33,32 @@ class BaselineModel(pl.LightningModule):
         self.optimizer = optimizer
 
         # construct network
-        net_list: List[torch.nn.Module] = []
-        num_units = [self.hparams.num_features] + self.hparams.hidden_units
-        for num_in, num_out in zip(num_units[:-1], num_units[1:]):
-            net_list.append(nn.Linear(num_in, num_out))
-            net_list.append(nn.ReLU())
-        net_list.append(nn.Linear(num_units[-1], 1))
+        if dataset_type == 'tabular':
+            net_list: List[torch.nn.Module] = []
+            num_units = [self.hparams.num_features] + self.hparams.hidden_units
+            for num_in, num_out in zip(num_units[:-1], num_units[1:]):
+                net_list.append(nn.Linear(num_in, num_out))
+                net_list.append(nn.ReLU())
+            net_list.append(nn.Linear(num_units[-1], 1))
 
-        self.net = nn.Sequential(*net_list)
+            self.net = nn.Sequential(*net_list)
+
+        elif dataset_type == 'image':
+            assert num_features == (1, 28, 28), f"Input shape to ARL is {num_features} and not [1, 28, 28]!"
+            self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
+                                     nn.MaxPool2d(kernel_size=(2, 2)),
+                                     nn.Flatten())
+            net_list: List[torch.nn.Module] = []
+            num_units = [10816] + hidden_units
+            for num_in, num_out in zip(num_units[:-1], num_units[1:]):
+                net_list.append(nn.Linear(num_in, num_out))
+                net_list.append(nn.ReLU())
+            net_list.append(nn.Linear(num_units[-1], 1))
+
+            self.net = nn.Sequential(*net_list)
+
+        else:
+            raise Exception("Baseline model was unable to recognize dataset type!")
 
         # init loss
         self.loss_fct = nn.BCEWithLogitsLoss()
@@ -53,7 +72,12 @@ class BaselineModel(pl.LightningModule):
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        out = self.net(input).squeeze(dim=-1)
+        if self.hparams.dataset_type == 'tabular':
+            out = self.net(input).squeeze(dim=-1)
+        else:
+            intermediate = self.cnn(input)
+            out = self.net(intermediate).squeeze(dim=-1)
+
         return out
     
     def training_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
