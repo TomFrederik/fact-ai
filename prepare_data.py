@@ -184,36 +184,6 @@ print(test_df.groupby('sex').count() / len(test_df))
 
 save_results(train_df, test_df, base_dir)
 
-'''
-### approach 1: throw away test file and re-split train file
-all_idcs = np.random.permutation(np.arange(len(train_df)))
-train_idcs, test_idcs = all_idcs[:int(len(all_idcs) * 0.7)], all_idcs[int(len(all_idcs) * 0.7):]
-train_only_test_df = train_df.iloc[test_idcs,:]
-train_only_train_df = train_df.iloc[train_idcs,:]
-print('Frequencies sex in only_train train:')
-print(train_only_train_df.groupby('sex').count()/len(train_only_train_df))
-print('Frequencies sex in only_train test:')
-print(train_only_test_df.groupby('sex').count()/len(train_only_test_df))
-
-save_results(train_only_train_df, train_only_test_df, base_dir, suffix='_only_train', skip_vocab=True)
-###
-
-### approach 2: combine both files
-concat_df = pd.concat([train_df, test_df])
-all_idcs = np.random.permutation(np.arange(len(concat_df)))
-train_idcs, test_idcs = all_idcs[:int(len(all_idcs) * 0.7)], all_idcs[int(len(all_idcs) * 0.7):]
-concat_test_df = concat_df.iloc[test_idcs,:]
-concat_train_df = concat_df.iloc[train_idcs,:]
-print('Frequencies sex in train:')
-print(concat_train_df.groupby('sex').count()/len(concat_train_df))
-print('Frequencies sex in test:')
-print(concat_test_df.groupby('sex').count()/len(concat_test_df))
-
-save_results(concat_train_df, concat_test_df, base_dir, suffix='_concat', skip_vocab=True)
-###
-
-'''
-
 #########
 # MNIST #
 #########
