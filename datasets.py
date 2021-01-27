@@ -363,7 +363,7 @@ class colorMNISTDataset(FairnessDataset):
         self._memberships = torch.Tensor([d[3] for d in self._data])
         self._labels = torch.Tensor([d[2] for d in self._data])
         '''
-        self._dimensionality = np.array(self._data[0, 0]).shape
+        self._dimensionality = np.expand_dims(np.array(self._data[0, 0]), axis=0).shape
         self._features = torch.stack([torch.Tensor(d[0] / 255).float().unsqueeze(0) for d in self._data])
         self.index2values = ['protected', 'unprotected']
         protected_prob = np.mean([d[2] for d in self._data])
