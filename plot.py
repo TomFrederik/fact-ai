@@ -1,7 +1,6 @@
 import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib
-matplotlib.use('pdf')
 
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
@@ -13,7 +12,6 @@ import os
 
 
 SETTINGS = {
-        'models': ['baseline', 'ARL', 'DRO', 'IPW(S)', 'IPW(S+Y)'],
         'colors': ['green', 'red', 'blue', 'orange', 'yellow'],
         'min_auc': 'Minimum group AUC',
         'micro_avg_auc': 'Micro-average AUC',
@@ -65,7 +63,7 @@ def tflog2pandas(path: str) -> pd.DataFrame:
     
 def main(args: argparse.Namespace):    
     
-    for model, color in zip(SETTINGS['models'], SETTINGS['colors']):
+    for model, color in zip(args.models, SETTINGS['colors']):
         
         paths = []
         dfList = []
@@ -106,6 +104,7 @@ def main(args: argparse.Namespace):
     
 
 if __name__ == '__main__':
+    matplotlib.use('pdf')
     
     # collect cmd line args
     parser = argparse.ArgumentParser()
@@ -114,6 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', default='final_logs', type=str)
     parser.add_argument('--split', choices=['training', 'validation', 'test'], default='validation')
     parser.add_argument('--metric', choices=['min_auc', 'macro_avg_auc', 'micro_avg_auc', 'minority_auc', 'accuracy'], default='min_auc')    
+    parser.add_argument('--models', nargs='+', default=['baseline', 'ARL', 'DRO', 'IPW(S)', 'IPW(S+Y)'])
     
     args: argparse.Namespace = parser.parse_args()
     
