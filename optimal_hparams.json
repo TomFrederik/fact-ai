@@ -43,5 +43,15 @@
 	    "batch_size": 256,
 	    "prim_lr": 0.1
 	}
+    },
+    "EMNIST": {
+	"baseline": {
+	    "batch_size": 256,
+	    "prim_lr": 0.01
+	},
+	"ARL": {
+	    "batch_size": 512,
+	    "prim_lr": 0.01
+	}
     }
 }
