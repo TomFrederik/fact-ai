@@ -1,32 +1,33 @@
-# fact-ai
+# Reproducibility Project: Fairness without Demographics through Adversarial Reweighted Learning
 
 ## Goal:
 This repository re-implements `Fairness without Demographics through Adversarial Reweighted Learning` in PyTorch. The goal was to reproduce the results from the paper and to extend ARL to image data.
 
 ## Organisation of this repo
-/data: 
-	The datasets used in the experiments:
-	- Adult
-	- LSAC
-	- COMPAS
-	- EMNIST
-	The data should be usable out of the box. If it doesn't or the data is not directly available in the repo, create the datasets as described below.
-
-/paper_results
-	Contains the results that were achieved by the authors of the original ARl paper in json format.
-
-/job_scripts
-	SLURM job scripts used in creating the results. Can be ignored.
-
-/grid_search
-	raw outputs, checkpoints and logs of the scripts that run a grid search
-
-/training_logs
-	raw_outputs, checkpoints and logs of the scripts than run individual training runs, e.g. when training with optimal hyperparameters.
-
-./
-	The root folder contains the code necessary to prepare the data, run all experiments and analyse the results. For a guided tour we recommend checking out `results.ipynb`.
-
+`/data`  
+The datasets used in the experiments:  
+  - Adult  
+  - LSAC  
+  - COMPAS  
+  - EMNIST  
+  
+The data should be usable out of the box. If it doesn't or the data is not directly available in the repo, create the datasets as described below.  
+  
+`/paper_results`  
+	Contains the results that were achieved by the authors of the original ARl paper in json format.  
+  
+`/job_scripts`  
+	SLURM job scripts used in creating the results. Can be ignored.  
+  
+`/grid_search`  
+	raw outputs, checkpoints and logs of the scripts that run a grid search  
+  
+`/training_logs`  
+	raw_outputs, checkpoints and logs of the scripts than run individual training runs, e.g. when training with optimal hyperparameters.  
+  
+`./`  
+	The root folder contains the code necessary to prepare the data, run all experiments and analyse the results. For a guided tour we recommend checking out `results.ipynb`.  
+  
 ## Creating the dataset
 Simply run `prepare_data.sh` in the project root directory to download
 and preprocess the datasets. Alternatively you can download the datasets
