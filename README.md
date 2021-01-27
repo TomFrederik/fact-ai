@@ -23,10 +23,19 @@ The data should be usable out of the box. If it doesn't or the data is not direc
 	raw outputs, checkpoints and logs of the scripts that run a grid search  
   
 `/training_logs`  
-	raw_outputs, checkpoints and logs of the scripts than run individual training runs, e.g. when training with optimal hyperparameters.  
+	raw_outputs, checkpoints and logs of the scripts than run individual training runs
+  
+`/final logs`
+	raw_outputs, checkpoints and logs of the runs that were used in to produce the final results
   
 `./`  
 	The root folder contains the code necessary to prepare the data, run all experiments and analyse the results. For a guided tour we recommend checking out `results.ipynb`.  
+  
+  
+## Installing the environment
+Execute the following commands to install the required packages and activate the environment  
+`conda env create -f environment.yml`  
+`conda activate fact-ai`
   
 ## Creating the dataset
 Simply run `prepare_data.sh` in the project root directory to download
@@ -35,7 +44,7 @@ yourself and then run `python prepare_data.py` (URLs and filepaths
 can be found in the shell script).
 
 ## Notebook
- To receive a guided end-to-end tour through our code, open `results.ipynb` e.g. in jupyter or in GColab. There you can inspect the already available outputs and re-run experiments at will. 
+ To receive a guided end-to-end tour through our code, open `results.ipynb` e.g. via Jupyter or Google Colab. There you can inspect the already available outputs and re-run experiments at will. The notebook contains all you need to reproduce the results, except the grid searches to find the optimal hyperparameters. To re-run the grid searches, follow the instructions below or in the notebook.
 
 ## Finding optimal hyperparameters
 To execute grid searches for all models and datasets with default settings run the following command
