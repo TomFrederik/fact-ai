@@ -115,7 +115,7 @@ def create_latex_line_with_std(row_key, result_entry, keys, bold_mask):
     string += '\\\\\n'
     return string
 
-def create_markdown_line(row_key, result_entry, keys, bold_mask):
+def create_markdown_line_scalar(row_key, result_entry, keys, bold_mask):
     if isinstance(row_key, tuple):
         string = ''
         for item in row_key:
