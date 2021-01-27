@@ -313,24 +313,15 @@ for t in ['train', 'test']:
     new_dataset = []
     for i in tqdm(range(len(dataset))):
         x, original_label = dataset.__getitem__(i)
-        x = x.convert('RGB')
         y = int(original_label >= 24)
 
         if (original_label % 2 == 0 and random.random() <= 0.9) or (original_label % 2 == 1 and random.random() <= 0.1):
             if random.random() <= 0.3:
                 continue
-
-            r, g, b = x.split()
-            r = Image.fromarray(np.array(r) * 0)
-            x_protected = Image.merge('RGB', (r, g, b))
             s = 1
-
         else:
-            x_protected = x
             s = 0
 
-        new_dataset.append([x, x_protected, y, s])
+        new_dataset.append([np.array(x), y, s])
 
-    np.save(os.path.join("data", "EMNIST", t + '_prepared'), np.array(new_dataset, dtype=object))
-
-os.system("mv data/EMNIST data/colorMNIST")
+    np.save(os.path.join("data", "EMNIST", t + '_prepared'), np.array(new_dataset))
