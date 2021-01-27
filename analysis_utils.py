@@ -72,8 +72,15 @@ def is_max(result_dict, metrics):
         for (dataset, model), v in result_dict.items()
     }
 
-def create_latex_line(model, dataset, result_entry, keys, bold_mask):
-    string = f'{dataset} & {model}'
+def create_latex_line(row_key, result_entry, keys, bold_mask):
+    if isinstance(row_key, tuple):
+        string = ''
+        for i, item in enumerate(row_key):
+            string += f'{item}'
+            if i + 1 < len(row_key):
+                string += ' & '
+    else:
+        string = f'{row_key}'
     for key in keys:
         val = result_entry[key]
         if bold_mask[key]:
@@ -83,8 +90,15 @@ def create_latex_line(model, dataset, result_entry, keys, bold_mask):
     string += '\\\\\n'
     return string
 
-def create_latex_line_with_std(model, dataset, result_entry, keys, bold_mask):
-    string = f'{dataset} & {model}'
+def create_latex_line_with_std(row_key, result_entry, keys, bold_mask):
+    if isinstance(row_key, tuple):
+        string = ''
+        for i, item in enumerate(row_key):
+            string += f'{item}'
+            if i + 1 < len(row_key):
+                string += ' & '
+    else:
+        string = f'{row_key}'
     for key in keys:
         mean = result_entry[key]['mean']
         std = result_entry[key]['std']
@@ -95,8 +109,13 @@ def create_latex_line_with_std(model, dataset, result_entry, keys, bold_mask):
     string += '\\\\\n'
     return string
 
-def create_markdown_line(model, dataset, result_entry, keys, bold_mask):
-    string = f'| {dataset} | {model}'
+def create_markdown_line(row_key, result_entry, keys, bold_mask):
+    if isinstance(row_key, tuple):
+        string = ''
+        for item in row_key:
+            string += f'| {item}'
+    else:
+        string = f'| {row_key}'
     for key in keys:
         val = result_entry[key]
         if bold_mask[key]:
@@ -106,8 +125,13 @@ def create_markdown_line(model, dataset, result_entry, keys, bold_mask):
     string += ' |\n'
     return string
 
-def create_markdown_line_with_std(model, dataset, result_entry, keys, bold_mask):
-    string = f'|{dataset} | {model}'
+def create_markdown_line_with_std(row_key, result_entry, keys, bold_mask):
+    if isinstance(row_key, tuple):
+        string = ''
+        for item in row_key:
+            string += f'| {item}'
+    else:
+        string = f'| {row_key}'
     for key in keys:
         mean = result_entry[key]['mean']
         std = result_entry[key]['std']
@@ -120,8 +144,8 @@ def create_markdown_line_with_std(model, dataset, result_entry, keys, bold_mask)
 
 def create_table(result_dict, keys, bold_dict, line_func):
     table = ''
-    for dataset, model in result_dict:
-        result_entry = result_dict[(dataset, model)]
-        bold_mask = bold_dict[(dataset, model)]
-        table += line_func(model, dataset, result_entry, keys, bold_mask)
+    for row_key in result_dict:
+        result_entry = result_dict[row_key]
+        bold_mask = bold_dict[row_key]
+        table += line_func(row_key, result_entry, keys, bold_mask)
     return table
