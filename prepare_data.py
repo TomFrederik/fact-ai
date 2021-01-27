@@ -11,6 +11,8 @@ from torchvision import datasets
 import numpy as np
 import random
 
+random.seed(0)
+
 def convert_object_type_to_category(df):
     """Converts columns of type object to category."""
     df = pd.concat(
