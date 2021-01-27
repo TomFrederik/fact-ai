@@ -6,6 +6,26 @@ import itertools
 from argparse import Namespace
 import main
 
+MAIN_RESULTS_HEADER = """
+|Dataset|Method|Micro-avg AUC|Macro-avg AUC|Min AUC|Minority AUC|Accuracy|
+|---|---|---|---|---|---|---|
+"""
+
+DEVIATION_HEADER = """
+|Dataset|Method|Micro-avg AUC|Macro-avg AUC|Min AUC|Minority AUC|
+|---|---|---|---|---|---|
+"""
+
+IDENTIFIABILITY_HEADER = """
+|Target|Adult|LSAC|COMPAS|
+|---|---|---|---|
+"""
+
+MAIN_RESULTS_KEYS = ['micro_avg_auc', 'macro_avg_auc', 'min_auc', 'minority_auc', 'accuracy']
+
+DEVIATION_KEYS = ['micro_avg_auc', 'macro_avg_auc', 'min_auc', 'minority_auc']
+
+
 def get_our_path(base_path, model, dataset, seed_run_version=0):
     path = os.path.join(base_path, dataset, model, f'seed_run_version_{seed_run_version}', 'mean_std.json')
     return path
