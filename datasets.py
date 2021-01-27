@@ -309,20 +309,14 @@ class EMNISTDataset(FairnessDataset):
     groups amongst its elements. 
 
     Attributes:
-        dataset_name: Identifier of the dataset used to load the data and the
-            corresponding dataset settings.
+        noise: Whether the dataset should include noisy samples or not.
         test: Option to use the test dataset.
-        binarize_prot_group: Option to binarize the values in sensitive columns.
-            If true, the dataset will only differentiate between sensitive and 
-            non-sensitive values (e.g. 'black' and 'not black') in sensitive 
-            columns.
-        idcs: Optional; indices that specify which rows should be included in 
+        idcs: Optional; indices that specify which rows should be included in
             the dataset. If None, all rows are included.
-        sensitive_label: Option to use the joint probability of label and group
-            membership for computing the weights for the IPW (IPW(S+Y)).
     """
 
     def __init__(self,
+                 noise: bool = True,
                  test: bool = False,
                  idcs: Optional[List[int]] = None):
         """Inits an instance of FairFaceDataset with the given attributes."""
@@ -333,10 +327,12 @@ class EMNISTDataset(FairnessDataset):
         self.test = test
         self.to_tensor = transforms.ToTensor()
 
+        dataset_name = 'EMNIST' if noise else 'EMNIST_no_noise'
+
         if self.test:
-            self._data = np.load(os.path.join('data', 'EMNIST', 'test_prepared.npy'), allow_pickle=True)
+            self._data = np.load(os.path.join('data', dataset_name, 'test_prepared.npy'), allow_pickle=True)
         else:
-            self._data = np.load(os.path.join('data', 'EMNIST', 'train_prepared.npy'), allow_pickle=True)
+            self._data = np.load(os.path.join('data', dataset_name, 'train_prepared.npy'), allow_pickle=True)
 
         if idcs is not None:
             self._data = self._data[idcs]
