@@ -20,6 +20,7 @@ import os
 import numpy as np # type: ignore
 import pandas as pd # type: ignore
 from time import time
+from typing import Tuple
 import itertools
 import json
 import warnings
@@ -62,7 +63,7 @@ def main(args: argparse.Namespace):
     # make a copy so we don't change the args object
     args = argparse.Namespace(**vars(args))
     
-    if args.version is not None:
+    if args.version is None:
         # set run version
         args.version = str(int(time()))
         
@@ -81,7 +82,7 @@ def main(args: argparse.Namespace):
     # init config dictionary
     config: Dict[str, Any] = {}
     
-    if args.grid_search:
+    if args.grid_search and args.dataset_type == 'tabular':
         # specify search space 
         # TODO: pull this outside this function for more flexible search space?
         lr_list: List[float] = [0.001, 0.01, 0.1, 1, 2, 5]
@@ -139,7 +140,44 @@ def main(args: argparse.Namespace):
         config['lr'] = analysis.best_config['lr']
         config['batch_size'] = analysis.best_config['batch_size']
         config['eta'] = analysis.best_config['eta']
-        
+
+    elif args.grid_search and args.dataset_type == 'image':
+        lr_list: List[float] = [0.001, 0.01, 0.1, 1, 2, 5]
+        batch_size_list: List[int] = [32, 64, 128, 256, 512]
+
+        best_score, best_lr, best_batch_size = -np.infty, None, None
+
+        # set path
+        path = f'grid_search/{args.model}_{args.dataset}_version_{args.version}'
+
+        # create val and train set
+        permuted_idcs = np.random.permutation(np.arange(0, len(dataset)))
+        # create an option to set the split percentage?
+        train_idcs, val_idcs = permuted_idcs[:int(0.9 * len(permuted_idcs))], permuted_idcs[int(0.9 * len(permuted_idcs)):]
+        train_dataset, val_dataset = CustomSubset(dataset, train_idcs), CustomSubset(dataset, val_idcs)
+
+        for lr, batch_size in itertools.product(lr_list, batch_size_list):
+            config = {
+                'lr': lr,
+                'batch_size': batch_size,
+            }
+
+            # set logdir
+            args.log_dir = os.path.join(path, f"batch_size={config['batch_size']}_lr={config['lr']}")
+
+            # training run
+            t: Tuple[pl.LightningModule, pl.Trainer] = train(config, args, train_dataset=train_dataset, val_dataset=val_dataset, test_dataset=test_dataset)
+            model, trainer = t
+            if trainer.checkpoint_callback.best_model_score > best_score:
+                best_lr = config['lr']
+                best_batch_size = config['batch_size']
+
+        print(f'Best hyperparameters found were: lr = {best_lr}, batch_size = {best_batch_size}')
+
+        # set hparams for final run
+        config['lr'] = best_lr
+        config['batch_size'] = best_batch_size
+
     else:
         # set hparams for single run
         config['lr'] = args.prim_lr
@@ -176,8 +214,9 @@ def main(args: argparse.Namespace):
     train_dataset, val_dataset = CustomSubset(dataset, train_idcs), CustomSubset(dataset, val_idcs)
     
     # single training run
-    model: pl.LightningModule = train(config, args, train_dataset=train_dataset, val_dataset=val_dataset, test_dataset=test_dataset)
-    
+    t: Tuple[pl.LightningModule, pl.Trainer] = train(config, args, train_dataset=train_dataset, val_dataset=val_dataset, test_dataset=test_dataset)
+    model, _ = t
+
     # compute final test scores
     dataloader = DataLoader(test_dataset, batch_size=args.eval_batch_size)
     auc_scores: Dict[str, float] = get_all_auc_scores(model, dataloader, test_dataset.minority)
@@ -306,9 +345,10 @@ def run_folds(config: Dict[str, Any],
         val_dataset = CustomSubset(dataset, val_idcs)
 
         # train model
-        model: pl.LightningModule = train(config, args, train_dataset=train_dataset,
+        t: Tuple[pl.LightningModule, pl.Trainer] = train(config, args, train_dataset=train_dataset,
                                           val_dataset=val_dataset,
                                           version=args.version, fold_nbr=fold_nbr)
+        model, _ = t
 
         # Evaluate on val set to get an estimate of performance
         scores: torch.Tensor = torch.sigmoid(model(val_dataset.features)) # suspect of this. Does it work with gpu? doesn't seem to throw an error
@@ -329,7 +369,7 @@ def train(config: Dict[str, Any],
           val_dataset: Optional[FairnessDataset]=None,
           test_dataset: Optional[FairnessDataset]=None,
           version=str(int(time())),
-          fold_nbr=None) -> pl.LightningModule:
+          fold_nbr=None) -> Tuple[pl.LightningModule, pl.Trainer]:
     """Single training run on a given dataset.
     
     Inits a model and optimizes its parameters on the given training dataset  
@@ -443,7 +483,7 @@ def train(config: Dict[str, Any],
     elif args.model == 'IPW':
         model = IPW.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
 
-    return model
+    return model, trainer
 
 
 
