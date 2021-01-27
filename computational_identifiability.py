@@ -71,7 +71,7 @@ class Linear(pl.LightningModule):
 
         loss = self.loss_fct(pred, targets) # CHECK THIS
 
-        accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets) / targets.shape[0])
+        accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets), targets.shape[0])
 
         self.log('training/loss', loss)
         self.log('training/accuracy', accuracy)
@@ -88,7 +88,7 @@ class Linear(pl.LightningModule):
 
         loss = self.loss_fct(pred, targets) # CHECK THIS
 
-        accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets) / targets.shape[0])
+        accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets), targets.shape[0])
 
         self.log('validation/loss', loss)
         self.log('validation/accuracy', accuracy)
@@ -106,7 +106,7 @@ class Linear(pl.LightningModule):
 
         loss = self.loss_fct(pred, targets) # CHECK THIS
 
-        accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets) / targets.shape[0])
+        accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets), targets.shape[0])
 
         self.log('test/loss', loss)
         self.log('test/accuracy', accuracy)
