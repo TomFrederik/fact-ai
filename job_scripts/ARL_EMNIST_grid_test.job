@@ -2,12 +2,12 @@
 
 #SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:1
-#SBATCH --job-name=get_opt_hparams
+#SBATCH --job-name=ARL_EMNIST_seed_avg
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
-#SBATCH --time=04:30:00
+#SBATCH --cpus-per-task=3
+#SBATCH --time=00:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=outputs/get_opt_hparams_%A.out
+#SBATCH --output=outputs/ARL_EMNIST_avg_%a_%A.out
 
 module purge
 module load 2019
@@ -24,6 +24,5 @@ cd $HOME/fact-ai/
 source activate fact-ai-lisa
 
 # Run code
-srun python -u get_opt_hparams.py --disable_warnings --num_cpus 2 --num_workers 2 --tf_mode --train_steps 100
-
+srun python -u main.py --model ARL --dataset EMNIST --num_cpus 2
 

@@ -18,6 +18,8 @@ OPT_BY_NAME: Dict[str, Type[torch.optim.Optimizer]] = {
 
 MODELS = ['baseline', 'ARL', 'DRO', 'IPW(S)', 'IPW(S+Y)']  
 DATASETS = ['Adult', 'COMPAS', 'LSAC']
+IMAGE_MODELS = ['baseline', 'ARL']
+IMAGE_DATASETS = ['EMNIST']
 PARAMS = ['lr', 'batch_size']
 
 
@@ -30,11 +32,16 @@ def get_opt_hparams(args):
             the model, dataset and training.
     """
 
-    all_best_params = {dataset: {} for dataset in DATASETS}
+    all_best_params = {dataset: {} for dataset in DATASETS+IMAGE_DATASETS}
+
+    # save num_gpus for image run
+    num_gpus = args.num_gpus
 
     args.version = str(int(time()))
 
+    print(f'Now running on tabular datasets')
     args.dataset_type = 'tabular'
+    args.num_gpus = 0 # runs are slower on GPUs than on CPUs
 
     for model, dataset in it.product(MODELS, DATASETS):
         
@@ -62,6 +69,28 @@ def get_opt_hparams(args):
         all_best_params[dataset][model] = {key: best_params[key] for key in PARAMS}
         if model == 'DRO':
             all_best_params[dataset][model]['eta'] = best_params['eta']
+        
+        # write to disk, to ensure it is saved even if run is aborted later
+        path = './optimal_hparams.json'
+        with open(path, 'w') as f:
+            json.dump(all_best_params, f)
+    
+    print(f'Now running on EMNIST')
+    args.dataset_type = 'image'
+    args.sensitive_label = False
+    args.num_gpus = num_gpus # restore num_gpus
+
+    for model, dataset in it.product(IMAGE_MODELS, IMAGE_DATASETS):
+        # set args
+        args.model = model
+        args.dataset = dataset
+
+        # run grid_search
+        auc_scores, best_params = main.main(args)
+        print(f'Best params for {model} on {dataset} are {best_params}')
+
+        # add params to dict
+        all_best_params[dataset][model] = {key: best_params[key] for key in PARAMS}
         
         # write to disk, to ensure it is saved even if run is aborted later
         path = './optimal_hparams.json'

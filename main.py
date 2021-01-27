@@ -228,8 +228,12 @@ def main(args: argparse.Namespace):
     with open(os.path.join(path, 'auc_scores.json'),'w') as f:
         json.dump(auc_scores, f)
 
-    if args.grid_search:
+    if args.grid_search and args.dataset_type != 'image':
         return auc_scores, analysis.best_config
+    
+    elif args.grid_search and args.dataset_type == 'image':
+        return auc_scores, {'lr': best_lr, 'batch_size': batch_size}
+
     else:
         return auc_scores
     
