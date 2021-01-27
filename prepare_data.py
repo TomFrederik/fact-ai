@@ -184,6 +184,8 @@ print(test_df.groupby('sex').count() / len(test_df))
 
 save_results(train_df, test_df, base_dir)
 
+# TODO: remove?
+"""
 #########
 # MNIST #
 #########
@@ -210,6 +212,7 @@ np.save(os.path.join('data', 'MNIST', 'mnist_testset'), np.array(mnist_testset_n
 
 os.system('rm -r data/MNIST/processed')
 os.system('rm -r data/MNIST/raw')
+"""
 
 ##########
 # EMNIST #
@@ -234,3 +237,29 @@ for t in ['train', 'test']:
         new_dataset.append([np.array(x), y, s])
 
     np.save(os.path.join("data", "EMNIST", t + '_prepared'), np.array(new_dataset))
+
+
+###################
+# EMNIST no noise #
+###################
+mnist_trainset = datasets.EMNIST(root='data', split='balanced', train=True, download=True, transform=None)
+mnist_testset = datasets.EMNIST(root='data', split='balanced', train=False, download=True, transform=None)
+os.mkdir(os.path.join("data", "EMNIST_no_noise"))
+
+for t in ['train', 'test']:
+    dataset = mnist_trainset if t == 'train' else mnist_testset
+    new_dataset = []
+    for i in tqdm(range(len(dataset))):
+        x, original_label = dataset.__getitem__(i)
+        y = int(original_label >= 24)
+
+        if original_label % 2 == 0:
+            if random.random() <= 0.3:
+                continue
+            s = 1
+        else:
+            s = 0
+
+        new_dataset.append([np.array(x), y, s])
+
+    np.save(os.path.join("data", "EMNIST_no_noise", t + '_prepared'), np.array(new_dataset))

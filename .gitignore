@@ -17,3 +17,4 @@ __pycache__
 /tSNE_results
 /data/EMNIST/
 /data/colorMNIST/
+/data/EMNIST_no_noise/
