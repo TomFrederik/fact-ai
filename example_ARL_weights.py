@@ -365,7 +365,7 @@ def train(config: Dict[str, Any],
 
     # Load best checkpoint after training
     if args.model == 'ARL' and args.dataset == 'EMNIST':
-        model = ARL_CNN.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+        model = ARL.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
         
     elif args.model == 'ARL':
         model = ARL.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
