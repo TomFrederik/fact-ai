@@ -1,7 +1,10 @@
 import math
+import statistics
 import os
 import json
 import itertools
+from argparse import Namespace
+import main
 
 def get_our_path(base_path, model, dataset, seed_run_version=0):
     path = os.path.join(base_path, dataset, model, f'seed_run_version_{seed_run_version}', 'mean_std.json')
@@ -152,3 +155,35 @@ def create_table(result_dict, keys, bold_dict, line_func):
         bold_mask = bold_dict[row_key]
         table += line_func(row_key, result_entry, keys, bold_mask)
     return table
+
+def run_models(seed, args, optimal_hparams, dataset_model_list):
+    result_dict = {}
+    for dataset, model in dataset_model_list:
+        # don't overwrite the defaults:
+        temp_args = Namespace(**vars(args))
+        temp_args.log_dir = 'complete_run_logs'
+        if model == 'IPW(S)':
+            temp_args.model = 'IPW'
+            temp_args.sensitive_label = False
+        elif model == 'IPW(S+Y)':
+            temp_args.model = 'IPW'
+            temp_args.sensitive_label = True
+        else:
+            temp_args.model = model
+        temp_args.dataset = dataset
+        temp_args.seed = seed
+        # set the optimal hyperparameters:
+        for k, v in optimal_hparams[dataset][model]:
+            setattr(args, k, v)
+
+        # train and evaluate the model:
+        result_dict[(dataset, model)] = main.main(args)
+    return result_dict
+
+def result_list_to_dict(results, dataset_model_list):
+    return {
+        k: {
+            'mean': statistics.mean(result_dict[k] for result_dict in results),
+            'std': statistics.std(result_dict[k] for result_dict in results)
+        } for k in dataset_model_list
+    }
