@@ -129,13 +129,14 @@ def main(args: argparse.Namespace):
     true_labels = true_labels[sort_idcs]
     memberships = memberships[sort_idcs]
 
-    print(f'Saving results to {path}')
-    np.save(os.path.join(path, 'lambdas'), lambdas)
-    np.save(os.path.join(path, 'predictions'), predictions)
-    np.save(os.path.join(path, 'true_labels'), true_labels)
-    np.save(os.path.join(path, 'memberships'), memberships)
+    if not args.notebook:
+        print(f'Saving results to {path}')
+        np.save(os.path.join(path, 'lambdas'), lambdas)
+        np.save(os.path.join(path, 'predictions'), predictions)
+        np.save(os.path.join(path, 'true_labels'), true_labels)
+        np.save(os.path.join(path, 'memberships'), memberships)
 
-    print('Plotting adversary scores..')
+        print('Plotting adversary scores..')
     # init KD
     kde = KernelDensity(bandwidth=0.3)
 
@@ -148,49 +149,50 @@ def main(args: argparse.Namespace):
     #
     score_ticks = np.linspace(0,5,100).reshape((100,1))
 
-    # plot 0 - 0
-    plt.figure()
-    for i in idx2val:
-        combi = idx2val[i]
-        lam = lambdas[(predictions == 0) & (true_labels == 0) & (memberships == i)][:, np.newaxis]
-        kde_00 = kde.fit(lam)
-        density_00 = np.exp(kde_00.score_samples(score_ticks))
-        plt.plot(score_ticks[:,0], density_00, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
-    plt.legend()
-    plt.savefig(os.path.join(path, 'lambda_0_0.pdf'))
-    
-    # plot 0 - 1
-    plt.figure()
-    for i in idx2val:
-        combi = idx2val[i]
-        lam = lambdas[(predictions == 1) & (true_labels == 0) & (memberships == i)][:, np.newaxis]
-        kde_01 = kde.fit(lam)
-        density_01 = np.exp(kde_01.score_samples(score_ticks))
-        plt.plot(score_ticks, density_01, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
-    plt.legend()
-    plt.savefig(os.path.join(path, 'lambda_0_1.pdf'))
+    if not args.notebook:
+        # plot 0 - 0
+        plt.figure()
+        for i in idx2val:
+            combi = idx2val[i]
+            lam = lambdas[(predictions == 0) & (true_labels == 0) & (memberships == i)][:, np.newaxis]
+            kde_00 = kde.fit(lam)
+            density_00 = np.exp(kde_00.score_samples(score_ticks))
+            plt.plot(score_ticks[:,0], density_00, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
+        plt.legend()
+        plt.savefig(os.path.join(path, 'lambda_0_0.pdf'))
 
-    # plot 1 - 0
-    plt.figure()
-    for i in idx2val:
-        combi = idx2val[i]
-        lam = lambdas[(predictions == 0) & (true_labels == 1) & (memberships == i)][:, np.newaxis]
-        kde_10 = kde.fit(lam)
-        density_10 = np.exp(kde_10.score_samples(score_ticks))
-        plt.plot(score_ticks, density_10, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
-    plt.legend()
-    plt.savefig(os.path.join(path, 'lambda_1_0.pdf'))
+        # plot 0 - 1
+        plt.figure()
+        for i in idx2val:
+            combi = idx2val[i]
+            lam = lambdas[(predictions == 1) & (true_labels == 0) & (memberships == i)][:, np.newaxis]
+            kde_01 = kde.fit(lam)
+            density_01 = np.exp(kde_01.score_samples(score_ticks))
+            plt.plot(score_ticks, density_01, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
+        plt.legend()
+        plt.savefig(os.path.join(path, 'lambda_0_1.pdf'))
 
-    # plot 1 - 1
-    plt.figure()
-    for i in idx2val:
-        combi = idx2val[i]
-        lam = lambdas[(predictions == 1) & (true_labels == 1) & (memberships == i)][:, np.newaxis]
-        kde_11 = kde.fit(lam)
-        density_11 = np.exp(kde_11.score_samples(score_ticks))
-        plt.plot(score_ticks, density_11, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
-    plt.legend()
-    plt.savefig(os.path.join(path, 'lambda_1_1.pdf'))
+        # plot 1 - 0
+        plt.figure()
+        for i in idx2val:
+            combi = idx2val[i]
+            lam = lambdas[(predictions == 0) & (true_labels == 1) & (memberships == i)][:, np.newaxis]
+            kde_10 = kde.fit(lam)
+            density_10 = np.exp(kde_10.score_samples(score_ticks))
+            plt.plot(score_ticks, density_10, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
+        plt.legend()
+        plt.savefig(os.path.join(path, 'lambda_1_0.pdf'))
+
+        # plot 1 - 1
+        plt.figure()
+        for i in idx2val:
+            combi = idx2val[i]
+            lam = lambdas[(predictions == 1) & (true_labels == 1) & (memberships == i)][:, np.newaxis]
+            kde_11 = kde.fit(lam)
+            density_11 = np.exp(kde_11.score_samples(score_ticks))
+            plt.plot(score_ticks, density_11, label=f'{race_dict[combi[0]]} {sex_dict[combi[1]]}')
+        plt.legend()
+        plt.savefig(os.path.join(path, 'lambda_1_1.pdf'))
 
     # combined plot
     f, axes = plt.subplots(2,2,gridspec_kw={'hspace':.5})
@@ -212,7 +214,10 @@ def main(args: argparse.Namespace):
             axes[i].set_title(titles[i])
             if i == 0:
                 axes[i].legend()
-    f.savefig(os.path.join(path, 'lambdas_combined.pdf'))
+    if args.notebook:
+        plt.show()
+    else:
+        f.savefig(os.path.join(path, 'lambdas_combined.pdf'))
     
 
 
@@ -407,6 +412,7 @@ if __name__ == '__main__':
     # ray settings
     parser.add_argument('--num_cpus', default=1, type=int, help='Number of CPUs used for each trial')
     parser.add_argument('--num_gpus', default=0.25, type=float, help='Number of GPUs used for each trial')
+    parser.add_argument('--notebook', default=False, action='store_true', help='Use notebook mode (which won\'t save anything and create fewer plots')
 
     args: argparse.Namespace = parser.parse_args()
 
