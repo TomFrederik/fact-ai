@@ -75,7 +75,7 @@ def is_max(result_dict, metrics):
         for (dataset, model), v in result_dict.items()
     }
 
-def create_latex_line(row_key, result_entry, keys, bold_mask):
+def create_latex_line_scalar(row_key, result_entry, keys, bold_mask):
     if isinstance(row_key, tuple):
         string = ''
         for i, item in enumerate(row_key):
@@ -85,7 +85,7 @@ def create_latex_line(row_key, result_entry, keys, bold_mask):
     else:
         string = f'{row_key}'
     for key in keys:
-        val = result_entry[key]['mean']
+        val = result_entry[key]
         if bold_mask[key]:
             string += r' & \textbf{' + f'{val:1.3f}' + r'}'
         else:
@@ -120,7 +120,7 @@ def create_markdown_line(row_key, result_entry, keys, bold_mask):
     else:
         string = f'| {row_key}'
     for key in keys:
-        val = result_entry[key]['mean']
+        val = result_entry[key]
         if bold_mask[key]:
             string += f' | **{val:1.2f}**'
         else:
