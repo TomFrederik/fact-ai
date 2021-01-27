@@ -66,7 +66,7 @@ class ARL(pl.LightningModule):
             if adv_input != {'X', 'Y'}:
                 print('CNN architecture currently only supports X+Y as adversary input')
             # only works with (C: 1, H: 28, W: 28) images since input shape of fully connected layers must be hard-coded
-            assert input_shape == (1, 28, 28), f"Input shape to ARL is {input_shape} and not (1, 28, 28)!"
+            # assert input_shape == (1, 28, 28), f"Input shape to ARL is {input_shape} and not (1, 28, 28)!"
             self.learner = CNN_Learner(hidden_units=prim_hidden)
             self.adversary = CNN_Adversary(hidden_units=adv_hidden)
         else:
@@ -461,6 +461,7 @@ class CNN_Adversary(nn.Module):
             net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
         net_list.append(nn.Linear(num_units[-1], 1))
+        net_list.append(nn.Sigmoid())
 
         self.fc = nn.Sequential(*net_list)
 
