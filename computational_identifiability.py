@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import DataLoader
-from datasets import TabularDataset, CustomSubset
+from datasets import TabularDataset, CustomSubset, EMNISTDataset
 
 import numpy as np
 
@@ -18,7 +18,7 @@ OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad, 'Adam': torch.optim.Adam}
 
 class Linear(pl.LightningModule):
 
-    def __init__(self, num_features, lr, train_index2value, test_index2value, target_grp, optimizer):
+    def __init__(self, num_features, lr, train_index2value, test_index2value, target_grp, optimizer, dataset_type):
         super().__init__()
 
         #self.save_hyperparameters()
@@ -28,10 +28,19 @@ class Linear(pl.LightningModule):
         self.test_index2value = test_index2value
         self.target_grp = target_grp
         self.optimizer = optimizer
+        self.dataset_type = dataset_type
         #print(index2value)
         # {0: ('Other', 'Other'), 1: ('Other', 'Female'), 2: ('Black', 'Other'), 3: ('Black', 'Female')}
 
-        self.net = nn.Linear(num_features, 1)
+        if self.dataset_type == 'tabular':
+            self.net = nn.Linear(num_features, 1)
+        elif self.dataset_type == 'image':
+            self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
+                                     nn.MaxPool2d(kernel_size=(2, 2)),
+                                     nn.Flatten())
+            self.fc = nn.Linear(10816 + 1, 1)
+        else:
+            raise Exception(f"Model was unable to recognize dataset type {self.dataset_type}!")
             
         # init loss
         self.loss_fct = nn.BCEWithLogitsLoss()
@@ -40,9 +49,15 @@ class Linear(pl.LightningModule):
 
     def forward(self, x, y):
 
-        input = torch.cat([x, y.unsqueeze(1)], dim=1).float()
+        if self.dataset_type == 'tabular':
+            input = torch.cat([x, y.unsqueeze(1)], dim=1).float()
 
-        out = self.net(input).squeeze(dim=-1)
+            out = self.net(input).squeeze(dim=-1)
+
+        else:
+            intermediate = self.cnn(x)
+            intermediate = torch.cat([intermediate.float(), y.float().unsqueeze(1)], dim=1)
+            out = self.fc(intermediate).squeeze(dim=-1)
 
         return out
     
@@ -100,7 +115,7 @@ class Linear(pl.LightningModule):
     
     def configure_optimizers(self):
 
-        optimizer = self.optimizer(self.net.parameters(), lr=self.lr)
+        optimizer = self.optimizer(self.parameters(), lr=self.lr)
 
         return optimizer
 
@@ -118,6 +133,11 @@ class Linear(pl.LightningModule):
                     if self.test_index2value[key][1] == 'Female':
                         out[x == key] = 1
                 return out
+            elif self.target_grp == 'dummy':
+                for key in self.test_index2value:
+                    if self.test_index2value[key][1] == 1:
+                        out[x == key] = 1
+                return out
             else:
                 raise ValueError(f'Unexpected value for target_grp: {self.target_group}')
         else:
@@ -129,6 +149,11 @@ class Linear(pl.LightningModule):
             elif self.target_grp == 'sex':
                 for key in self.train_index2value:
                     if self.train_index2value[key][1] == 'Female':
+                        out[x == key] = 1
+                return out
+            elif self.target_grp == 'dummy':
+                for key in self.train_index2value:
+                    if self.train_index2value[key][1] == 1:
                         out[x == key] = 1
                 return out
             else:
@@ -149,8 +174,13 @@ def main(args):
 
     ## create train, val, test dataset
     # TODO: do this for images as well?
-    dataset = TabularDataset(args.dataset, disable_warnings=args.disable_warnings, suffix=args.suffix)
-    test_dataset = TabularDataset(args.dataset, test=True, disable_warnings=args.disable_warnings, suffix=args.suffix)
+    if args.dataset == 'EMNIST':
+        assert args.target_grp == 'dummy', "Target group not recognized for EMNIST dataset!"
+        dataset = EMNISTDataset()
+        test_dataset = EMNISTDataset(test=True)
+    else:
+        dataset = TabularDataset(args.dataset, disable_warnings=args.disable_warnings, suffix=args.suffix)
+        test_dataset = TabularDataset(args.dataset, test=True, disable_warnings=args.disable_warnings, suffix=args.suffix)
     
     # train val split
     all_idcs = np.random.permutation(np.arange(0, len(dataset), 1))
@@ -165,12 +195,13 @@ def main(args):
     test_loader = DataLoader(test_dataset, num_workers=args.num_workers, batch_size=args.batch_size)
 
     # set up model
-    model = Linear(num_features=dataset.dimensionality + 1, # + 1 for labels
+    model = Linear(num_features=dataset.dimensionality + 1 if args.dataset != 'EMNIST' else None, # + 1 for labels
                    lr=args.learning_rate,
                    train_index2value=dataset.protected_index2value,
                    test_index2value=test_dataset.protected_index2value,
                    target_grp=args.target_grp,
-                   optimizer=OPT_BY_NAME[args.optimizer]) 
+                   optimizer=OPT_BY_NAME[args.optimizer],
+                   dataset_type = args.dataset_type)
 
     if args.tf_mode:
         def init_weights(layer):
@@ -225,9 +256,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST'], required=True)
     parser.add_argument('--optimizer', choices=['Adagrad', 'Adam'], default='Adagrad')
-    parser.add_argument('--target_grp', choices=['race', 'sex'], required=True, help='Whether to predict race or sex of a person')
+    parser.add_argument('--target_grp', choices=['race', 'sex', 'dummy'], required=True, help='Whether to predict race or sex of a person')
     parser.add_argument('--suffix', default='', help='Dataset suffix to specify other datasets than the defaults')
     parser.add_argument('--seed', default=0, type=int, help='seed for reproducibility')
     parser.add_argument('--learning_rate', default=1e-3, type=float)
@@ -238,5 +269,7 @@ if __name__ == '__main__':
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     
     args = parser.parse_args()
+
+    args.dataset_type = 'image' if args.dataset in ['EMNIST'] else 'tabular'
 
     main(args)
