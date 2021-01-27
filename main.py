@@ -7,7 +7,7 @@ from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
-from datasets import TabularDataset, CustomSubset, FairnessDataset, FairFaceDataset, EMNISTDataset
+from datasets import TabularDataset, CustomSubset, FairnessDataset, EMNISTDataset
 from arl import ARL
 from dro import DRO
 from ipw import IPW
@@ -74,9 +74,6 @@ def main(args: argparse.Namespace):
     if args.dataset == 'EMNIST':
         dataset: FairnessDataset = EMNISTDataset()
         test_dataset: FairnessDataset = EMNISTDataset(test=True)
-    elif args.dataset == 'FairFace':
-        dataset: FairnessDataset = FairFaceDataset(args.dataset, sensitive_label=args.sensitive_label)
-        test_dataset: FairnessDataset = FairFaceDataset(args.dataset, sensitive_label=args.sensitive_label, test=True)
     else:
         dataset = TabularDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
         test_dataset = TabularDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
@@ -485,7 +482,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=None, type=str, help='Override version. Default is the current time. Will be used in other scripts which call main.main().')
 
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced', 'EMNIST'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--sensitive_label', default=False, action='store_true', help='If True, target label will be included in list of sensitive columns; used for IPW(S+Y)')
@@ -496,7 +493,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['FairFace', 'FairFace_reduced', 'EMNIST'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['EMNIST'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop

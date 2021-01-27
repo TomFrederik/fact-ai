@@ -7,13 +7,11 @@ from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
-from datasets import TabularDataset, CustomSubset, FairnessDataset, FairFaceDataset, EMNISTDataset
+from datasets import TabularDataset, CustomSubset, FairnessDataset, EMNISTDataset
 from arl import ARL
 from dro import DRO
 from ipw import IPW
 from baseline_model import BaselineModel
-from arl_cnn_test import ARL as ARL_CNN
-from baseline_model_cnn import BaselineModel as Baseline_CNN
 from metrics import Logger, get_all_auc_scores
 
 import argparse
@@ -78,9 +76,6 @@ def main(args: argparse.Namespace):
     if args.dataset == 'EMNIST':
         dataset: FairnessDataset = EMNISTDataset()
         test_dataset: FairnessDataset = EMNISTDataset(test=True)
-    elif args.dataset == 'FairFace':
-        dataset: FairnessDataset = FairFaceDataset(args.dataset)
-        test_dataset: FairnessDataset = FairFaceDataset(args.dataset, test=True)
     else:
         dataset = TabularDataset(args.dataset, disable_warnings=args.disable_warnings)
         test_dataset = TabularDataset(args.dataset, test=True, disable_warnings=args.disable_warnings)
@@ -405,7 +400,7 @@ if __name__ == '__main__':
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced', 'EMNIST'], default='Adult')
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST'], default='Adult')
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
 
@@ -415,7 +410,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['FairFace', 'FairFace_reduced', 'EMNIST'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['EMNIST'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop

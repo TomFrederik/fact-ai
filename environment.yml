@@ -14,4 +14,3 @@ dependencies:
   - torchvision=0.8.2
   - pip:
       - ray
-      - git+https://github.com/elliottzheng/face-detection.git@master

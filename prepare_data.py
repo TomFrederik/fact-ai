@@ -6,7 +6,6 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from PIL import Image
 from tqdm import tqdm
-#from face_detection import RetinaFace
 from torchvision import datasets
 import numpy as np
 import random
@@ -214,68 +213,6 @@ save_results(concat_train_df, concat_test_df, base_dir, suffix='_concat', skip_v
 ###
 
 '''
-############
-# FairFace #
-############
-print("Processing FairFace")
-base_dir = "data/FairFace/labels"
-train_file = os.path.join(base_dir, 'train_original.csv')
-test_file = os.path.join(base_dir, 'test_original.csv')
-
-columns = [
-    "file", "age", "gender", "race", "service_test"
-]
-
-train_df = load_df(train_file)
-test_df = load_df(test_file)
-
-# Remove the folder name in file path
-train_df['file'] = train_df['file'].apply(lambda x: x[6:])
-test_df['file'] = test_df['file'].apply(lambda x: x[4:])
-
-# delete irrelevant columns
-del train_df['service_test']
-del test_df['service_test']
-del train_df['age']
-del test_df['age']
-
-save_results(train_df, test_df, base_dir, contains_numeric=False)
-
-
-####################
-# FairFace Reduced #
-####################
-BASE_PATH = "data/FairFace"
-BASE_PATH_NEW = "data/FairFace_reduced"
-THRESHOLD = 0.987
-
-for TEST in [False, True]:
-    idx = []
-
-    frame = pd.read_csv(os.path.join(BASE_PATH, "test.csv" if TEST else "train.csv"))
-    detector = RetinaFace()
-
-    # select images with high confidence that face is contained (prefers full front shots)
-    for i in tqdm(range(len(frame))):
-        img = Image.open(os.path.join(BASE_PATH, "images", "test" if TEST else "train", frame.iloc[i].file)).convert('RGB')
-        np_img = np.array(img)
-
-        try:
-            # moved this into try/catch as detector is sometimes unstable
-            all_faces = detector([np_img])
-            box, landmarks, score = all_faces[0][0]
-
-            if score > THRESHOLD:
-                idx.append(i)
-                resized_img = img.resize((80, 80), Image.ANTIALIAS)
-                resized_img.save(os.path.join(BASE_PATH_NEW, "images", "test" if TEST else "train", frame.iloc[i].file), quality=60)
-
-        except:
-            pass
-
-
-    sub_frame = frame.iloc[idx]
-    sub_frame.to_csv(os.path.join(BASE_PATH_NEW, "test.csv" if TEST else "train.csv"), index=False)
 
 #########
 # MNIST #
@@ -304,9 +241,9 @@ np.save(os.path.join('data', 'MNIST', 'mnist_testset'), np.array(mnist_testset_n
 os.system('rm -r data/MNIST/processed')
 os.system('rm -r data/MNIST/raw')
 
-######################
-# EMNIST with Colors #
-######################
+##########
+# EMNIST #
+##########
 mnist_trainset = datasets.EMNIST(root='data', split='balanced', train=True, download=True, transform=None)
 mnist_testset = datasets.EMNIST(root='data', split='balanced', train=False, download=True, transform=None)
 
