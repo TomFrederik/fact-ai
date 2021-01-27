@@ -16,12 +16,12 @@ OPT_BY_NAME: Dict[str, Type[torch.optim.Optimizer]] = {
     'Adam': torch.optim.Adam
 }
 
-MODELS = ['baseline', 'ARL', 'DRO', 'IPW(S)', 'IPW(S+Y)']
+MODELS = ['baseline', 'ARL', 'DRO', 'IPW(S)', 'IPW(S+Y)']  
 DATASETS = ['Adult', 'COMPAS', 'LSAC']
 PARAMS = ['lr', 'batch_size']
 
 
-def get_tabular_opt_hparams(args):
+def get_opt_hparams(args):
     """
     Executes grid searches of all models on all tabular datasets.
     Saves the optimal
@@ -33,6 +33,8 @@ def get_tabular_opt_hparams(args):
     all_best_params = {dataset: {} for dataset in DATASETS}
 
     args.version = str(int(time()))
+
+    args.dataset_type = 'tabular'
 
     for model, dataset in it.product(MODELS, DATASETS):
         
@@ -46,7 +48,7 @@ def get_tabular_opt_hparams(args):
             args.model = 'IPW'
             args.sensitive_label = True
         else:
-            args.model = MODELS
+            args.model = model
             args.sensitive_label = False
         
         args.dataset = dataset
@@ -62,11 +64,13 @@ def get_tabular_opt_hparams(args):
             all_best_params[dataset][model]['eta'] = best_params['eta']
         
         # write to disk, to ensure it is saved even if run is aborted later
-        path = './optimal_hparams_TEST.json'
-        with open(path) as f:
-            json.dump(f)
+        path = './optimal_hparams.json'
+        with open(path, 'w') as f:
+            json.dump(all_best_params, f)
         
     print(f'Search complete! Best params are {all_best_params}.')
+
+    return all_best_params
 
 
 
@@ -95,7 +99,6 @@ if __name__ == '__main__':
     parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
     parser.add_argument('--no_grid_search', action='store_false', default=True, dest="grid_search", help='Don\'t optimize batch size and lr via gridsearch')
-    #parser.add_argument('--nbr_seeds', default=2, type=int, help='Number of independent training runs') # TODO: not implemented yet
     parser.add_argument('--eval_batch_size', default=512, type=int, help='Batch size for evaluation. No effect on training or results, set as large as memory allows to maximize performance')
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     
@@ -109,4 +112,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    get_tabular_opt_hparams(args)
+    args.working_dir = os.getcwd()
+
+    get_opt_hparams(args)
