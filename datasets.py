@@ -318,7 +318,7 @@ class TabularDataset(FairnessDataset):
         return self._labels
 
 
-class colorMNISTDataset(FairnessDataset):
+class EMNISTDataset(FairnessDataset):
     """Dataset from image data that can provide information about protected
     groups amongst its elements. 
 
@@ -348,9 +348,9 @@ class colorMNISTDataset(FairnessDataset):
         self.to_tensor = transforms.ToTensor()
 
         if self.test:
-            self._data = np.load(os.path.join('data', 'colorMNIST', 'test_prepared.npy'), allow_pickle=True)
+            self._data = np.load(os.path.join('data', 'EMNIST', 'test_prepared.npy'), allow_pickle=True)
         else:
-            self._data = np.load(os.path.join('data', 'colorMNIST', 'train_prepared.npy'), allow_pickle=True)
+            self._data = np.load(os.path.join('data', 'EMNIST', 'train_prepared.npy'), allow_pickle=True)
 
         if idcs is not None:
             self._data = self._data[idcs]
