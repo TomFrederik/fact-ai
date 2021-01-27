@@ -87,9 +87,9 @@ def create_latex_line(row_key, result_entry, keys, bold_mask):
     for key in keys:
         val = result_entry[key]['mean']
         if bold_mask[key]:
-            string += r' & \textbf{' + f'{val:1.2f}' + r'}'
+            string += r' & \textbf{' + f'{val:1.3f}' + r'}'
         else:
-            string += f' & {val:1.2f}'
+            string += f' & {val:1.3f}'
     string += '\\\\\n'
     return string
 
