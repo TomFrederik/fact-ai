@@ -365,7 +365,7 @@ class EMNISTDataset(FairnessDataset):
         '''
         self._dimensionality = np.expand_dims(np.array(self._data[0, 0]), axis=0).shape
         self._features = torch.stack([torch.Tensor(d[0] / 255).float().unsqueeze(0) for d in self._data])
-        self.index2values = ['protected', 'unprotected']
+        self.index2values = {0: 'protected', 1: 'unprotected'}
         protected_prob = np.mean([d[2] for d in self._data])
         self._group_probs = np.array([protected_prob, 1 - protected_prob])
         self._memberships = torch.Tensor([d[2] for d in self._data])
