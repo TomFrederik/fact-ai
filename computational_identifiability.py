@@ -135,7 +135,7 @@ class Linear(pl.LightningModule):
                 return out
             elif self.target_grp == 'dummy':
                 for key in self.test_index2value:
-                    if self.test_index2value[key][1] == 1:
+                    if self.test_index2value[key] == 'protected':
                         out[x == key] = 1
                 return out
             else:
@@ -153,7 +153,7 @@ class Linear(pl.LightningModule):
                 return out
             elif self.target_grp == 'dummy':
                 for key in self.train_index2value:
-                    if self.train_index2value[key][1] == 1:
+                    if self.train_index2value[key] == 'protected':
                         out[x == key] = 1
                 return out
             else:

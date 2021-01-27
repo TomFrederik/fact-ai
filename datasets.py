@@ -395,6 +395,7 @@ class EMNISTDataset(FairnessDataset):
         # x_protected = self.to_tensor(x_protected)
 
         # y = float(y)
+        # x = torch.reshape(self._features[index], (784,))
         x = self._features[index]
         y = self._labels[index]
         s = self._memberships[index]
