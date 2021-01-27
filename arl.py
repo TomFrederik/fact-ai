@@ -65,8 +65,8 @@ class ARL(pl.LightningModule):
         elif dataset_type == 'image':
             if adv_input != {'X', 'Y'}:
                 print('CNN architecture currently only supports X+Y as adversary input')
-            # only works with [3, 224, 224] images since input shape of fully connected layers must be hard-coded
-            assert input_shape == (1, 28, 28), f"Input shape to ARL is {input_shape} and not [1, 28, 28]!"
+            # only works with (C: 1, H: 28, W: 28) images since input shape of fully connected layers must be hard-coded
+            assert input_shape == (1, 28, 28), f"Input shape to ARL is {input_shape} and not (1, 28, 28)!"
             self.learner = CNN_Learner(hidden_units=prim_hidden)
             self.adversary = CNN_Adversary(hidden_units=adv_hidden)
         else:
@@ -394,13 +394,11 @@ class Adversary(nn.Module):
 
 
 class CNN_Learner(nn.Module):
-    """Feed forward CNN (ResNet34); primary network of the ARL.
+    """Feed forward CNN; primary network of the ARL.
 
     Attributes:
-        input_shape: Dimensionality of the data input.
         hidden_units: Number of hidden units in each fully-connected layer of
             the network.
-        pretrained: Option to use a model that is pretrained on ImageNet.
     """
 
     def __init__(self,
@@ -427,12 +425,11 @@ class CNN_Learner(nn.Module):
         """Forward propagation of inputs through the primary network.
 
         Args:
-            x: Tensor of shape [batch_size, input_shape] with data inputs.
+            x: Tensor of shape [batch_size, 1, 28, 28] with data inputs.
 
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        # intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[0])
         intermediate = self.cnn(x)
         out = self.fc(intermediate)
 
@@ -440,13 +437,11 @@ class CNN_Learner(nn.Module):
 
 
 class CNN_Adversary(nn.Module):
-    """Feed forward CNN (ResNet34); adversary network of the ARL.
+    """Feed forward CNN; adversary network of the ARL.
 
     Attributes:
-        input_shape: Dimensionality of the data input.
         hidden_units: Number of hidden units in each fully-connected layer of
             the network.
-        pretrained: Option to use a model that is pretrained on ImageNet.
     """
 
     def __init__(self,
@@ -471,10 +466,10 @@ class CNN_Adversary(nn.Module):
 
     def forward(self, x, y, s):
         """Forward propagation of inputs and labels (optional) through the
-        adversary network.
+        adversary network. Concatenates y to flattened output of CNN part.
 
         Args:
-            x: Tensor of shape [batch_size, input_shape] with data inputs.
+            x: Tensor of shape [batch_size, 1, 28, 28] with data inputs.
             y: Tensor of shape [batch_size] with labels.
             s: Tensor of shape [batch_size] with protected group membership indices (unused).
 
@@ -483,7 +478,6 @@ class CNN_Adversary(nn.Module):
         """
 
         # compute adversary
-        # intermediate = self.cnn(x.permute((1, 0, 2, 3, 4))[0])
         intermediate = self.cnn(x)
         intermediate = torch.cat([intermediate.float(), y.float().unsqueeze(1)], dim=1)
         adv = self.fc(intermediate)

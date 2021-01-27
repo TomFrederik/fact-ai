@@ -5,14 +5,18 @@ import pytorch_lightning as pl
 
 
 class BaselineModel(pl.LightningModule):
-    """Fully-connected feed forward neural network.
+    """Feed forward neural network.
 
     Attributes:
         config: Dict with hyperparameters (learning rate, batch size).
         num_features: Dimensionality of the data input.
         hidden_units: Number of hidden units in each layer of the network.
         optimizer: Optimizer used to update the model parameters.
+        dataset_type: Indicator for which datatype is used.
         opt_kwargs: Optional; optimizer keywords other than learning rate.
+
+    Raises:
+        Exception: If the dataset type is neither tabular nor image data.
     """
 
     def __init__(self,
@@ -44,7 +48,8 @@ class BaselineModel(pl.LightningModule):
             self.net = nn.Sequential(*net_list)
 
         elif dataset_type == 'image':
-            assert num_features == (1, 28, 28), f"Input shape to ARL is {num_features} and not [1, 28, 28]!"
+            # only works with (C: 1, H: 28, W: 28) images since input shape of fully connected layers must be hard-coded
+            assert num_features == (1, 28, 28), f"Input shape to ARL is {num_features} and not (1, 28, 28)!"
             self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
                                      nn.MaxPool2d(kernel_size=(2, 2)),
                                      nn.Flatten())
