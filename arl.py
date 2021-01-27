@@ -156,6 +156,10 @@ class ARL(pl.LightningModule):
         
         # compute lambdas
         lambdas = self.adversary(x, y, s)
+
+        for i in range(lambdas.shape[0]):
+            if lambdas[i] > 20:
+                self.logger.experiment.add_image('high_lambda', x[i], 0)
         
         # compute reweighted loss
         loss = -torch.mean(lambdas * bce)
