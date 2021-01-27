@@ -45,8 +45,11 @@ def load_result_dict(base_path, datasets, models, path_func):
     results = {}
     for dataset, model in itertools.product(datasets, models):
         path = path_func(base_path, model, dataset)
-        with open(path) as f:
-            results[(dataset, model)] = json.load(f)
+        try:
+            with open(path) as f:
+                results[(dataset, model)] = json.load(f)
+        except FileNotFoundError:
+            print(f"Didn't find results for {dataset}, {model}, skipping")
     return results
 
 def is_max(result_dict, metrics):
