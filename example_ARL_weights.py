@@ -7,7 +7,7 @@ from pytorch_lightning.metrics.functional.classification import auroc
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
-from datasets import TabularDataset, CustomSubset, FairnessDataset, FairFaceDataset, colorMNISTDataset
+from datasets import TabularDataset, CustomSubset, FairnessDataset, FairFaceDataset, EMNISTDataset
 from arl import ARL
 from dro import DRO
 from ipw import IPW
@@ -75,9 +75,9 @@ def main(args: argparse.Namespace):
     np.random.seed(args.seed)
 
     # create datasets
-    if args.dataset == 'colorMNIST':
-        dataset: FairnessDataset = colorMNISTDataset()
-        test_dataset: FairnessDataset = colorMNISTDataset(test=True)
+    if args.dataset == 'EMNIST':
+        dataset: FairnessDataset = EMNISTDataset()
+        test_dataset: FairnessDataset = EMNISTDataset(test=True)
     elif args.dataset == 'FairFace':
         dataset: FairnessDataset = FairFaceDataset(args.dataset)
         test_dataset: FairnessDataset = FairFaceDataset(args.dataset, test=True)
@@ -369,7 +369,7 @@ def train(config: Dict[str, Any],
     assert trainer.checkpoint_callback is not None
 
     # Load best checkpoint after training
-    if args.model == 'ARL' and args.dataset == 'colorMNIST':
+    if args.model == 'ARL' and args.dataset == 'EMNIST':
         model = ARL_CNN.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
         
     elif args.model == 'ARL':
@@ -405,7 +405,7 @@ if __name__ == '__main__':
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced', 'colorMNIST'], default='Adult')
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'FairFace', 'FairFace_reduced', 'EMNIST'], default='Adult')
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
 
@@ -415,7 +415,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['FairFace', 'FairFace_reduced', 'colorMNIST'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['FairFace', 'FairFace_reduced', 'EMNIST'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop
