@@ -22,17 +22,22 @@ class Logger(Callback):
         name: Directory of the logged metrics, e.g. "training", "validation" 
             or "test".
         batch_size: Batch size to iterate through the dataset.
+        save_scatter: Whether scatter plots of BCE loss vs lambdas should be saved (only for ARL)
     """
     
-    def __init__(self, dataset: FairnessDataset, name: str, batch_size: int):
+    def __init__(self, dataset: FairnessDataset, name: str, batch_size: int, save_scatter: bool = False):
         """Inits an instance of Logger with the given attributes."""
         
         super().__init__()
         self.dataset = dataset
         self.batch_size = batch_size
         self.name = name
+        self.save_scatter = save_scatter
         # create a dataloader to pass the dataset through the model
         self.dataloader = DataLoader(self.dataset, self.batch_size, pin_memory=True)
+
+        if self.save_scatter:
+            self.scatter_dataloader = DataLoader(self.dataset, 2048, shuffle=True, pin_memory=True)
 
     def on_validation_epoch_end(self, trainer, pl_module):
         """Logs metrics. Function is called at the end of each validation epoch.
@@ -46,6 +51,9 @@ class Logger(Callback):
         super().on_validation_end(trainer, pl_module)
 
         results = get_all_auc_scores(pl_module, self.dataloader, self.dataset.minority)
+
+        if self.save_scatter:
+            save_scatter(pl_module, self.scatter_dataloader)
 
         for key in results:
             pl_module.log(f'{self.name}/{key}', results[key])
@@ -120,3 +128,14 @@ def group_aucs(predictions: torch.Tensor, targets: torch.Tensor, memberships: to
         else:
             aucs[int(group)] = auroc(predictions[indices], targets[indices]).item()
     return aucs
+
+
+def save_scatter(pl_module: LightningModule, dataloader: DataLoader):
+    """Calls the save_scatter method of the ARL module for a mini batch.
+
+    Args:
+        pl_module: LightningModule of the model.
+        dataloader: Dataloader of the Logger instance dataset
+    """
+    x, y, s = next(iter(dataloader))
+    pl_module.save_scatter(x, y, s)

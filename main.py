@@ -429,8 +429,8 @@ def train(config: Dict[str, Any],
             ))
     
     if test_dataset is not None:
-        callbacks.append(Logger(test_dataset, 'test', batch_size=args.eval_batch_size))
-        
+        callbacks.append(Logger(test_dataset, 'test', batch_size=args.eval_batch_size, save_scatter=(args.model == 'ARL')))
+
     # Select model and instantiate
     model: pl.LightningModule = get_model(config, args, train_dataset)
         

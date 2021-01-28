@@ -209,14 +209,6 @@ class ARL(pl.LightningModule):
         x, y, s = batch
         loss = self.learner_step(x, y, s)
 
-        # testing:
-        logits = self.learner(x)
-        bce = self.loss_fct(logits, y)
-        lambdas = self.adversary(x, y, s)
-
-        fig = plt.scatter(bce, lambdas)
-        self.logger.experiment.add_figure(tag='bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
-
         # logging
         self.log("test/reweighted_loss_learner", loss)
 
@@ -245,6 +237,26 @@ class ARL(pl.LightningModule):
         """
 
         return self.learner(x)
+
+    def save_scatter(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor):
+        """Creates a scatter plot of the BCE Loss vs. the lambda values of the adversary.
+
+        Args:
+            x: Tensor of shape [batch_size, input_shape] with data inputs.
+            y: Tensor of shape [batch_size] with data labels.
+            x: Tensor of shape [batch_size] with protected group membership indices.
+        """
+        logits = self.learner(x)
+        bce = self.loss_fct(logits, y)
+        lambdas = self.adversary(x, y, s)
+
+        fig = plt.figure()
+        plt.scatter(lambdas.detach().numpy(), bce.detach().numpy(), s=5)
+        plt.xlabel("Lambda Value")
+        plt.ylabel("BCE Loss Value")
+        plt.title("Lambda vs. BCE Loss Values")
+
+        self.logger.experiment.add_figure(tag='bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
 
     def get_lambda(self, dataloader: torch.utils.data.DataLoader) -> Tuple[torch.Tensor]:
         """
