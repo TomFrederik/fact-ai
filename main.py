@@ -75,9 +75,6 @@ def main(args: argparse.Namespace):
     if args.dataset == 'EMNIST':
         dataset: FairnessDataset = EMNISTDataset()
         test_dataset: FairnessDataset = EMNISTDataset(test=True)
-    elif args.dataset == 'EMNIST_no_noise':
-        dataset: FairnessDataset = EMNISTDataset(noise=False)
-        test_dataset: FairnessDataset = EMNISTDataset(noise=False, test=True)
     elif args.dataset == 'EMNIST_9':
         dataset: FairnessDataset = EMNISTDataset(imb=True)
         test_dataset: FairnessDataset = EMNISTDataset(imb=True, test=True)
@@ -275,6 +272,7 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
                     dataset_type=args.dataset_type,
                     adv_input=set(args.adv_input),
                     num_groups=len(dataset.protected_index2value),
+                    adv_cnn_strength=args.adv_cnn_strength,
                     opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
 
     elif args.model == 'DRO':
@@ -511,6 +509,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required=True)
     parser.add_argument('--prim_hidden', nargs='*', type=int, default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', nargs='*', type=int, default=[], help='Number of hidden units in adversarial network')
+    parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'strong'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
     parser.add_argument('--eta', default=0.5, type=float, help='Threshold for single losses that contribute to learning objective')
     parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
     parser.add_argument('--adv_input', nargs='+', default=['X', 'Y'], help='Inputs to use for the adversary. Any combination of X (features), Y (labels) and S (protected group memberships)')
@@ -537,7 +536,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=None, type=str, help='Override version. Default is the current time. Will be used in other scripts which call main.main().')
 
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST', 'EMNIST_no_noise', 'EMNIST_9'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST', 'EMNIST_9'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--sensitive_label', default=False, action='store_true', help='If True, target label will be included in list of sensitive columns; used for IPW(S+Y)')
@@ -548,7 +547,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['EMNIST', 'EMNIST_no_noise', 'EMNIST_9'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['EMNIST', 'EMNIST_9'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop

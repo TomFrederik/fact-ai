@@ -18,7 +18,7 @@ OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad, 'Adam': torch.optim.Adam}
 
 class Linear(pl.LightningModule):
 
-    def __init__(self, num_features, lr, train_index2value, test_index2value, target_grp, optimizer, dataset_type):
+    def __init__(self, num_features, lr, train_index2value, test_index2value, target_grp, optimizer, dataset_type, strength):
         super().__init__()
 
         #self.save_hyperparameters()
@@ -35,11 +35,24 @@ class Linear(pl.LightningModule):
         if self.dataset_type == 'tabular':
             self.net = nn.Linear(num_features, 1)
         elif self.dataset_type == 'image':
-            self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=2, kernel_size=(3, 3)),
-                                     nn.MaxPool2d(kernel_size=(2, 2)),
-                                     nn.Flatten())
-            # self.fc = nn.Linear(10816 + 1, 1)
-            self.fc = nn.Linear(338 + 1, 1)
+            # construct network
+            if strength == 'weak':
+                self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=2, kernel_size=(3, 3)),
+                                         nn.MaxPool2d(kernel_size=(2, 2)),
+                                         nn.Flatten())
+                self.fc = nn.Linear(338 + 1, 1)
+            elif strength == 'normal':
+                self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=32, kernel_size=(3, 3)),
+                                         nn.MaxPool2d(kernel_size=(2, 2)),
+                                         nn.Flatten())
+                self.fc = nn.Linear(5408 + 1, 1)
+            elif strength == 'strong':
+                self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
+                                         nn.MaxPool2d(kernel_size=(2, 2)),
+                                         nn.Flatten())
+                self.fc = nn.Linear(10816 + 1, 1)
+            else:
+                raise Exception("Strength of the Adversary CNN not recognized!")
         else:
             raise Exception(f"Model was unable to recognize dataset type {self.dataset_type}!")
             
@@ -213,7 +226,8 @@ def main(args):
                    test_index2value=test_dataset.protected_index2value,
                    target_grp=args.target_grp,
                    optimizer=OPT_BY_NAME[args.optimizer],
-                   dataset_type = args.dataset_type)
+                   dataset_type = args.dataset_type,
+                   strength=args.adv_cnn_strength)
 
     if args.tf_mode:
         def init_weights(layer):
@@ -270,6 +284,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST', 'EMNIST_9'], required=True)
+    parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'strong'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
     parser.add_argument('--optimizer', choices=['Adagrad', 'Adam'], default='Adagrad')
     parser.add_argument('--target_grp', choices=['race', 'sex', 'dummy'], required=True, help='Whether to predict race or sex of a person')
     parser.add_argument('--suffix', default='', help='Dataset suffix to specify other datasets than the defaults')

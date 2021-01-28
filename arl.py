@@ -29,6 +29,7 @@ class ARL(pl.LightningModule):
             adversary has access to protected group memberships.
         optimizer: Optimizer used to update the model parameters.
         dataset_type: Type of the dataset; 'tabular' or 'image'.
+        adv_cnn_strength: Parameter to select one of the pre-set architectures for the CNN adversary.
         opt_kwargs: Optional; optimizer keywords other than learning rate.
 
     Raises:
@@ -48,6 +49,7 @@ class ARL(pl.LightningModule):
         num_groups: Optional[int] = None,
         optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
         dataset_type: str = 'tabular',
+        adv_cnn_strength: str = 'normal',
         opt_kwargs: Dict[str, Any] = {},
         ):
         """Inits an instance of ARL with the given attributes."""
@@ -69,7 +71,7 @@ class ARL(pl.LightningModule):
             # only works with (C: 1, H: 28, W: 28) images since input shape of fully connected layers must be hard-coded
             # assert input_shape == (1, 28, 28), f"Input shape to ARL is {input_shape} and not (1, 28, 28)!"
             self.learner = CNN_Learner(hidden_units=prim_hidden)
-            self.adversary = CNN_Adversary(hidden_units=adv_hidden)
+            self.adversary = CNN_Adversary(hidden_units=adv_hidden, strength=adv_cnn_strength)
         else:
             raise Exception("ARL was unable to recognize the dataset type.")
 
@@ -466,21 +468,38 @@ class CNN_Adversary(nn.Module):
     Attributes:
         hidden_units: Number of hidden units in each fully-connected layer of
             the network.
+    Raises:
+        Exception: If the strength setting is not recognized.
     """
 
     def __init__(self,
-                 hidden_units: list = []
+                 hidden_units: list = [],
+                 strength: str = 'normal'
                  ):
         """Inits an instance of the adversary CNN with the given attributes."""
 
         super().__init__()
 
         # construct network
-        self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=2, kernel_size=(3, 3)),
+        if strength == 'weak':
+            self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=2, kernel_size=(3, 3)),
+                                     nn.MaxPool2d(kernel_size=(2, 2)),
+                                     nn.Flatten())
+            num_units = [338 + 1] + hidden_units
+        elif strength == 'normal':
+            self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=32, kernel_size=(3, 3)),
                                  nn.MaxPool2d(kernel_size=(2, 2)),
                                  nn.Flatten())
+            num_units = [5408 + 1] + hidden_units
+        elif strength == 'strong':
+            self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
+                                     nn.MaxPool2d(kernel_size=(2, 2)),
+                                     nn.Flatten())
+            num_units = [10816 + 1] + hidden_units
+        else:
+            raise Exception("Strength of the Adversary CNN not recognized!")
+
         net_list: List[torch.nn.Module] = []
-        num_units = [338 + 1] + hidden_units
         for num_in, num_out in zip(num_units[:-1], num_units[1:]):
             net_list.append(nn.Linear(num_in, num_out))
             net_list.append(nn.ReLU())
