@@ -328,9 +328,7 @@ class EMNISTDataset(FairnessDataset):
         self.test = test
         self.to_tensor = transforms.ToTensor()
 
-        if not noise:
-            dataset_name = "EMNIST_no_noise"
-        elif imb:
+        if imb:
             dataset_name = 'EMNIST_9'
         else:
             dataset_name = "EMNIST"
