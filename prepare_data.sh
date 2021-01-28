@@ -10,7 +10,7 @@ curl https://raw.githubusercontent.com/propublica/compas-analysis/master/compas-
 
 mkdir -p LSAC
 curl http://www.seaphe.org/databases/LSAC/LSAC_SAS.zip -o LSAC/LSAC_SAS.zip
-unzip LSAC/LSAC_SAS.zip -d LSAC
+unzip -o LSAC/LSAC_SAS.zip -d LSAC
 
 cd -
 
