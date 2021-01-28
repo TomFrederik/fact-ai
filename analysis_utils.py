@@ -176,12 +176,12 @@ def create_table(result_dict, keys, bold_dict, line_func):
         table += line_func(row_key, result_entry, keys, bold_mask)
     return table
 
-def run_models(seed, args, optimal_hparams, dataset_model_list):
+def run_models(seed, args, optimal_hparams, dataset_model_list, log_dir = 'training_logs/complete_runs'):
     result_dict = {}
     for dataset, model in dataset_model_list:
         # don't overwrite the defaults:
         temp_args = Namespace(**vars(args))
-        temp_args.log_dir = 'complete_run_logs'
+        temp_args.log_dir = log_dir
         if model == 'IPW(S)':
             temp_args.model = 'IPW'
             temp_args.sensitive_label = False
