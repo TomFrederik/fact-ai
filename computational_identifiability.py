@@ -178,6 +178,10 @@ def main(args):
         assert args.target_grp == 'dummy', "Target group not recognized for EMNIST dataset!"
         dataset = EMNISTDataset()
         test_dataset = EMNISTDataset(test=True)
+    elif args.dataset == 'EMNIST_9':
+        assert args.target_grp == 'dummy', "Target group not recognized for EMNIST_9 dataset!"
+        dataset = EMNISTDataset(imb=True)
+        test_dataset = EMNISTDataset(img=True, test=True)
     else:
         dataset = TabularDataset(args.dataset, disable_warnings=args.disable_warnings, suffix=args.suffix)
         test_dataset = TabularDataset(args.dataset, test=True, disable_warnings=args.disable_warnings, suffix=args.suffix)
@@ -257,7 +261,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST', 'EMNIST_9'], required=True)
     parser.add_argument('--optimizer', choices=['Adagrad', 'Adam'], default='Adagrad')
     parser.add_argument('--target_grp', choices=['race', 'sex', 'dummy'], required=True, help='Whether to predict race or sex of a person')
     parser.add_argument('--suffix', default='', help='Dataset suffix to specify other datasets than the defaults')
@@ -272,6 +276,6 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['EMNIST'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['EMNIST', 'EMNIST_9'] else 'tabular'
 
     main(args)
