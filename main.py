@@ -78,7 +78,7 @@ def main(args: argparse.Namespace):
     elif args.dataset == 'EMNIST_no_noise':
         dataset: FairnessDataset = EMNISTDataset(noise=False)
         test_dataset: FairnessDataset = EMNISTDataset(noise=False, test=True)
-    elif args.dataset == 'EMNIST_no_noise':
+    elif args.dataset == 'EMNIST_9':
         dataset: FairnessDataset = EMNISTDataset(imb=True)
         test_dataset: FairnessDataset = EMNISTDataset(imb=True, test=True)
     else:
