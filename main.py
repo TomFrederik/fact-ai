@@ -175,6 +175,7 @@ def main(args: argparse.Namespace):
             t: Tuple[pl.LightningModule, pl.Trainer] = train(config, args, train_dataset=train_dataset, val_dataset=val_dataset, test_dataset=test_dataset)
             model, trainer = t
             if trainer.checkpoint_callback.best_model_score > best_score:
+                best_score = trainer.checkpoint_callback.best_model_score
                 best_lr = config['lr']
                 best_batch_size = config['batch_size']
 
