@@ -184,39 +184,9 @@ print(test_df.groupby('sex').count() / len(test_df))
 
 save_results(train_df, test_df, base_dir)
 
-# TODO: remove?
-"""
-#########
-# MNIST #
-#########
-mnist_trainset = datasets.MNIST(root='data', train=True, download=True, transform=None)
-mnist_testset = datasets.MNIST(root='data', train=False, download=True, transform=None)
-
-mnist_trainset_np = []
-mnist_testset_np = []
-
-for i in tqdm(range(len(mnist_trainset))):
-    img, label = mnist_trainset.__getitem__(i)
-    if (label == 8 or label == 5) and random.random() <= 0.6:
-        sample = [np.array(img), label]
-        mnist_trainset_np.append(sample)
-
-for i in tqdm(range(len(mnist_testset))):
-    img, label = mnist_testset.__getitem__(i)
-    if (label == 8 or label == 5) and random.random() <= 0.6:
-        sample = [np.array(img), label]
-        mnist_testset_np.append(sample)
-
-np.save(os.path.join('data', 'MNIST', 'mnist_trainset'), np.array(mnist_trainset_np, dtype=object))
-np.save(os.path.join('data', 'MNIST', 'mnist_testset'), np.array(mnist_testset_np, dtype=object))
-
-os.system('rm -r data/MNIST/processed')
-os.system('rm -r data/MNIST/raw')
-"""
-
-##########
-# EMNIST #
-##########
+#############
+# EMNIST_10 #
+#############
 mnist_trainset = datasets.EMNIST(root='data', split='balanced', train=True, download=True, transform=None)
 mnist_testset = datasets.EMNIST(root='data', split='balanced', train=False, download=True, transform=None)
 
@@ -228,7 +198,7 @@ for t in ['train', 'test']:
         y = int(original_label >= 24)
 
         if (original_label % 2 == 0 and random.random() <= 0.9) or (original_label % 2 == 1 and random.random() <= 0.1):
-            if random.random() <= 0.3:
+            if random.random() <= 0.9:
                 continue
             s = 1
         else:
@@ -238,13 +208,11 @@ for t in ['train', 'test']:
 
     np.save(os.path.join("data", "EMNIST", t + '_prepared'), np.array(new_dataset))
 
-
-###################
-# EMNIST no noise #
-###################
+#############
+# EMNIST_35 #
+#############
 mnist_trainset = datasets.EMNIST(root='data', split='balanced', train=True, download=True, transform=None)
 mnist_testset = datasets.EMNIST(root='data', split='balanced', train=False, download=True, transform=None)
-os.mkdir(os.path.join("data", "EMNIST_no_noise"))
 
 for t in ['train', 'test']:
     dataset = mnist_trainset if t == 'train' else mnist_testset
@@ -253,8 +221,8 @@ for t in ['train', 'test']:
         x, original_label = dataset.__getitem__(i)
         y = int(original_label >= 24)
 
-        if original_label % 2 == 0:
-            if random.random() <= 0.3:
+        if (original_label % 2 == 0 and random.random() <= 0.9) or (original_label % 2 == 1 and random.random() <= 0.1):
+            if random.random() <= 0.5:
                 continue
             s = 1
         else:
@@ -262,4 +230,7 @@ for t in ['train', 'test']:
 
         new_dataset.append([np.array(x), y, s])
 
-    np.save(os.path.join("data", "EMNIST_no_noise", t + '_prepared'), np.array(new_dataset))
+    np.save(os.path.join("data", "EMNIST_35", t + '_prepared'), np.array(new_dataset))
+
+os.system("mv data/EMNIST data/EMNIST_10")
+
