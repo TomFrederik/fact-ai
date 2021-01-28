@@ -9,7 +9,8 @@ The datasets used in the experiments:
   - Adult  
   - LSAC  
   - COMPAS  
-  - EMNIST  
+  - EMNIST_35
+  - EMNIST_10
   
 The data should be usable out of the box. If it doesn't or the data is not directly available in the repo, create the datasets as described below.  
   

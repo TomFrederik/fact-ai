@@ -195,12 +195,12 @@ def main(args):
 
     ## create train, val, test dataset
     # TODO: do this for images as well?
-    if args.dataset == 'EMNIST':
-        assert args.target_grp == 'dummy', "Target group not recognized for EMNIST dataset!"
+    if args.dataset == 'EMNIST_35':
+        assert args.target_grp == 'dummy', "Target group not recognized for EMNIST_35 dataset!"
         dataset = EMNISTDataset()
         test_dataset = EMNISTDataset(test=True)
-    elif args.dataset == 'EMNIST_9':
-        assert args.target_grp == 'dummy', "Target group not recognized for EMNIST_9 dataset!"
+    elif args.dataset == 'EMNIST_10':
+        assert args.target_grp == 'dummy', "Target group not recognized for EMNIST_10 dataset!"
         dataset = EMNISTDataset(imb=True)
         test_dataset = EMNISTDataset(imb=True, test=True)
     else:
@@ -283,7 +283,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST', 'EMNIST_9'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST_35', 'EMNIST_10'], required=True)
     parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'strong'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
     parser.add_argument('--optimizer', choices=['Adagrad', 'Adam'], default='Adagrad')
     parser.add_argument('--target_grp', choices=['race', 'sex', 'dummy'], required=True, help='Whether to predict race or sex of a person')
@@ -299,6 +299,6 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['EMNIST', 'EMNIST_9'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['EMNIST_35', 'EMNIST_10'] else 'tabular'
 
     main(args)

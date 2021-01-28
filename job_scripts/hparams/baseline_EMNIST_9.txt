@@ -1,11 +1,11 @@
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 1
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 2
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 3
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 4
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 5
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 6
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 7
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 8
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 9
---model baseline --dataset EMNIST_9 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 10
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 1
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 2
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 3
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 4
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 5
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 6
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 7
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 8
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 9
+--model baseline --dataset EMNIST_10 --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 0.01 --seed_run --seed 10
 

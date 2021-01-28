@@ -19,7 +19,7 @@ OPT_BY_NAME: Dict[str, Type[torch.optim.Optimizer]] = {
 MODELS = ['baseline', 'ARL', 'DRO', 'IPW(S)', 'IPW(S+Y)']  
 DATASETS = ['Adult', 'COMPAS', 'LSAC']
 IMAGE_MODELS = ['baseline', 'ARL']
-IMAGE_DATASETS = ['EMNIST_9', 'EMNIST']
+IMAGE_DATASETS = ['EMNIST_10', 'EMNIST_35']
 PARAMS = ['lr', 'batch_size']
 
 

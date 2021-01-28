@@ -53,7 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', default='training_logs')
     parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required='True')
     parser.add_argument('--sensitive_label', default=False, action='store_true', help='Whether to use the label Y in IPW')
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST', 'EMNIST_9'], required='True')
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST_35', 'EMNIST_10'], required='True')
     parser.add_argument('--seed_run_version', default=0)
 
 

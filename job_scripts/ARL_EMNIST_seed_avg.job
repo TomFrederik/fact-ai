@@ -24,7 +24,7 @@ cd $HOME/fact-ai/
 # Activate environment
 source activate fact-ai-lisa
 
-HPARAMS_FILE=./job_scripts/hparams/ARL_EMNIST.txt
+HPARAMS_FILE=./job_scripts/hparams/ARL_EMNIST_35.txt
 
 # Run code
 srun python -u main.py $(head -$SLURM_ARRAY_TASK_ID $HPARAMS_FILE | tail -1)

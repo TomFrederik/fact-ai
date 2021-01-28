@@ -13,8 +13,8 @@ __pycache__
 **/FairFace_reduced/**/*.jpg
 **/.vscode/**
 **/*.jpg
-/data/EMNIST/
+/data/EMNIST_35/
 /tSNE_results
-/data/EMNIST/
+/data/EMNIST_35/
 /data/colorMNIST/
 /data/EMNIST_no_noise/

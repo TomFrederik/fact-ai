@@ -72,10 +72,10 @@ def main(args: argparse.Namespace):
     np.random.seed(args.seed)
 
     # create datasets
-    if args.dataset == 'EMNIST':
+    if args.dataset == 'EMNIST_35':
         dataset: FairnessDataset = EMNISTDataset()
         test_dataset: FairnessDataset = EMNISTDataset(test=True)
-    elif args.dataset == 'EMNIST_9':
+    elif args.dataset == 'EMNIST_10':
         dataset: FairnessDataset = EMNISTDataset(imb=True)
         test_dataset: FairnessDataset = EMNISTDataset(imb=True, test=True)
     else:
@@ -536,7 +536,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=None, type=str, help='Override version. Default is the current time. Will be used in other scripts which call main.main().')
 
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST', 'EMNIST_9'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST_35', 'EMNIST_10'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--sensitive_label', default=False, action='store_true', help='If True, target label will be included in list of sensitive columns; used for IPW(S+Y)')
@@ -547,7 +547,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['EMNIST', 'EMNIST_9'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['EMNIST_35', 'EMNIST_10'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop

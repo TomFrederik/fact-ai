@@ -329,9 +329,9 @@ class EMNISTDataset(FairnessDataset):
         self.to_tensor = transforms.ToTensor()
 
         if imb:
-            dataset_name = 'EMNIST_9'
+            dataset_name = 'EMNIST_10'
         else:
-            dataset_name = "EMNIST"
+            dataset_name = "EMNIST_35"
 
         if self.test:
             self._data = np.load(os.path.join('data', dataset_name, 'test_prepared.npy'), allow_pickle=True)

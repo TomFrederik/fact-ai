@@ -24,4 +24,4 @@ cd $HOME/fact-ai/
 source activate fact-ai-lisa
 
 # Run code
-srun python -u computational_identifiability.py --dataset EMNIST_9 --target_grp dummy --learning_rate 0.01 --batch_size 256
+srun python -u computational_identifiability.py --dataset EMNIST_10 --target_grp dummy --learning_rate 0.01 --batch_size 256

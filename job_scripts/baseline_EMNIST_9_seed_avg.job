@@ -2,13 +2,13 @@
 
 #SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:1
-#SBATCH --job-name=baseline_EMNIST_9_seed_avg
+#SBATCH --job-name=baseline_EMNIST_10_seed_avg
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=3
 #SBATCH --array=1-10%2
 #SBATCH --time=02:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=outputs/baseline_EMNIST_9_avg_%a_%A.out
+#SBATCH --output=outputs/baseline_EMNIST_10_avg_%a_%A.out
 
 module purge
 module load 2019
@@ -24,7 +24,7 @@ cd $HOME/fact-ai/
 # Activate environment
 source activate fact-ai-lisa
 
-HPARAMS_FILE=./job_scripts/hparams/baseline_EMNIST_9.txt
+HPARAMS_FILE=./job_scripts/hparams/baseline_EMNIST_10.txt
 
 # Run code
 srun python -u main.py $(head -$SLURM_ARRAY_TASK_ID $HPARAMS_FILE | tail -1)

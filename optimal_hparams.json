@@ -68,7 +68,7 @@
 	    "prim_lr": 0.1
 	}
     },
-    "EMNIST": {
+    "EMNIST_35": {
 	"baseline": {
 	    "batch_size": 256,
 	    "prim_lr": 0.01

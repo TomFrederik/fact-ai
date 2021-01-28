@@ -192,7 +192,7 @@ def run_models(seed, args, optimal_hparams, dataset_model_list, log_dir = 'train
             temp_args.model = model
         temp_args.dataset = dataset
         temp_args.seed = seed
-        temp_args.dataset_type = 'image' if temp_args.dataset == 'EMNIST' else 'tabular'
+        temp_args.dataset_type = 'image' if temp_args.dataset in ['EMNIST_35', 'EMNIST_10'] else 'tabular'
         # set the optimal hyperparameters:
         for k, v in optimal_hparams[dataset][model].items():
             setattr(temp_args, k, v)
