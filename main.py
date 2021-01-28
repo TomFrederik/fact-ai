@@ -78,6 +78,9 @@ def main(args: argparse.Namespace):
     elif args.dataset == 'EMNIST_no_noise':
         dataset: FairnessDataset = EMNISTDataset(noise=False)
         test_dataset: FairnessDataset = EMNISTDataset(noise=False, test=True)
+    elif args.dataset == 'EMNIST_no_noise':
+        dataset: FairnessDataset = EMNISTDataset(imb=True)
+        test_dataset: FairnessDataset = EMNISTDataset(imb=True, test=True)
     else:
         dataset = TabularDataset(args.dataset, sensitive_label=args.sensitive_label, disable_warnings=args.disable_warnings)
         test_dataset = TabularDataset(args.dataset, sensitive_label=args.sensitive_label, test=True, disable_warnings=args.disable_warnings)
@@ -527,7 +530,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', default=None, type=str, help='Override version. Default is the current time. Will be used in other scripts which call main.main().')
 
     # Dataset settings
-    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST', 'EMNIST_no_noise'], required=True)
+    parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST', 'EMNIST_no_noise', 'EMNIST_9'], required=True)
     parser.add_argument('--num_workers', default=0, type=int, help='Number of workers that are used in dataloader')
     parser.add_argument('--disable_warnings', action='store_true', help='Whether to disable warnings about mean and std in the dataset')
     parser.add_argument('--sensitive_label', default=False, action='store_true', help='If True, target label will be included in list of sensitive columns; used for IPW(S+Y)')
@@ -538,7 +541,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['EMNIST', 'EMNIST_no_noise'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['EMNIST', 'EMNIST_no_noise', 'EMNIST_9'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop

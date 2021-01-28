@@ -317,6 +317,7 @@ class EMNISTDataset(FairnessDataset):
 
     def __init__(self,
                  noise: bool = True,
+                 imb: bool = False,
                  test: bool = False,
                  idcs: Optional[List[int]] = None):
         """Inits an instance of FairFaceDataset with the given attributes."""
@@ -327,7 +328,12 @@ class EMNISTDataset(FairnessDataset):
         self.test = test
         self.to_tensor = transforms.ToTensor()
 
-        dataset_name = 'EMNIST' if noise else 'EMNIST_no_noise'
+        if not noise:
+            dataset_name = "EMNIST_no_noise"
+        elif imb:
+            dataset_name = 'EMNIST_9'
+        else:
+            dataset_name = "EMNIST"
 
         if self.test:
             self._data = np.load(os.path.join('data', dataset_name, 'test_prepared.npy'), allow_pickle=True)
