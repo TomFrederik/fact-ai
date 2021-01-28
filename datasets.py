@@ -353,9 +353,9 @@ class EMNISTDataset(FairnessDataset):
         '''
         self._dimensionality = np.expand_dims(np.array(self._data[0, 0]), axis=0).shape
         self._features = torch.stack([torch.Tensor(d[0] / 255).float().unsqueeze(0) for d in self._data])
-        self.index2values = {0: 'protected', 1: 'unprotected'}
+        self.index2values = {0: 'unprotected', 1: 'protected'}
         protected_prob = np.mean([d[2] for d in self._data])
-        self._group_probs = np.array([protected_prob, 1 - protected_prob])
+        self._group_probs = np.array([1 - protected_prob, protected_prob])
         self._memberships = torch.Tensor([d[2] for d in self._data])
         self._labels = torch.Tensor([d[1] for d in self._data]).float()
 
@@ -416,7 +416,7 @@ class EMNISTDataset(FairnessDataset):
     @property
     def minority(self):
         """Index of the protected group with the fewest members."""
-        return 0
+        return 1
         # return self._minority
 
     @property
