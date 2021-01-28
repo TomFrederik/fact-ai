@@ -2,12 +2,13 @@
 
 #SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:1
-#SBATCH --job-name=Baseline_FairFace_red_test
+#SBATCH --job-name=ARL_EMNIST_9_seed_avg
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --time=04:30:00
+#SBATCH --cpus-per-task=3
+#SBATCH --array=1-10%2
+#SBATCH --time=02:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=outputs/Baseline_FairFace_red_test_%A.out
+#SBATCH --output=outputs/ARL_EMNIST_9_avg_%a_%A.out
 
 module purge
 module load 2019
@@ -23,6 +24,8 @@ cd $HOME/fact-ai/
 # Activate environment
 source activate fact-ai-lisa
 
+HPARAMS_FILE=./job_scripts/hparams/ARL_EMNIST_9.txt
+
 # Run code
-srun python -u main.py --model baseline_cnn --dataset FairFace_reduced --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search
+srun python -u main.py $(head -$SLURM_ARRAY_TASK_ID $HPARAMS_FILE | tail -1)
 
