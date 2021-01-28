@@ -538,7 +538,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['EMNIST'] else 'tabular'
+    args.dataset_type = 'image' if args.dataset in ['EMNIST', 'EMNIST_no_noise'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop
