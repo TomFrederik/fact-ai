@@ -35,10 +35,11 @@ class Linear(pl.LightningModule):
         if self.dataset_type == 'tabular':
             self.net = nn.Linear(num_features, 1)
         elif self.dataset_type == 'image':
-            self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
+            self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=2, kernel_size=(3, 3)),
                                      nn.MaxPool2d(kernel_size=(2, 2)),
                                      nn.Flatten())
-            self.fc = nn.Linear(10816 + 1, 1)
+            # self.fc = nn.Linear(10816 + 1, 1)
+            self.fc = nn.Linear(338 + 1, 1)
         else:
             raise Exception(f"Model was unable to recognize dataset type {self.dataset_type}!")
             
@@ -181,7 +182,7 @@ def main(args):
     elif args.dataset == 'EMNIST_9':
         assert args.target_grp == 'dummy', "Target group not recognized for EMNIST_9 dataset!"
         dataset = EMNISTDataset(imb=True)
-        test_dataset = EMNISTDataset(img=True, test=True)
+        test_dataset = EMNISTDataset(imb=True, test=True)
     else:
         dataset = TabularDataset(args.dataset, disable_warnings=args.disable_warnings, suffix=args.suffix)
         test_dataset = TabularDataset(args.dataset, test=True, disable_warnings=args.disable_warnings, suffix=args.suffix)
@@ -199,7 +200,7 @@ def main(args):
     test_loader = DataLoader(test_dataset, num_workers=args.num_workers, batch_size=args.batch_size)
 
     # set up model
-    model = Linear(num_features=dataset.dimensionality + 1 if args.dataset != 'EMNIST' else None, # + 1 for labels
+    model = Linear(num_features=dataset.dimensionality + 1 if args.dataset_type != 'image' else None, # + 1 for labels
                    lr=args.learning_rate,
                    train_index2value=dataset.protected_index2value,
                    test_index2value=test_dataset.protected_index2value,
