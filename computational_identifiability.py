@@ -105,12 +105,19 @@ class Linear(pl.LightningModule):
 
         targets = self.idx_mapping(s, test=True).float()
 
-        loss = self.loss_fct(pred, targets) # CHECK THIS
+        loss = self.loss_fct(pred, targets)
+
+        grp_1_idcs = targets == 0
+        grp_2_idcs = targets == 1
 
         accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets), targets.shape[0])
-
+        accuracy_grp_1 = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred[grp_1_idcs])) == targets[grp_1_idcs]), targets[grp_1_idcs].shape[0])
+        accuracy_grp_2 = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred[grp_2_idcs])) == targets[grp_2_idcs]), targets[grp_2_idcs].shape[0])
+        
         self.log('test/loss', loss)
         self.log('test/accuracy', accuracy)
+        self.log('test/accuracy_grp_1', accuracy_grp_1)
+        self.log('test/accuracy_grp_2', accuracy_grp_2)
 
         return loss
     
