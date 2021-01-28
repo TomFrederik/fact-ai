@@ -1,81 +1,99 @@
 {
-    "Adult": {
-	"baseline": {
-	    "batch_size": 512,
-	    "prim_lr": 2
-	},
-	"DRO": {
-	    "batch_size": 128,
-	    "prim_lr": 1,
-	    "eta": 0.5
-	},
-	"ARL": {
-	    "batch_size": 128,
-	    "prim_lr": 0.1
-	},
-	"IPW(S)": {
-	    "batch_size": 128,
-	    "prim_lr": 0.01
-	},
-	"IPW(S+Y)": {
-	    "batch_size": 256,
-	    "prim_lr": 0.1
-	}
+  "Adult": {
+    "baseline": {
+      "batch_size": 512,
+      "prim_lr": 2
     },
-    "LSAC": {
-	"baseline": {
-	    "batch_size": 64,
-	    "prim_lr": 0.1
-	},
-	"DRO": {
-	    "batch_size": 128,
-	    "prim_lr": 1,
-	    "eta": 0.6
-	},
-	"ARL": {
-	    "batch_size": 64,
-	    "prim_lr": 0.1
-	},
-	"IPW(S)": {
-	    "batch_size": 256,
-	    "prim_lr": 0.1
-	},
-	"IPW(S+Y)": {
-	    "batch_size": 64,
-	    "prim_lr": 0.1
-	}
+    "DRO": {
+      "batch_size": 128,
+      "prim_lr": 1,
+      "eta": 0.5
     },
-    "COMPAS": {
-	"baseline": {
-	    "batch_size": 256,
-	    "prim_lr": 0.1
-	},
-	"DRO": {
-	    "batch_size": 256,
-	    "prim_lr": 1,
-	    "eta": 0.6
-	},
-	"ARL": {
-	    "batch_size": 256,
-	    "prim_lr": 0.1
-	},
-	"IPW(S)": {
-	    "batch_size": 256,
-	    "prim_lr": 0.1
-	},
-	"IPW(S+Y)": {
-	    "batch_size": 512,
-	    "prim_lr": 0.1
-	}
+    "ARL": {
+      "batch_size": 128,
+      "prim_lr": 0.1
     },
-    "EMNIST_35": {
-	"baseline": {
-	    "batch_size": 256,
-	    "prim_lr": 0.01
-	},
-	"ARL": {
-	    "batch_size": 512,
-	    "prim_lr": 0.01
-	}
+    "IPW(S)": {
+      "batch_size": 128,
+      "prim_lr": 0.01
+    },
+    "IPW(S+Y)": {
+      "batch_size": 256,
+      "prim_lr": 0.1
     }
+  },
+  "LSAC": {
+    "baseline": {
+      "batch_size": 64,
+      "prim_lr": 0.1
+    },
+    "DRO": {
+      "batch_size": 128,
+      "prim_lr": 1,
+      "eta": 0.6
+    },
+    "ARL": {
+      "batch_size": 64,
+      "prim_lr": 0.1
+    },
+    "IPW(S)": {
+      "batch_size": 256,
+      "prim_lr": 0.1
+    },
+    "IPW(S+Y)": {
+      "batch_size": 64,
+      "prim_lr": 0.1
+    }
+  },
+  "COMPAS": {
+    "baseline": {
+      "batch_size": 256,
+      "prim_lr": 0.1
+    },
+    "DRO": {
+      "batch_size": 256,
+      "prim_lr": 1,
+      "eta": 0.6
+    },
+    "ARL": {
+      "batch_size": 256,
+      "prim_lr": 0.1
+    },
+    "IPW(S)": {
+      "batch_size": 256,
+      "prim_lr": 0.1
+    },
+    "IPW(S+Y)": {
+      "batch_size": 512,
+      "prim_lr": 0.1
+    }
+  },
+  "EMNIST_35": {
+    "baseline": {
+      "batch_size": 512,
+      "prim_lr": 0.01
+    },
+    "ARL": {
+      "batch_size": 512,
+      "prim_lr": 0.01
+    },
+    "ARL_weak": {
+      "batch_size": 512,
+      "prim_lr": 0.01
+    }
+  },
+  "EMNIST_10": {
+    "baseline": {
+      "batch_size": 512,
+      "prim_lr": 0.01
+    },
+    "ARL": {
+      "batch_size": 256,
+      "prim_lr": 0.1
+    },
+    "ARL_weak": {
+      "batch_size": 256,
+      "prim_lr": 0.01
+    }
+  }
 }
