@@ -2,13 +2,16 @@ from typing import Dict, Type, Optional, Any, List, Tuple, Set
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
-import torchvision.models as models # type: ignore
+import torchvision.models as models  # type: ignore
 
+import matplotlib as mpl
+mpl.use('Agg')  # No display
+import matplotlib.pyplot as plt
 
 
 class ARL(pl.LightningModule):
-    """Feed forward neural network consisting of a primary network and an 
-    adversary network that reweights the losses. 
+    """Feed forward neural network consisting of a primary network and an
+    adversary network that reweights the losses.
 
     Attributes:
         config: Dict with hyperparameters (learning rate, batch size).
@@ -27,7 +30,7 @@ class ARL(pl.LightningModule):
         optimizer: Optimizer used to update the model parameters.
         dataset_type: Type of the dataset; 'tabular' or 'image'.
         opt_kwargs: Optional; optimizer keywords other than learning rate.
-        
+
     Raises:
         Exception: If the dataset type is neither tabular nor image data.
     """
@@ -77,134 +80,153 @@ class ARL(pl.LightningModule):
                       batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
                       batch_idx: int,
                       optimizer_idx: int) -> Optional[torch.Tensor]:
-        """Computes and logs the adversarially reweighted loss on the training 
+        """Computes and logs the adversarially reweighted loss on the training
         set.
-    
+
         Args:
             batch: Inputs, labels and group memberships of a data batch.
             batch_idx: Index of batch in the dataset (not needed).
-            optimizer_idx: Index of the optimizer that is used for updating the 
+            optimizer_idx: Index of the optimizer that is used for updating the
                 weights after the training step; 0 = learner, 1 = adversary.
-    
+
         Returns:
             Adversarially reweighted loss or negative adversarially reweighted
             loss. During pretraining, only return the positive loss.
         """
-        
-        x, y, s = batch         
+
+        x, y, s = batch
 
         if optimizer_idx == 0:
             loss = self.learner_step(x, y, s)
-            
+
             # logging
             self.log("training/reweighted_loss_learner", loss)
-            
+
             return loss
 
         elif optimizer_idx == 1 and self.global_step > self.hparams.pretrain_steps:
             loss = self.adversary_step(x, y, s)
-            
+
             return loss
 
         else:
             return None
 
-
     def learner_step(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
         """Computes the adversarially reweighted loss on the training set.
-    
+
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
             y: Tensor of shape [batch_size] with labels.
             s: Tensor of shape [batch_size] with protected group membership indices.
-    
+
         Returns:
             Adversarially reweighted loss on the training dataset.
         """
-        
+
         # compute unweighted bce
-        logits = self.learner(x)        
+        logits = self.learner(x)
         bce = self.loss_fct(logits, y)
-        
+
         # compute lambdas
         lambdas = self.adversary(x, y, s)
-        
-        # compute reweighted loss  
+
+        # compute reweighted loss
         loss = torch.mean(lambdas * bce)
-        
+
+        # test
+        # lambdas_scaled = torch.true_divide(lambdas, torch.max(lambdas)) + 1.0
+        # bce_scaled = torch.true_divide(bce, torch.max(bce)) + 1.0
+        # self.logger.experiment.add_histogram(tag="loss", values=bce_scaled, bins=15, global_step=self.global_step)
+        # self.logger.experiment.add_histogram(tag="lambdas", values=lambdas_scaled, bins=15, global_step=self.global_step)
+        # self.logger.experiment.add_histogram(tag="loss_vs_lambdas", values = bce_scaled * lambdas_scaled, bins=15, global_step=self.global_step)
+
         return loss
-     
-        
+
     def adversary_step(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
         """Computes the negative adversarially reweighted loss on the training set.
-    
+
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
             y: Tensor of shape [batch_size] with labels.
             s: Tensor of shape [batch_size] with protected group membership indices.
-    
+
         Returns:
             Negative adversarially reweighted loss on the training dataset.
         """
-        
+
         # compute unweighted bce
-        
-        logits = self.learner(x)        
+
+        logits = self.learner(x)
         bce = self.loss_fct(logits, y)
-        
+
         # compute lambdas
         lambdas = self.adversary(x, y, s)
 
-        for i in range(lambdas.shape[0]):
-            if lambdas[i] > 20:
-                self.logger.experiment.add_image('high_lambda', x[i], 0)
-        
+        # test
+        # s_array = []
+        # y_array = []
+        # large_c = 0
+        # for i in range(lambdas.shape[0]):
+        #     if lambdas[i] > 10:
+        #         s_array.append(1 if s[i] == 1 else 0)
+        #         y_array.append(1 if y[i] == 1 else 0)
+        #         large_c += 1
+        # self.log("adv_step/s_mean_large_lambda", np.mean(s_array))
+        # self.log("adv_step/y_mean_large_lambda", np.mean(y_array))
+        # self.log("adv_step/mean_large_lambda_ratio", np.divide(large_c, lambdas.shape[0]))
+
         # compute reweighted loss
         loss = -torch.mean(lambdas * bce)
-        
-        return loss        
-        
-        
+
+        return loss
+
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
-        """Computes and logs the adversarially reweighted loss on the validation 
+        """Computes and logs the adversarially reweighted loss on the validation
         set.
-    
+
         Args:
             batch: Inputs, labels and group memberships of a data batch.
             batch_idx: Index of batch in the dataset (not needed).
         """
-        
-        x, y, s = batch        
+
+        x, y, s = batch
         loss = self.learner_step(x, y, s)
-        
+
         # logging
         self.log("validation/reweighted_loss_learner", loss)
 
-        
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], batch_idx: int):
         """Computes and logs the adversarially reweighted loss on the test set.
-    
+
         Args:
             batch: Inputs, labels and group memberships of a data batch.
             batch_idx: Index of batch in the dataset (not needed).
         """
-        
-        x, y, s = batch 
+
+        x, y, s = batch
         loss = self.learner_step(x, y, s)
-        
+
+        # testing:
+        # logits = self.learner(x)
+        # bce = self.loss_fct(logits, y)
+        # lambdas = self.adversary(x, y, s)
+        #
+        # fig = plt.scatter(bce, lambdas)
+        # self.logger.experiment.add_figure(tag='bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
+
         # logging
         self.log("test/reweighted_loss_learner", loss)
- 
-    
+
     def configure_optimizers(self):
         """Chooses optimizers and learning-rates to use during optimization of
         the primary and adversary network.
-        
+
         Returns:
-            Optimizers.   
+            Optimizers.
             Learning-rate schedulers (currently not used).
         """
-        
+
         optimizer_learn = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.config["lr"], **self.hparams.opt_kwargs)
         optimizer_adv = self.hparams.optimizer(self.adversary.parameters(), lr=self.hparams.config["lr"], **self.hparams.opt_kwargs)
 
@@ -212,10 +234,10 @@ class ARL(pl.LightningModule):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward propagation of inputs through the primary network.
-    
+
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
-    
+
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
@@ -228,7 +250,7 @@ class ARL(pl.LightningModule):
 
         Args:
             dataloader: An instance of torch.utils.data.DataLoader, e.g. the test dataloader
-        
+
         Returns:
             lambdas: Tensor of shape [num_samples] containing the adversary scores lambda
             predictions: Tensor of shape [num_samples] containing predicted labels in the same order as the lambdas
@@ -266,24 +288,24 @@ class ARL(pl.LightningModule):
         memberships = torch.cat(memberships, dim=0)
 
         return lambdas, predictions, true_labels, memberships
-    
-    
+
+
 class Learner(nn.Module):
-    """Fully-connected feed forward neural network; primary network of the ARL. 
+    """Fully-connected feed forward neural network; primary network of the ARL.
 
     Attributes:
         input_shape: Dimensionality of the data input.
         hidden_units: Number of hidden units in each layer of the network.
     """
-    
-    def __init__(self, 
-        input_shape: int,
-        hidden_units: List[int] = [64,32]
-        ):        
+
+    def __init__(self,
+                 input_shape: int,
+                 hidden_units: List[int] = [64, 32]
+                 ):
         """Inits an instance of the primary network with the given attributes."""
-            
+
         super().__init__()
-        
+
         # construct network
         net_list: List[nn.Module] = []
         num_units = [input_shape] + hidden_units
@@ -293,24 +315,24 @@ class Learner(nn.Module):
         net_list.append(nn.Linear(num_units[-1], 1))
 
         self.net = nn.Sequential(*net_list)
-        
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward propagation of inputs through the primary network.
-    
+
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
-    
+
         Returns:
             Tensor of shape [batch_size] with predicted logits.
         """
-        
+
         out = self.net(x)
-        
+
         return torch.squeeze(out, dim=-1)
 
-    
+
 class Adversary(nn.Module):
-    """Fully-connected feed forward neural network; adversary network of the ARL. 
+    """Fully-connected feed forward neural network; adversary network of the ARL.
 
     Attributes:
         input_shape: Dimensionality of the data input.
@@ -323,20 +345,20 @@ class Adversary(nn.Module):
             This set must not be empty (that would correspond to a constant adversary output, use Baseline instead).
         num_groups: Number of protected groups. Only needs to be set if 'S' is used in adv_input.
     """
-    
-    def __init__(self, 
-        input_shape: int,
-        hidden_units: List[int] = [],
-        adv_input: Set[str] = {'X', 'Y'},
-        num_groups: Optional[int] = None,
-        ):
+
+    def __init__(self,
+                 input_shape: int,
+                 hidden_units: List[int] = [],
+                 adv_input: Set[str] = {'X', 'Y'},
+                 num_groups: Optional[int] = None,
+                 ):
         """Inits an instance of the adversary network with the given attributes."""
-            
+
         super().__init__()
 
         if len(adv_input) == 0:
             raise ValueError("Adversary has no inputs!")
-        
+
         # construct network
         net_list: List[nn.Module] = []
         num_inputs = 0
@@ -358,16 +380,16 @@ class Adversary(nn.Module):
         net_list.append(nn.Sigmoid())
 
         self.net = nn.Sequential(*net_list)
-        
+
     def forward(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
-        """Forward propagation of inputs and labels (optional) through the 
+        """Forward propagation of inputs and labels (optional) through the
         adversary network.
-    
+
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
             y: Tensor of shape [batch_size] with labels.
             s: Tensor of shape [batch_size] with protected group membership indices.
-    
+
         Returns:
             Tensor of shape [batch_size] with reweighting scores.
         """
@@ -379,19 +401,19 @@ class Adversary(nn.Module):
             inputs.append(y.unsqueeze(1).float())
         if 'S' in self.adv_input:
             inputs.append(nn.functional.one_hot(s.long(), num_classes=self.num_groups).float())
-        
+
         input = torch.cat(inputs, dim=1).float()
 
         # compute adversary
         adv = self.net(input)
-        
+
         # normalize adversary across batch
         # TODO: check numerical stability
         adv_norm = adv / torch.sum(adv)
-        
+
         # scale and shift
-        out = x.shape[0] * adv_norm + torch.ones_like(adv_norm)        
-        
+        out = x.shape[0] * adv_norm + torch.ones_like(adv_norm)
+
         return torch.squeeze(out, dim=-1)
 
 
