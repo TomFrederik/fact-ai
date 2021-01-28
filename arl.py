@@ -26,7 +26,6 @@ class ARL(pl.LightningModule):
             adversary has access to protected group memberships.
         optimizer: Optimizer used to update the model parameters.
         dataset_type: Type of the dataset; 'tabular' or 'image'.
-        pretrained: Option to use a pretrained model if the networks are CNNs.
         opt_kwargs: Optional; optimizer keywords other than learning rate.
         
     Raises:
@@ -46,7 +45,6 @@ class ARL(pl.LightningModule):
         num_groups: Optional[int] = None,
         optimizer: Type[torch.optim.Optimizer] = torch.optim.Adagrad,
         dataset_type: str = 'tabular',
-        pretrained: bool = False,
         opt_kwargs: Dict[str, Any] = {},
         ):
         """Inits an instance of ARL with the given attributes."""
