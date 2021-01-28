@@ -19,7 +19,7 @@ OPT_BY_NAME: Dict[str, Type[torch.optim.Optimizer]] = {
 MODELS = ['baseline', 'ARL', 'DRO', 'IPW(S)', 'IPW(S+Y)']  
 DATASETS = ['Adult', 'COMPAS', 'LSAC']
 IMAGE_MODELS = ['baseline', 'ARL']
-IMAGE_DATASETS = ['EMNIST']
+IMAGE_DATASETS = ['EMNIST_9', 'EMNIST']
 PARAMS = ['lr', 'batch_size']
 
 
@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
     # ray settings
     parser.add_argument('--num_cpus', default=1, type=int, help='Number of CPUs used for each trial')
-    parser.add_argument('--num_gpus', default=0.25, type=float, help='Number of GPUs used for each trial')
+    parser.add_argument('--num_gpus', default=1, type=float, help='Number of GPUs used for each trial')
 
     args = parser.parse_args()
 
