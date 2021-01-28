@@ -421,13 +421,14 @@ def train(config: Dict[str, Any],
 
     if val_dataset is not None:
         callbacks.append(Logger(val_dataset, 'validation', batch_size=args.eval_batch_size))
-        callbacks.append(EarlyStopping(
-            monitor='validation/micro_avg_auc', 
-            min_delta=0.00,
-            patience=10,
-            verbose=True,
-            mode='max'
-        ))
+        if not args.no_early_stopping:
+            callbacks.append(EarlyStopping(
+                monitor='validation/micro_avg_auc', 
+                min_delta=0.00,
+                patience=10,
+                verbose=True,
+                mode='max'
+            ))
     
     if test_dataset is not None:
         callbacks.append(Logger(test_dataset, 'test', batch_size=args.eval_batch_size))
@@ -449,13 +450,14 @@ def train(config: Dict[str, Any],
         version=logger_version
     )
 
-    # create checkpoint
-    checkpoint = ModelCheckpoint(save_weights_only=True,
-                                dirpath=logger.log_dir, 
-                                mode='max', 
-                                verbose=False,
-                                monitor='validation/micro_avg_auc')
-    callbacks.append(checkpoint)
+    if not args.no_early_stopping:
+        # create checkpoint
+        checkpoint = ModelCheckpoint(save_weights_only=True,
+                                    dirpath=logger.log_dir, 
+                                    mode='max', 
+                                    verbose=False,
+                                    monitor='validation/micro_avg_auc')
+        callbacks.append(checkpoint)
     
     # Create a PyTorch Lightning trainer
     trainer = pl.Trainer(logger=logger,
@@ -478,22 +480,23 @@ def train(config: Dict[str, Any],
         trainer.fit(model, train_loader)
     print(f'time to fit was {time()-fit_time}')
 
-    # necessary to make the type checker happy and since this is only run once,
-    # runtime is not an issue
-    assert trainer.checkpoint_callback is not None
+    if not args.no_early_stopping:
+        # necessary to make the type checker happy and since this is only run once,
+        # runtime is not an issue
+        assert trainer.checkpoint_callback is not None
 
-    # Load best checkpoint after training
-    if args.model == 'baseline':
-        model = BaselineModel.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+        # Load best checkpoint after training
+        if args.model == 'baseline':
+            model = BaselineModel.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
 
-    elif args.model == 'ARL':
-        model = ARL.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
-        
-    elif args.model == 'DRO':
-        model = DRO.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
-        
-    elif args.model == 'IPW':
-        model = IPW.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+        elif args.model == 'ARL':
+            model = ARL.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+
+        elif args.model == 'DRO':
+            model = DRO.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+
+        elif args.model == 'IPW':
+            model = IPW.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
 
     return model, trainer
 
@@ -530,6 +533,7 @@ if __name__ == '__main__':
     #parser.add_argument('--nbr_seeds', default=2, type=int, help='Number of independent training runs') # TODO: not implemented yet
     parser.add_argument('--eval_batch_size', default=512, type=int, help='Batch size for evaluation. No effect on training or results, set as large as memory allows to maximize performance')
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
+    parser.add_argument('--no_early_stopping', action='store_true', default=False, help='Disable early stopping')
     parser.add_argument('--version', default=None, type=str, help='Override version. Default is the current time. Will be used in other scripts which call main.main().')
 
     # Dataset settings
