@@ -25,6 +25,9 @@ for the output files.
 **Encoding:** The default in the code uses an embedding dimension of 32,
 we used one-hot encoding instead (as in our own implementation).
 
+**Seeding:** The original code doesn't use random seeds, we added support for
+that (the seed can be set via a command line argument).
+
 ## Installation
 
 Run the following:
