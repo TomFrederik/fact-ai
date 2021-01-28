@@ -1,0 +1,13 @@
+config:
+  batch_size: 32
+  lr: 0.001
+dataset_type: image
+hidden_units:
+- 64
+- 32
+num_features: !!python/tuple
+- 1
+- 28
+- 28
+opt_kwargs: {}
+optimizer: !!python/name:torch.optim.adagrad.Adagrad ''
