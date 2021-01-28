@@ -1,5 +1,5 @@
 import math
-import statistics
+import numpy as np
 import os
 import json
 import itertools
@@ -192,18 +192,21 @@ def run_models(seed, args, optimal_hparams, dataset_model_list):
             temp_args.model = model
         temp_args.dataset = dataset
         temp_args.seed = seed
+        temp_args.dataset_type = 'image' if temp_args.dataset == 'EMNIST' else 'tabular'
         # set the optimal hyperparameters:
-        for k, v in optimal_hparams[dataset][model]:
-            setattr(args, k, v)
+        for k, v in optimal_hparams[dataset][model].items():
+            setattr(temp_args, k, v)
 
         # train and evaluate the model:
-        result_dict[(dataset, model)] = main.main(args)
+        result_dict[(dataset, model)] = main.main(temp_args)
     return result_dict
 
-def result_list_to_dict(results, dataset_model_list):
+def result_list_to_dict(results, dataset_model_list, metrics):
     return {
         k: {
-            'mean': statistics.mean(result_dict[k] for result_dict in results),
-            'std': statistics.std(result_dict[k] for result_dict in results)
+            metric: {
+                'mean': np.mean([result_dict[k][metric] for result_dict in results]),
+                'std': np.std([result_dict[k][metric] for result_dict in results])
+            } for metric in metrics
         } for k in dataset_model_list
     }

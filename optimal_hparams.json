@@ -12,6 +12,14 @@
 	"ARL": {
 	    "batch_size": 128,
 	    "prim_lr": 0.1
+	},
+	"IPW(S)": {
+	    "batch_size": 128,
+	    "prim_lr": 0.01
+	},
+	"IPW(S+Y)": {
+	    "batch_size": 256,
+	    "prim_lr": 0.1
 	}
     },
     "LSAC": {
@@ -25,6 +33,14 @@
 	    "eta": 0.6
 	},
 	"ARL": {
+	    "batch_size": 64,
+	    "prim_lr": 0.1
+	},
+	"IPW(S)": {
+	    "batch_size": 256,
+	    "prim_lr": 0.1
+	},
+	"IPW(S+Y)": {
 	    "batch_size": 64,
 	    "prim_lr": 0.1
 	}
@@ -41,6 +57,14 @@
 	},
 	"ARL": {
 	    "batch_size": 256,
+	    "prim_lr": 0.1
+	},
+	"IPW(S)": {
+	    "batch_size": 256,
+	    "prim_lr": 0.1
+	},
+	"IPW(S+Y)": {
+	    "batch_size": 512,
 	    "prim_lr": 0.1
 	}
     },

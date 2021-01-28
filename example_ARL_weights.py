@@ -253,7 +253,6 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
                 adv_hidden=args.adv_hidden, 
                 optimizer=OPT_BY_NAME[args.opt],
                 dataset_type=args.dataset_type,
-                pretrained=args.pretrained,
                 adv_input=set(args.adv_input),
                 num_groups=len(dataset.protected_index2value),
                 opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
@@ -388,7 +387,6 @@ if __name__ == '__main__':
     parser.add_argument('--prim_hidden', nargs='*', type=int, default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', nargs='*', type=int, default=[], help='Number of hidden units in adversarial network')
     parser.add_argument('--adv_input', nargs='+', default=['X', 'Y'], help='Inputs to use for the adversary. Any combination of X (features), Y (labels) and S (protected group memberships)')
-    parser.add_argument('--pretrained', action='store_true', help='Whether to load a pretrained dataset from torchvision where applicable')
 
     # Single run settings
     parser.add_argument('--batch_size', default=256, type=int)

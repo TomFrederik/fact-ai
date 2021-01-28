@@ -470,7 +470,9 @@ def train(config: Dict[str, Any],
     # Training
     fit_time = time()
     if val_dataset is not None:
-        trainer.fit(model, train_loader, val_dataloaders=DataLoader(val_dataset, batch_size=args.eval_batch_size))
+        trainer.fit(model, train_loader, val_dataloaders=DataLoader(val_dataset,
+                                                                    batch_size=args.eval_batch_size,
+                                                                    num_workers=args.num_workers))
     else:
         trainer.fit(model, train_loader)
     print(f'time to fit was {time()-fit_time}')
