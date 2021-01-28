@@ -543,7 +543,7 @@ if __name__ == '__main__':
 
     # ray settings
     parser.add_argument('--num_cpus', default=1, type=int, help='Number of CPUs used for each trial')
-    parser.add_argument('--num_gpus', default=0.25, type=float, help='Number of GPUs used for each trial')
+    parser.add_argument('--num_gpus', default=1, type=float, help='Number of GPUs used for each trial')
 
     args: argparse.Namespace = parser.parse_args()
 
