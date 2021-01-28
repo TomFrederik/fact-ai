@@ -208,12 +208,12 @@ class ARL(pl.LightningModule):
         loss = self.learner_step(x, y, s)
 
         # testing:
-        # logits = self.learner(x)
-        # bce = self.loss_fct(logits, y)
-        # lambdas = self.adversary(x, y, s)
-        #
-        # fig = plt.scatter(bce, lambdas)
-        # self.logger.experiment.add_figure(tag='bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
+        logits = self.learner(x)
+        bce = self.loss_fct(logits, y)
+        lambdas = self.adversary(x, y, s)
+
+        fig = plt.scatter(bce, lambdas)
+        self.logger.experiment.add_figure(tag='bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
 
         # logging
         self.log("test/reweighted_loss_learner", loss)
