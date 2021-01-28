@@ -1,5 +1,5 @@
 import math
-import statistics
+import numpy as np
 import os
 import json
 import itertools
@@ -205,8 +205,8 @@ def result_list_to_dict(results, dataset_model_list, metrics):
     return {
         k: {
             metric: {
-                'mean': statistics.mean(result_dict[k][metric] for result_dict in results),
-                'std': statistics.stdev(result_dict[k][metric] for result_dict in results)
+                'mean': np.mean([result_dict[k][metric] for result_dict in results]),
+                'std': np.std([result_dict[k][metric] for result_dict in results])
             } for metric in metrics
         } for k in dataset_model_list
     }
