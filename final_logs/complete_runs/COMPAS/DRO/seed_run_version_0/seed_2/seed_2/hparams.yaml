@@ -1,0 +1,13 @@
+config:
+  batch_size: 256
+  eta: 0.6
+  lr: 1
+hidden_units:
+- 64
+- 32
+k: 2.0
+num_features: 447
+opt_kwargs:
+  initial_accumulator_value: 0.1
+optimizer: !!python/name:torch.optim.adagrad.Adagrad ''
+pretrain_steps: 250

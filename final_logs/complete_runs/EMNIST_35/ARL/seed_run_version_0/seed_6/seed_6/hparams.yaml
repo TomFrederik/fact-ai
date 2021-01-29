@@ -1,0 +1,22 @@
+adv_cnn_strength: normal
+adv_hidden: []
+adv_input: !!set
+  X: null
+  Y: null
+config:
+  batch_size: 512
+  eta: 0.5
+  lr: 0.01
+dataset_type: image
+input_shape: !!python/tuple
+- 1
+- 28
+- 28
+num_groups: 2
+opt_kwargs:
+  initial_accumulator_value: 0.1
+optimizer: !!python/name:torch.optim.adagrad.Adagrad ''
+pretrain_steps: 250
+prim_hidden:
+- 64
+- 32
