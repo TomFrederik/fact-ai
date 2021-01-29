@@ -62,6 +62,7 @@ def main(args: argparse.Namespace):
 
     # make a copy so we don't change the args object
     args = argparse.Namespace(**vars(args))
+    args.dataset_type = 'image' if args.dataset in ['EMNIST_35', 'EMNIST_10'] else 'tabular'
     
     if args.version is None:
         # set run version
@@ -272,6 +273,30 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
                     adv_cnn_strength=args.adv_cnn_strength,
                     opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
 
+    elif args.model == 'ARL_strong':
+        model = ARL(config=config, # for hparam tuning
+                    input_shape=dataset.dimensionality,
+                    pretrain_steps=args.pretrain_steps,
+                    prim_hidden=args.prim_hidden, 
+                    adv_hidden=args.adv_hidden, 
+                    optimizer=OPT_BY_NAME[args.opt],
+                    dataset_type=args.dataset_type,
+                    adv_input=set(args.adv_input),
+                    num_groups=len(dataset.protected_index2value),
+                    adv_cnn_strength='strong',
+                    opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
+    elif args.model == 'ARL_weak':
+        model = ARL(config=config, # for hparam tuning
+                    input_shape=dataset.dimensionality,
+                    pretrain_steps=args.pretrain_steps,
+                    prim_hidden=args.prim_hidden, 
+                    adv_hidden=args.adv_hidden, 
+                    optimizer=OPT_BY_NAME[args.opt],
+                    dataset_type=args.dataset_type,
+                    adv_input=set(args.adv_input),
+                    num_groups=len(dataset.protected_index2value),
+                    adv_cnn_strength='weak',
+                    opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
     elif args.model == 'DRO':
         model = DRO(config=config, # for hparam tuning
                     num_features=dataset.dimensionality,
@@ -501,7 +526,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Model settings
-    parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required=True)
+    parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW', 'ARL_strong', 'ARL_weak'], required=True)
     parser.add_argument('--prim_hidden', nargs='*', type=int, default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', nargs='*', type=int, default=[], help='Number of hidden units in adversarial network')
     parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'strong'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
@@ -541,7 +566,6 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['EMNIST_35', 'EMNIST_10'] else 'tabular'
     args.working_dir = os.getcwd()
 
     # run main loop

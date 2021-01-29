@@ -61,6 +61,8 @@ class ARL(pl.LightningModule):
         
         # init networks
         if dataset_type == 'tabular':
+            if adv_cnn_strength != 'normal':
+                print('You changed the strength of the adversary from its default but this doesn\'t have any effect for tabular data!')
             self.learner = Learner(input_shape=input_shape, hidden_units=prim_hidden)
             self.adversary = Adversary(input_shape=input_shape, hidden_units=adv_hidden,
                                        adv_input=adv_input,
@@ -234,6 +236,8 @@ class ARL(pl.LightningModule):
         plt.scatter(lambdas.detach().cpu().numpy(), bce.detach().cpu().numpy(), s=5)
         plt.xlabel("Lambda Value")
         plt.ylabel("BCE Loss Value")
+        plt.xlim([0, 30])
+        plt.ylim([0, 10])
         plt.title("Lambda vs. BCE Loss Values")
 
         self.logger.experiment.add_figure(tag=name+'/bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)

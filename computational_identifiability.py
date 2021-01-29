@@ -291,7 +291,7 @@ def main(args):
                    train_index2value=dataset.protected_index2value,
                    test_index2value=test_dataset.protected_index2value,
                    target_grp=args.target_grp,
-                   optimizer=OPT_BY_NAME[args.optimizer],
+                   optimizer=OPT_BY_NAME[args.opt],
                    dataset_type = args.dataset_type,
                    strength=args.adv_cnn_strength)
 
@@ -351,7 +351,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST_35', 'EMNIST_10'], required=True)
     parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'strong'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
-    parser.add_argument('--optimizer', choices=['Adagrad', 'Adam'], default='Adagrad')
+    parser.add_argument('--opt', choices=['Adagrad', 'Adam'], default='Adagrad')
     parser.add_argument('--target_grp', choices=['race', 'sex', 'dummy'], required=True, help='Whether to predict race or sex of a person')
     parser.add_argument('--suffix', default='', help='Dataset suffix to specify other datasets than the defaults')
     parser.add_argument('--seed', default=0, type=int, help='seed for reproducibility')
@@ -364,7 +364,6 @@ if __name__ == '__main__':
     parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     
     args = parser.parse_args()
-
     args.dataset_type = 'image' if args.dataset in ['EMNIST_35', 'EMNIST_10'] else 'tabular'
 
     main(args)
