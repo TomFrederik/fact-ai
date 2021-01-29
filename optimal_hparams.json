@@ -80,6 +80,10 @@
     "ARL_weak": {
       "batch_size": 512,
       "prim_lr": 0.01
+    },
+    "ARL_strong": {
+      "batch_size": 512,
+      "prim_lr": 0.1
     }
   },
   "EMNIST_10": {
@@ -93,6 +97,10 @@
     },
     "ARL_weak": {
       "batch_size": 256,
+      "prim_lr": 0.01
+    },
+    "ARL_strong": {
+      "batch_size": 512,
       "prim_lr": 0.01
     }
   }
