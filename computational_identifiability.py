@@ -166,26 +166,52 @@ class Linear(pl.LightningModule):
 
         x, y, s = batch
 
-        pred = self.forward(x, y)
+        pred = torch.round(torch.sigmoid(self.forward(x, y)))
 
         targets = self.idx_mapping(s, test=True).float()
 
+        # compute scores
         loss = self.loss_fct(pred, targets)
-
-        grp_1_idcs = targets == 0
-        grp_2_idcs = targets == 1
-
-        accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets), targets.shape[0])
-        accuracy_grp_1 = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred[grp_1_idcs])) == targets[grp_1_idcs]), targets[grp_1_idcs].shape[0])
-        accuracy_grp_2 = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred[grp_2_idcs])) == targets[grp_2_idcs]), targets[grp_2_idcs].shape[0])
+        accuracy = torch.true_divide(torch.sum(pred == targets), targets.shape[0])
         
         self.log('test/loss', loss)
         self.log('test/accuracy', accuracy)
+
+        return targets, pred
+    
+    def test_epoch_end(self, outputs):
+        """ 
+        Computest group specific accuracy scores.
+
+        Args:
+            outputs: List with elements targets and preds containing batch outputs of test_step
+        """
+        # extract test results
+        targets = []
+        preds = []
+        
+        for idx in range(len(outputs)):
+            targets.append(outputs[idx][0])
+            preds.append(outputs[idx][1])
+        
+        targets = torch.cat(targets, dim=0)
+        preds = torch.cat(preds, dim=0)
+
+        # compute group specific scores
+        grp_1_idcs = targets == 0
+        grp_2_idcs = targets == 1
+
+        grp_1_targets = targets[grp_1_idcs]
+        grp_2_targets = targets[grp_2_idcs]
+        
+        accuracy_grp_1 = torch.true_divide(torch.sum(preds[grp_1_idcs]== grp_1_targets), grp_1_targets.shape[0])
+        accuracy_grp_2 = torch.true_divide(torch.sum(preds[grp_2_idcs] == grp_2_targets), grp_2_targets.shape[0])
+
         self.log('test/accuracy_grp_1', accuracy_grp_1)
         self.log('test/accuracy_grp_2', accuracy_grp_2)
 
-        return loss
-    
+
+
     def configure_optimizers(self):
         """Chooses optimizer and learning-rate to use during optimization.
         
