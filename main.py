@@ -270,7 +270,6 @@ def get_model(config: Dict[str, Any], args: argparse.Namespace, dataset: Fairnes
                     dataset_type=args.dataset_type,
                     adv_input=set(args.adv_input),
                     num_groups=len(dataset.protected_index2value),
-                    adv_cnn_strength=args.adv_cnn_strength,
                     opt_kwargs={"initial_accumulator_value": 0.1} if args.tf_mode else {})
 
     elif args.model == 'ARL_strong':
@@ -437,7 +436,7 @@ def train(config: Dict[str, Any],
                               pin_memory=True)
 
     callbacks: List[pl.callbacks.Callback] = []
-    callbacks.append(Logger(train_dataset, 'train', batch_size=args.eval_batch_size, save_scatter=True))
+    callbacks.append(Logger(train_dataset, 'train', batch_size=args.eval_batch_size, save_scatter=(args.model == 'ARL')))
 
     if val_dataset is not None:
         callbacks.append(Logger(val_dataset, 'validation', batch_size=args.eval_batch_size))
@@ -529,7 +528,6 @@ if __name__ == '__main__':
     parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW', 'ARL_strong', 'ARL_weak'], required=True)
     parser.add_argument('--prim_hidden', nargs='*', type=int, default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', nargs='*', type=int, default=[], help='Number of hidden units in adversarial network')
-    parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'strong'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
     parser.add_argument('--eta', default=0.5, type=float, help='Threshold for single losses that contribute to learning objective')
     parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
     parser.add_argument('--adv_input', nargs='+', default=['X', 'Y'], help='Inputs to use for the adversary. Any combination of X (features), Y (labels) and S (protected group memberships)')

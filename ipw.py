@@ -98,9 +98,9 @@ class IPW(pl.LightningModule):
         if s is not None:
             # compute weights
             if self.hparams.sensitive_label:
-                sample_weights = torch.index_select(torch.index_select(self.group_probs, 0, s), 1, y.long())
+                sample_weights = torch.index_select(torch.index_select(self.group_probs.to(self.device), 0, s), 1, y.long())
             else:
-                sample_weights = torch.index_select(self.group_probs, 0, s)
+                sample_weights = torch.index_select(self.group_probs.to(self.device), 0, s)
 
             # compute reweighted loss
             loss = torch.mean(bce / sample_weights)
