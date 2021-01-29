@@ -51,13 +51,6 @@ class Linear(pl.LightningModule):
                                          nn.MaxPool2d(kernel_size=(2, 2)),
                                          nn.Flatten())
                 self.fc = nn.Linear(10816 + 1, 1)
-            elif strength == 'stronger':
-                self.cnn = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3)),
-                                         nn.MaxPool2d(kernel_size=(2, 2)),
-                                         nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3, 3)),
-                                         nn.MaxPool2d(kernel_size=(2, 2)),
-                                         nn.Flatten())
-                self.fc = nn.Linear(3200 + 1, 1)
             else:
                 raise Exception("Strength of the Adversary CNN not recognized!")
         else:
@@ -291,7 +284,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dataset', choices=['Adult', 'LSAC', 'COMPAS', 'EMNIST_35', 'EMNIST_10'], required=True)
-    parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'stronger'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
+    parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'strong'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
     parser.add_argument('--optimizer', choices=['Adagrad', 'Adam'], default='Adagrad')
     parser.add_argument('--target_grp', choices=['race', 'sex', 'dummy'], required=True, help='Whether to predict race or sex of a person')
     parser.add_argument('--suffix', default='', help='Dataset suffix to specify other datasets than the defaults')
