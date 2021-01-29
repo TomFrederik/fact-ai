@@ -261,7 +261,7 @@ class ARL(pl.LightningModule):
         plt.ylabel("BCE Loss Value")
         plt.title("Lambda vs. BCE Loss Values")
 
-        self.logger.experiment.add_histogram(tag=name+"/loss", values=bce, bins=15, global_step=self.global_step)
+        # self.logger.experiment.add_histogram(tag=name+"/loss", values=bce, bins=15, global_step=self.global_step)
         self.logger.experiment.add_figure(tag=name+'/bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
 
     def get_lambda(self, dataloader: torch.utils.data.DataLoader) -> Tuple[torch.Tensor]:
