@@ -17,8 +17,27 @@ OPT_BY_NAME = {'Adagrad': torch.optim.Adagrad, 'Adam': torch.optim.Adam}
 
 
 class Linear(pl.LightningModule):
+    """Linear model (or simple CNN) to predict group membership.
+
+    Attributes:
+        num_features: Dimensionality of the data input.
+        lr: Learning rate.
+        train_index2value: Dictionary mapping group index 0-3 to a tuple in race x sex used in the train set.
+        test_index2value: Dictionary mapping group index 0-3 to a tuple in race x sex used in the test set.
+        target_grp: A value from ['race', 'sex'], describing the variable to predict.
+        optimizer: Optimizer used to update the model parameters.
+        dataset_type: Indicator for which datatype is used.
+        strength: Strength / Model capacity of the CNN.
+
+    Raises:
+        Exception: If the dataset type is neither tabular nor image data.
+        Exception: If the strength of the CNN adversary was not recognized.
+    """
 
     def __init__(self, num_features, lr, train_index2value, test_index2value, target_grp, optimizer, dataset_type, strength):
+        """
+        Instantiates the model with the given attributes.
+        """
         super().__init__()
 
         #self.save_hyperparameters()
@@ -60,7 +79,15 @@ class Linear(pl.LightningModule):
 
 
     def forward(self, x, y):
-
+        """Forward propagation of inputs through the network.
+    
+        Args:
+            x: Tensor of shape [batch_size, num_features] with data inputs.
+            y: Tensor of shape [batch_size] with data labels.
+    
+        Returns:
+            Tensor of shape [batch_size] with predicted logits for group membership.
+        """
         if self.dataset_type == 'tabular':
             input = torch.cat([x, y.unsqueeze(1)], dim=1).float()
 
@@ -74,6 +101,15 @@ class Linear(pl.LightningModule):
         return out
     
     def training_step(self, batch, batch_idx):
+        """Computes and logs the training loss.
+    
+        Args:
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
+    
+        Returns:
+            BCE loss of the batch on the training dataset. 
+        """
 
         x, y, s = batch
 
@@ -91,6 +127,15 @@ class Linear(pl.LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
+        """Computes and logs the validation loss.
+    
+        Args:
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
+        
+        Returns:
+            BCE loss of the batch on the validation dataset. 
+        """
 
         x, y, s = batch
 
@@ -109,6 +154,15 @@ class Linear(pl.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
+        """Computes and logs the test loss.
+    
+        Args:
+            batch: Inputs, labels and group memberships of a data batch.
+            batch_idx: Index of batch in the dataset (not needed).
+        
+        Returns:
+            BCE loss of the batch on the test dataset. 
+        """
 
         x, y, s = batch
 
@@ -133,12 +187,29 @@ class Linear(pl.LightningModule):
         return loss
     
     def configure_optimizers(self):
+        """Chooses optimizer and learning-rate to use during optimization.
+        
+        Returns:
+            Optimizer.       
+        """
 
         optimizer = self.optimizer(self.parameters(), lr=self.lr)
 
         return optimizer
 
+
     def idx_mapping(self, x, test=False):
+        """
+        Maps the group membership to a binary value, depending on the target group.
+
+        Args:
+            x: Tensor of shape [batch_size] with values between 0 and 3.
+            test: Bool, whether to use the test index2value mapping.
+        
+        Returns:
+            out: Tensor of shape [batch_size] containing the binarized group membership.
+        """
+
         out = torch.zeros_like(x)
 
         if test:

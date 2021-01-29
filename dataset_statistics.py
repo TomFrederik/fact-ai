@@ -9,6 +9,18 @@ import json
 import os
 
 def idx_mapping(x, target_grp, index2value):
+    '''
+    Binarizes group membership according to the target group and the index2value mapping
+    
+    Args:
+        x: Tensor containing group memberships with values between 0 and 3
+        target_grp: One of ['race', 'sex'].
+        index2value: Mapping from values 0-3 to a tuple in race x sex.
+    
+    Returns:
+        out: Tensor, binarized group memberships.
+    
+    '''
     out = torch.zeros_like(x)
     if target_grp == 'race':
         for key in index2value:

@@ -100,7 +100,7 @@ class DRO(pl.LightningModule):
             input: Tensor of shape [batch_size, num_features] with data inputs.
     
         Returns:
-            Tensor of shape [batch_size] with predicted logits.
+            out: Tensor of shape [batch_size] with predicted logits.
         """
         
         out = self.net(input).squeeze(dim=-1)

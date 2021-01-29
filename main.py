@@ -356,7 +356,7 @@ def run_folds(config: Dict[str, Any],
         model, _ = t
 
         # Evaluate on val set to get an estimate of performance
-        scores: torch.Tensor = torch.sigmoid(model(val_dataset.features)) # suspect of this. Does it work with gpu? doesn't seem to throw an error
+        scores: torch.Tensor = torch.sigmoid(model(val_dataset.features))
         aucs.append(auroc(scores, val_dataset.labels).item())
 
     mean_auc: float = np.mean(aucs)
@@ -524,7 +524,6 @@ if __name__ == '__main__':
     parser.add_argument('--p_bar', action='store_true', help='Whether to use progressbar')
     parser.add_argument('--num_folds', default=5, type=int, help='Number of crossvalidation folds')
     parser.add_argument('--no_grid_search', action='store_false', default=True, dest="grid_search", help='Don\'t optimize batch size and lr via gridsearch')
-    #parser.add_argument('--nbr_seeds', default=2, type=int, help='Number of independent training runs') # TODO: not implemented yet
     parser.add_argument('--eval_batch_size', default=512, type=int, help='Batch size for evaluation. No effect on training or results, set as large as memory allows to maximize performance')
     parser.add_argument('--tf_mode', action='store_true', default=False, help='Use tensorflow rather than PyTorch defaults where possible. Only supports AdaGrad optimizer.')
     parser.add_argument('--no_early_stopping', action='store_true', default=False, help='Disable early stopping')

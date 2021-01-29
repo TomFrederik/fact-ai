@@ -25,14 +25,10 @@ SETTINGS = {
 # Extraction function
 def tflog2pandas(path: str) -> pd.DataFrame:
     """convert single tensorflow log file to pandas DataFrame
-    Parameters
-    ----------
-    path : str
-        path to tensorflow log file
+    Args:
+        path : str, path to tensorflow log file
     Returns
-    -------
-    pd.DataFrame
-        converted dataframe
+        runlog_data: pd.DataFrame, converted dataframe
     """
     DEFAULT_SIZE_GUIDANCE = {
         "compressedHistograms": 1,
