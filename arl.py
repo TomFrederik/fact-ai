@@ -134,7 +134,7 @@ class ARL(pl.LightningModule):
         lambdas = self.adversary(x, y, s)
 
         # compute reweighted loss
-        loss = torch.mean(lambdas * (bce+1.0))
+        loss = torch.mean(lambdas * bce)
 
         # test
         # lambdas_scaled = torch.true_divide(lambdas, torch.max(lambdas)) + 1.0
@@ -179,7 +179,7 @@ class ARL(pl.LightningModule):
         # self.log("adv_step/mean_large_lambda_ratio", np.divide(large_c, lambdas.shape[0]))
 
         # compute reweighted loss
-        loss = -torch.mean(lambdas * bce)
+        loss = -torch.mean(lambdas * (bce+1.0))
 
         return loss
 
