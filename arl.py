@@ -136,13 +136,6 @@ class ARL(pl.LightningModule):
         # compute reweighted loss
         loss = torch.mean(lambdas * bce)
 
-        # test
-        # lambdas_scaled = torch.true_divide(lambdas, torch.max(lambdas)) + 1.0
-        # bce_scaled = torch.true_divide(bce, torch.max(bce)) + 1.0
-        # self.logger.experiment.add_histogram(tag="loss", values=bce_scaled, bins=15, global_step=self.global_step)
-        # self.logger.experiment.add_histogram(tag="lambdas", values=lambdas_scaled, bins=15, global_step=self.global_step)
-        # self.logger.experiment.add_histogram(tag="loss_vs_lambdas", values = bce_scaled * lambdas_scaled, bins=15, global_step=self.global_step)
-
         return loss
 
     def adversary_step(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor) -> torch.Tensor:
@@ -165,26 +158,8 @@ class ARL(pl.LightningModule):
         # compute lambdas
         lambdas = self.adversary(x, y, s)
 
-        # test
-        # s_array = []
-        # y_array = []
-        # large_c = 0
-        # for i in range(lambdas.shape[0]):
-        #     if lambdas[i] > 10:
-        #         s_array.append(1 if s[i] == 1 else 0)
-        #         y_array.append(1 if y[i] == 1 else 0)
-        #         large_c += 1
-        # self.log("adv_step/s_mean_large_lambda", np.mean(s_array))
-        # self.log("adv_step/y_mean_large_lambda", np.mean(y_array))
-        # self.log("adv_step/mean_large_lambda_ratio", np.divide(large_c, lambdas.shape[0]))
-
         # compute reweighted loss
         loss = -torch.mean(lambdas * bce)
-
-        # loss.backward(retain_graph=True)
-        # for name, param in self.adversary.named_parameters():
-        #     if name == 'fc.0.weight':
-        #         self.logger.experiment.add_scalar('fc_weights_norm', torch.norm(param), global_step=self.global_step)
 
         return loss
 
@@ -261,7 +236,6 @@ class ARL(pl.LightningModule):
         plt.ylabel("BCE Loss Value")
         plt.title("Lambda vs. BCE Loss Values")
 
-        # self.logger.experiment.add_histogram(tag=name+"/loss", values=bce, bins=15, global_step=self.global_step)
         self.logger.experiment.add_figure(tag=name+'/bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
 
     def get_lambda(self, dataloader: torch.utils.data.DataLoader) -> Tuple[torch.Tensor]:
@@ -428,7 +402,6 @@ class Adversary(nn.Module):
         adv = self.net(input)
 
         # normalize adversary across batch
-        # TODO: check numerical stability
         adv_norm = adv / torch.sum(adv)
 
         # scale and shift
@@ -545,7 +518,6 @@ class CNN_Adversary(nn.Module):
         adv = self.fc(intermediate)
 
         # normalize adversary across batch
-        # TODO: check numerical stability
         adv_norm = adv / torch.sum(adv)
 
         # scale and shift

@@ -153,8 +153,6 @@ class TabularDataset(FairnessDataset):
                         print(f'WARNING: mean is {mean}')
                     if delta_std > 1e-4:
                         print(f'WARNING: delta std is {delta_std}')
-                # assert mean < 1e-10, f'mean is {mean}'
-                # assert delta_std < 1e-4, f'delta std is {delta_std}'
 
         # create labels
         labels = (features[target_variable].to_numpy() == target_value).astype(int)
@@ -374,22 +372,9 @@ class EMNISTDataset(FairnessDataset):
             s: Group memberships of the specified elements.       
         """
         
-        # x, x_protected, y, s = self._data[index]
-        # x, y, s = self._data[index]
-
-        # x = self.to_tensor(x)
-        # x_protected = self.to_tensor(x_protected)
-
-        # y = float(y)
-        # x = torch.reshape(self._features[index], (784,))
         x = self._features[index]
         y = self._labels[index]
         s = self._memberships[index]
-
-
-        # input = torch.stack([x, x_protected])
-
-        # return input, y, s
 
         return x, y, s
 
@@ -402,10 +387,6 @@ class EMNISTDataset(FairnessDataset):
         underlying sensitive attributes."""
         return self.index2values
 
-    @property # deprecated
-    def features(self): 
-        return self._features
-
     @property
     def dimensionality(self):
         """Dimensionality of single images."""
@@ -415,7 +396,6 @@ class EMNISTDataset(FairnessDataset):
     def minority(self):
         """Index of the protected group with the fewest members."""
         return 1
-        # return self._minority
 
     @property
     def group_probs(self):
@@ -488,19 +468,3 @@ class CustomSubset(FairnessDataset):
     @property
     def labels(self):
         return self.dataset.labels[self.indices]
-
-
-if __name__ == '__main__':
-    # adult_dataset = TabularDataset("Adult")
-    # print('\n\nExample 1 of Adult set: \n',adult_dataset[1])
-
-    # compas_dataset = TabularDataset('COMPAS')
-    # print('\n\nExample 1 of COMPAS set: \n',compas_dataset[1])
-
-    # lsac_dataset = TabularDataset('LSAC')
-    # print('\n\nExample 1 of LSAC set: \n', lsac_dataset[1])
-    # indices = [1,2,3,4]
-    # subsetloader = DataLoader(lsac_dataset, batch_size=3, sampler=SubsetRandomSampler(indices))
-    # print('\n\nFirst batch in subsetloader:\n',next(enumerate(subsetloader)))
-
-    pass

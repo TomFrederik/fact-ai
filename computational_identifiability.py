@@ -29,8 +29,6 @@ class Linear(pl.LightningModule):
         self.target_grp = target_grp
         self.optimizer = optimizer
         self.dataset_type = dataset_type
-        #print(index2value)
-        # {0: ('Other', 'Other'), 1: ('Other', 'Female'), 2: ('Black', 'Other'), 3: ('Black', 'Female')}
 
         if self.dataset_type == 'tabular':
             self.net = nn.Linear(num_features, 1)
@@ -83,7 +81,7 @@ class Linear(pl.LightningModule):
 
         targets = self.idx_mapping(s).float()
 
-        loss = self.loss_fct(pred, targets) # CHECK THIS
+        loss = self.loss_fct(pred, targets)
 
         accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets), targets.shape[0])
 
@@ -100,7 +98,7 @@ class Linear(pl.LightningModule):
 
         targets = self.idx_mapping(s).float()
 
-        loss = self.loss_fct(pred, targets) # CHECK THIS
+        loss = self.loss_fct(pred, targets)
 
         accuracy = torch.true_divide(torch.sum(torch.round(torch.sigmoid(pred)) == targets), targets.shape[0])
 
@@ -184,8 +182,6 @@ class Linear(pl.LightningModule):
 
 def main(args):
 
-    #TODO: do a gridsearch?
-
     # set run version
     args.version = str(int(time()))
     
@@ -193,8 +189,7 @@ def main(args):
     pl.seed_everything(args.seed)
     np.random.seed(args.seed)
 
-    ## create train, val, test dataset
-    # TODO: do this for images as well?
+    # create train, val, test dataset
     if args.dataset == 'EMNIST_35':
         assert args.target_grp == 'dummy', "Target group not recognized for EMNIST_35 dataset!"
         dataset = EMNISTDataset()

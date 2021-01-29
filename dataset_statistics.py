@@ -34,9 +34,6 @@ def main(args):
     # set version
     version = int(time())
 
-    # make sure dir exist
-    #os.makedirs(f'./dataset_statistics/{args.dataset}/{args.target_grp}', exist_ok=True)
-
     # get mem2label dict
     mem2label_dict = mem2label(args.target_grp)
 
@@ -49,12 +46,14 @@ def main(args):
     test_dataset = TabularDataset(args.dataset, test=True, suffix=args.suffix)
     print(train_dataset.index2values)
     print(test_dataset.index2values)
+    
     # mapping memberships to 0/1
     print('Binarizing memberships...')
     train_memberships = idx_mapping(train_dataset.memberships, args.target_grp, train_dataset.index2values)
     test_memberships = idx_mapping(test_dataset.memberships, args.target_grp, test_dataset.index2values)
     print(train_memberships)
     print(test_memberships)
+    
     # compute percentage of 0/1 group in train and test
     train_mean = torch.mean(train_memberships.float())
     test_mean = torch.mean(test_memberships.float())

@@ -87,7 +87,6 @@ def main(args: argparse.Namespace):
     
     if args.grid_search and args.dataset_type == 'tabular':
         # specify search space 
-        # TODO: pull this outside this function for more flexible search space?
         lr_list: List[float] = [0.001, 0.01, 0.1, 1, 2, 5]
         batch_size_list: List[int] = [32, 64, 128, 256, 512]
         eta_list: List[float] = [0.0] # dummy entry for non-DRO experiments
@@ -155,7 +154,6 @@ def main(args: argparse.Namespace):
 
         # create val and train set
         permuted_idcs = np.random.permutation(np.arange(0, len(dataset)))
-        # create an option to set the split percentage?
         train_idcs, val_idcs = permuted_idcs[:int(0.9 * len(permuted_idcs))], permuted_idcs[int(0.9 * len(permuted_idcs)):]
         train_dataset, val_dataset = CustomSubset(dataset, train_idcs), CustomSubset(dataset, val_idcs)
 
@@ -213,7 +211,6 @@ def main(args: argparse.Namespace):
 
     # create val and train set
     permuted_idcs = np.random.permutation(np.arange(0, len(dataset)))
-    # create an option to set the split percentage?
     train_idcs, val_idcs = permuted_idcs[:int(0.9*len(permuted_idcs))], permuted_idcs[int(0.9*len(permuted_idcs)):] 
     train_dataset, val_dataset = CustomSubset(dataset, train_idcs), CustomSubset(dataset, val_idcs)
     
@@ -414,7 +411,6 @@ def train(config: Dict[str, Any],
                               num_workers=args.num_workers,
                               pin_memory=True)
 
-    #callbacks = [Logger(train_dataset, 'training', batch_size=config['batch_size'])]
     callbacks: List[pl.callbacks.Callback] = []
     callbacks.append(Logger(train_dataset, 'train', batch_size=args.eval_batch_size, save_scatter=True))
 
@@ -465,8 +461,6 @@ def train(config: Dict[str, Any],
                          callbacks=callbacks,
                          gradient_clip_val=1 if args.model=='DRO' else 0,
                          progress_bar_refresh_rate=1 if args.p_bar else 0,
-                         #weights_summary=None, # supress model summary
-                         # fast_dev_run=True # FOR DEBUGGING, SET TO FALSE FOR REAL TRAINING
                          )
     
     # Training

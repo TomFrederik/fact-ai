@@ -112,7 +112,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Model settings
-    #parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required=True)
     parser.add_argument('--prim_hidden', nargs='*', type=int, default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', nargs='*', type=int, default=[], help='Number of hidden units in adversarial network')
     parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'strong'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
