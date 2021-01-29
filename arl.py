@@ -134,7 +134,7 @@ class ARL(pl.LightningModule):
         lambdas = self.adversary(x, y, s)
 
         # compute reweighted loss
-        loss = torch.mean(lambdas * bce)
+        loss = torch.mean(lambdas * (bce+1.0))
 
         # test
         # lambdas_scaled = torch.true_divide(lambdas, torch.max(lambdas)) + 1.0
@@ -256,6 +256,7 @@ class ARL(pl.LightningModule):
         plt.ylabel("BCE Loss Value")
         plt.title("Lambda vs. BCE Loss Values")
 
+        self.logger.experiment.add_histogram(tag="loss", values=bce, bins=15, global_step=self.global_step)
         self.logger.experiment.add_figure(tag='bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
 
     def get_lambda(self, dataloader: torch.utils.data.DataLoader) -> Tuple[torch.Tensor]:
