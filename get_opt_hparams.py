@@ -18,7 +18,7 @@ OPT_BY_NAME: Dict[str, Type[torch.optim.Optimizer]] = {
 
 MODELS = ['baseline', 'ARL', 'DRO', 'IPW(S)', 'IPW(S+Y)']  
 DATASETS = ['Adult', 'COMPAS', 'LSAC']
-IMAGE_MODELS = ['baseline', 'ARL']
+IMAGE_MODELS = ['baseline', 'ARL', 'ARL_weak', 'ARL_strong']
 IMAGE_DATASETS = ['EMNIST_10', 'EMNIST_35']
 PARAMS = ['lr', 'batch_size']
 
@@ -115,7 +115,6 @@ if __name__ == '__main__':
     #parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required=True)
     parser.add_argument('--prim_hidden', nargs='*', type=int, default=[64, 32], help='Number of hidden units in primary network')
     parser.add_argument('--adv_hidden', nargs='*', type=int, default=[], help='Number of hidden units in adversarial network')
-    parser.add_argument('--adv_cnn_strength', choices=['weak', 'normal', 'strong'], default='normal', help='One of the pre-set strength settings of the CNN Adversarial in ARL')
     parser.add_argument('--k', default=2.0, type=float, help='Exponent to upweight high losses')
     parser.add_argument('--pretrained', action='store_true', help='Whether to load a pretrained dataset from torchvision where applicable')
     parser.add_argument('--adv_input', nargs='+', default=['X', 'Y'], help='Inputs to use for the adversary. Any combination of X (features), Y (labels) and S (protected group memberships)')

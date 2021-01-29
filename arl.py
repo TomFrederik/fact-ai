@@ -61,6 +61,8 @@ class ARL(pl.LightningModule):
         
         # init networks
         if dataset_type == 'tabular':
+            if adv_cnn_strength != 'normal':
+                print('You changed the strength of the adversary from its default but this doesn\'t have any effect for tabular data!')
             self.learner = Learner(input_shape=input_shape, hidden_units=prim_hidden)
             self.adversary = Adversary(input_shape=input_shape, hidden_units=adv_hidden,
                                        adv_input=adv_input,
