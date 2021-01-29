@@ -416,6 +416,11 @@ class EMNISTDataset(FairnessDataset):
         return self._labels
 
     @property
+    def features(self):
+        """Features of all elements of the dataset."""
+        return self._features
+
+    @property
     def sensitive_label(self):
         """Whether the label should be included in IPW"""
         return self._sensitive_label
