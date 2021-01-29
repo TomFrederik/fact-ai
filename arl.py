@@ -259,6 +259,8 @@ class ARL(pl.LightningModule):
         plt.scatter(lambdas.detach().cpu().numpy(), bce.detach().cpu().numpy(), s=5)
         plt.xlabel("Lambda Value")
         plt.ylabel("BCE Loss Value")
+        plt.xlim([0, 30])
+        plt.ylim([0, 10])
         plt.title("Lambda vs. BCE Loss Values")
 
         # self.logger.experiment.add_histogram(tag=name+"/loss", values=bce, bins=15, global_step=self.global_step)
