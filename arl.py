@@ -179,12 +179,12 @@ class ARL(pl.LightningModule):
         # self.log("adv_step/mean_large_lambda_ratio", np.divide(large_c, lambdas.shape[0]))
 
         # compute reweighted loss
-        loss = -torch.mean(lambdas * (bce+1.0))
+        loss = -torch.mean(lambdas * bce)
 
-        loss.backward(retain_graph=True)
-        for name, param in self.adversary.named_parameters():
-            if name == 'fc.0.weight':
-                self.logger.experiment.add_scalar('fc_weights_norm', torch.norm(param), global_step=self.global_step)
+        # loss.backward(retain_graph=True)
+        # for name, param in self.adversary.named_parameters():
+        #     if name == 'fc.0.weight':
+        #         self.logger.experiment.add_scalar('fc_weights_norm', torch.norm(param), global_step=self.global_step)
 
         return loss
 
