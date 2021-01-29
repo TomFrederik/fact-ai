@@ -35,10 +35,7 @@ The tabular data is usable out of the box (though you can recreate it from scrat
 	raw outputs, checkpoints and logs of our grid search  
   
 `/training_logs`  
-	raw outputs, checkpoints and logs of scripts you run yourself
-  
-`/final_logs`  
-	raw_outputs, checkpoints and logs of our final runs
+	raw outputs, checkpoints and logs of scripts
   
 `./`  
 	The root folder contains the code necessary to prepare the data, run all experiments and analyse the results. For a guided tour we recommend checking out `results.ipynb`.  
@@ -67,8 +64,3 @@ python get_opt_hparams.py --num_workers 2
 The optimal hyperparameters will be saved to `optimal_hparams.json`. More details can be found
 at the end of the notebook.
 ### WARNING: This command can take multiple hours, depending on your machine. You can also use the already supplied optimal parameters.
-
-
-
-
-
