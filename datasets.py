@@ -78,6 +78,11 @@ class FairnessDataset(ABC, Dataset):
     def labels(self) -> torch.Tensor:
         pass
 
+    @property
+    @abstractmethod
+    def sensitive_label(self) -> bool:
+        pass
+
 
 class TabularDataset(FairnessDataset):
     """Dataset from tabular data that can provide information about protected
@@ -301,6 +306,11 @@ class TabularDataset(FairnessDataset):
         """Labels of all elements of the dataset."""
         return self._labels
 
+    @property
+    def sensitive_label(self):
+        """Whether the label should be included in IPW"""
+        return self._sensitive_label
+
 
 class EMNISTDataset(FairnessDataset):
     """Dataset from image data that can provide information about protected
@@ -323,7 +333,7 @@ class EMNISTDataset(FairnessDataset):
 
         super().__init__()
 
-        self.sensitive_label = False
+        self._sensitive_label = False
         self.test = test
         self.to_tensor = transforms.ToTensor()
 
@@ -405,6 +415,11 @@ class EMNISTDataset(FairnessDataset):
         """Labels of all elements of the dataset."""
         return self._labels
 
+    @property
+    def sensitive_label(self):
+        """Whether the label should be included in IPW"""
+        return self._sensitive_label
+
 
 class CustomSubset(FairnessDataset):
     """Subset of a dataset at specified indices.
@@ -414,7 +429,7 @@ class CustomSubset(FairnessDataset):
         indices: Indices in the whole set selected for subset.
     """
 
-    def __init__(self, dataset: Dataset, indices: np.ndarray):
+    def __init__(self, dataset: FairnessDataset, indices: np.ndarray):
         self.dataset = dataset
         self.indices = indices
 
