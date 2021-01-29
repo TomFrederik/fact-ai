@@ -255,8 +255,20 @@ class ARL(pl.LightningModule):
         bce = self.loss_fct(logits, y)
         lambdas = self.adversary(x, y, s)
 
+        bce_protected = torch.where(s == 1, bce, torch.ones_like(bce) * 12345.0).detach().cpu().numpy()
+        lambdas_protected = torch.where(s == 1, lambdas, torch.ones_like(lambdas) * 12345.0).detach().cpu().numpy()
+        bce_unprotected = torch.where(s == 0, bce, torch.ones_like(bce) * 12345.0).detach().cpu().numpy()
+        lambdas_unprotected = torch.where(s == 0, lambdas, torch.ones_like(lambdas) * 12345.0).detach().cpu().numpy()
+
+        bce_protected = bce_protected[bce_protected != 12345.0]
+        lambdas_protected = lambdas_protected[lambdas_protected != 12345.0]
+        bce_unprotected = bce_unprotected[bce_unprotected != 12345.0]
+        lambdas_unprotected = lambdas_unprotected[lambdas_unprotected != 12345.0]
+
         fig = plt.figure()
-        plt.scatter(lambdas.detach().cpu().numpy(), bce.detach().cpu().numpy(), s=5)
+        plt.scatter(lambdas_protected, bce_protected, s=5, marker='o', c='red', name='Protected Sample')
+        plt.scatter(lambdas_unprotected, bce_unprotected, s=5, name='Unprotected Sample')
+        plt.legend()
         plt.xlabel("Lambda Value")
         plt.ylabel("BCE Loss Value")
         plt.title("Lambda vs. BCE Loss Values")
