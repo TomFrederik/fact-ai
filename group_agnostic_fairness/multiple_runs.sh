@@ -1,23 +1,27 @@
 #!/bin/bash
 
+set -eu
+
 mkdir -p results
+mkdir -p logs
 cd ..
 
 lr=0.1
 bs=128
 dataset="$1"
 model="$2"
-steps=1000
+steps=100
 
 echo "Dataset and model:"
 echo "$dataset $model"
 
 run () {
     echo "Starting run with seed $1"
-    mkdir -p "group_agnostic_fairness/results/${model}_${dataset}_${lr}_${bs}_${steps}"
+    mkdir -p "group_agnostic_fairness/results/${model}_${dataset}"
     # the trainer outputs lots of deprecation and other warnings,
     # hide everything to not clutter up this scripts output
-    python 2>/dev/null \
+    mkdir -p "group_agnostic_fairness/logs/${model}_${dataset}"
+    python &> "group_agnostic_fairness/logs/${model}_${dataset}/$1.txt" \
 	   -m group_agnostic_fairness.main_trainer \
 	   --train_steps "$steps" \
 	   --test_steps 100 \

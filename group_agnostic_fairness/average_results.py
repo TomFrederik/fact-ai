@@ -24,7 +24,7 @@ for entry in os.scandir(args.directory):
         print("Processing ", entry.path)
         with open(entry.path, 'r') as file:
             data = json.load(file)
-            renamed_data = {k: data[key_dict[k]] for k in data}
+            renamed_data = {k: data[key_dict[k]] for k in key_dict}
             results.append(renamed_data)
 
 mean_std_dict = {

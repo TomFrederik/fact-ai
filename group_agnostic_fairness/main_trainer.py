@@ -57,7 +57,7 @@ MODEL_KEYS = ["baseline",
 # pylint: disable=line-too-long
 # Flags for creating and running a model
 flags.DEFINE_string("model_name", "baseline", "Name of the model to run")
-flags.DEFINE_string("base_dir", "tmp", "Base directory for output.")
+flags.DEFINE_string("base_dir", "/tmp", "Base directory for output.")
 flags.DEFINE_string("model_dir", None, "Model directory for output.")
 flags.DEFINE_string("output_file_name", "results.txt",
                     "Output file where to write metrics to.")
@@ -252,6 +252,9 @@ def _initialize_model_dir():
           str(FLAGS.primary_learning_rate))
     else:
       raise ValueError("Model {} is not implemented.".format(model_name))
+
+    # necessary so that parallel runs with different seeds use different model dirs:
+    setting_name += "_{}".format(str(FLAGS.seed))
     model_dir = os.path.join(base_dir, setting_name)
 
   if tf.gfile.Exists(model_dir):
