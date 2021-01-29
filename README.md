@@ -45,7 +45,9 @@ The tabular data is usable out of the box (though you can recreate it from scrat
   
   
 ## Installing the environment
-Execute the following commands to install the required packages and activate the environment  
+Execute the following commands to install the required packages and activate the environment.
+Note that for installing on macOS, you need to remove the package cudatoolkit from the environment 
+file or select a different available version.
 ```bash
 conda env create -f environment.yml
 conda activate fact-ai
