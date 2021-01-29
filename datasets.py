@@ -129,7 +129,7 @@ class TabularDataset(FairnessDataset):
         target_value = DATASET_SETTINGS[dataset_name]["target_value"]
 
         self.hide_sensitive_columns = hide_sensitive_columns
-        self.sensitive_label = sensitive_label
+        self._sensitive_label = sensitive_label
 
         # load data
         features = pd.read_csv(path, ',', header=0)
