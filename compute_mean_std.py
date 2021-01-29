@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--num_seeds', default=10, help='number of seeds to average')
+    parser.add_argument('--num_seeds', default=10, type=int, help='number of seeds to average')
     parser.add_argument('--log_dir', default='training_logs')
     parser.add_argument('--model', choices=['baseline', 'ARL', 'DRO', 'IPW'], required='True')
     parser.add_argument('--sensitive_label', default=False, action='store_true', help='Whether to use the label Y in IPW')
