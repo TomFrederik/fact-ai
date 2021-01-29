@@ -1,9 +1,0 @@
-Adult & baseline & 0.909 & \textbf{0.919} & 0.884 & \textbf{0.944} & 0.850\\
-Adult & DRO & \textbf{0.910} & 0.919 & \textbf{0.885} & 0.941 & \textbf{0.857}\\
-Adult & ARL & 0.909 & 0.918 & 0.884 & 0.939 & 0.850\\
-LSAC & baseline & \textbf{0.831} & \textbf{0.826} & \textbf{0.810} & \textbf{0.837} & \textbf{0.860}\\
-LSAC & DRO & 0.824 & 0.822 & 0.802 & 0.836 & 0.857\\
-LSAC & ARL & 0.812 & 0.806 & 0.787 & 0.826 & 0.750\\
-COMPAS & baseline & 0.736 & 0.734 & 0.699 & 0.748 & 0.673\\
-COMPAS & DRO & 0.736 & 0.735 & 0.700 & \textbf{0.753} & 0.669\\
-COMPAS & ARL & \textbf{0.736} & \textbf{0.735} & \textbf{0.701} & 0.748 & \textbf{0.676}\\

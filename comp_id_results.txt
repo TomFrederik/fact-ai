@@ -1,9 +1,0 @@
-Adult:
-	race: 90.42 (Adam: 90.41)
-	sex: 69.57 (Adam: 84.06)
-Compas:
-	race: 59.04 (Adam: 60.20)
-	sex: 80.00 (Adam: 80.24)
-LSAC: 
-	race: 92.10 (Adam: 94.24)
-	sex: 55.69 (Adam: 57.98)
