@@ -299,6 +299,4 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    args.dataset_type = 'image' if args.dataset in ['EMNIST_35', 'EMNIST_10'] else 'tabular'
-
     main(args)
