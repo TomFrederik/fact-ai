@@ -4,10 +4,6 @@ import torch.nn as nn
 import pytorch_lightning as pl
 import torchvision.models as models  # type: ignore
 
-import matplotlib as mpl
-mpl.use('Agg')  # No display
-import matplotlib.pyplot as plt
-
 
 class ARL(pl.LightningModule):
     """Feed forward neural network consisting of a primary network and an
@@ -223,24 +219,14 @@ class ARL(pl.LightningModule):
     def save_scatter(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor, name: str):
         """Creates a scatter plot of the BCE Loss vs. the lambda values of the adversary.
 
+            Disabled.
+
         Args:
             x: Tensor of shape [batch_size, input_shape] with data inputs.
             y: Tensor of shape [batch_size] with data labels.
             x: Tensor of shape [batch_size] with protected group membership indices.
         """
-        logits = self.learner(x)
-        bce = self.loss_fct(logits, y)
-        lambdas = self.adversary(x, y, s)
-
-        fig = plt.figure()
-        plt.scatter(lambdas.detach().cpu().numpy(), bce.detach().cpu().numpy(), s=5)
-        plt.xlabel("Lambda Value")
-        plt.ylabel("BCE Loss Value")
-        plt.xlim([0, 30])
-        plt.ylim([0, 10])
-        plt.title("Lambda vs. BCE Loss Values")
-
-        self.logger.experiment.add_figure(tag=name+'/bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
+        pass
 
     def get_lambda(self, dataloader: torch.utils.data.DataLoader) -> Tuple[torch.Tensor]:
         """
