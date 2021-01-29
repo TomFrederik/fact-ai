@@ -138,4 +138,4 @@ def save_scatter(pl_module: LightningModule, dataloader: DataLoader):
         dataloader: Dataloader of the Logger instance dataset
     """
     x, y, s = next(iter(dataloader))
-    pl_module.save_scatter(x, y, s)
+    pl_module.save_scatter(x.to(pl_module.device), y.to(pl_module.device), s.to(pl_module.device))
