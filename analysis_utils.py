@@ -17,7 +17,12 @@ DEVIATION_HEADER = """
 """
 
 IDENTIFIABILITY_HEADER = """
-|Target|Adult|LSAC|COMPAS|
+|Target|Group|Adult|LSAC|COMPAS|
+|---|---|---|---|---|
+"""
+
+IDENTIFIABILITY_IMAGE_HEADER = """
+|Adversary strength|Group|EMNIST 35|EMNIST 10|
 |---|---|---|---|
 """
 
