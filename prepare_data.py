@@ -52,8 +52,6 @@ def build_mean_std(df, base_dir, suffix=''):
     description = df.describe().to_dict()
     mean_std_dict = {}
     for key, value in description.items():
-        print(key)
-        print(value)
         mean_std_dict[key] = [value['mean'], value['std']]
 
     output_file_path = os.path.join(base_dir, f'mean_std{suffix}.json')
@@ -68,6 +66,41 @@ def save_results(train_df, test_df, base_dir, contains_numeric=True, suffix='', 
         build_vocab(train_df, base_dir)
     if contains_numeric:
         build_mean_std(train_df, base_dir, suffix)
+
+def precompute_weights(train_df, base_dir, target_variable, target_value):
+    IPS_example_weights_without_label = {
+        0: (len(train_df))/(len(train_df[(train_df.race != 'Black') & (train_df.sex != 'Female')])), # 00: White Male
+        1: (len(train_df))/(len(train_df[(train_df.race != 'Black') & (train_df.sex == 'Female')])), # 01: White Female
+        2: (len(train_df))/(len(train_df[(train_df.race == 'Black') & (train_df.sex != 'Female')])), # 10: Black Male
+        3: (len(train_df))/(len(train_df[(train_df.race == 'Black') & (train_df.sex == 'Female')]))  # 11: Black Female
+    }
+
+    output_file_path = os.path.join(base_dir, 'IPS_example_weights_without_label.json')
+    with open(output_file_path, mode="w") as output_file:
+        json.dump(IPS_example_weights_without_label, output_file)
+
+    IPS_example_weights_with_label = {
+        0: (len(train_df))/(len(train_df[(train_df[target_variable] != target_value)
+                                         & (train_df.race != 'Black') & (train_df.sex != 'Female')])), # 000: Negative White Male
+        1: (len(train_df))/(len(train_df[(train_df[target_variable] != target_value)
+                                         & (train_df.race != 'Black') & (train_df.sex == 'Female')])), # 001: Negative White Female
+        2: (len(train_df))/(len(train_df[(train_df[target_variable] != target_value)
+                                         & (train_df.race == 'Black') & (train_df.sex != 'Female')])), # 010: Negative Black Male
+        3: (len(train_df))/(len(train_df[(train_df[target_variable] != target_value)
+                                         & (train_df.race == 'Black') & (train_df.sex == 'Female')])), # 011: Negative Black Female
+        4: (len(train_df))/(len(train_df[(train_df[target_variable] == target_value)
+                                         & (train_df.race != 'Black') & (train_df.sex != 'Female')])), # 100: Positive White Male
+        5: (len(train_df))/(len(train_df[(train_df[target_variable] == target_value)
+                                         & (train_df.race != 'Black') & (train_df.sex == 'Female')])), # 101: Positive White Female
+        6: (len(train_df))/(len(train_df[(train_df[target_variable] == target_value)
+                                         & (train_df.race == 'Black') & (train_df.sex != 'Female')])), # 110: Positive Black Male
+        7: (len(train_df))/(len(train_df[(train_df[target_variable] == target_value)
+                                         & (train_df.race == 'Black') & (train_df.sex == 'Female')])), # 111: Positive Black Female
+    }
+
+    output_file_path = os.path.join(base_dir, 'IPS_example_weights_with_label.json')
+    with open(output_file_path, mode="w") as output_file:
+        json.dump(IPS_example_weights_with_label, output_file)
     
 
 ##########
@@ -104,6 +137,12 @@ df = df.dropna()
 train_df, test_df = train_test_split(df, test_size=0.30, random_state=42)
 
 save_results(train_df, test_df, base_dir)
+
+# Precompute IPW weights (only needed for Tensorflow, the Pytorch implementation
+# computes them on the fly when loading the dataset)
+target_variable = 'is_recid'
+target_value = 'Yes'
+precompute_weights(train_df, base_dir, target_variable, target_value)
 
 
 ########
@@ -156,6 +195,12 @@ train_df, test_df = train_test_split(df, test_size=0.30, random_state=42)
 
 save_results(train_df, test_df, base_dir)
 
+# Precompute IPW weights (only needed for Tensorflow, the Pytorch implementation
+# computes them on the fly when loading the dataset)
+target_variable = 'pass_bar'
+target_value = 'Passed'
+precompute_weights(train_df, base_dir, target_variable, target_value)
+
 #########
 # Adult #
 #########
@@ -183,6 +228,12 @@ print('Frequencies sex in test:')
 print(test_df.groupby('sex').count() / len(test_df))
 
 save_results(train_df, test_df, base_dir)
+
+# Precompute IPW weights (only needed for Tensorflow, the Pytorch implementation
+# computes them on the fly when loading the dataset)
+target_variable = 'income'
+target_value = '>50K'
+precompute_weights(train_df, base_dir, target_variable, target_value)
 
 #############
 # EMNIST_10 #
