@@ -44,8 +44,19 @@ this directory). So no additional preparation is needed.
 
 ## Training and Inference
 
-Training and evaluation for the adversarial robust learning model can be run as:
+Training and evaluation for a single model and dataset can be run using
 ```bash
 python -m group_agnostic_fairness.main_trainer
 ```
 Refer to the test cases in <model_name>_model_test.py files to understand the workflow.
+
+To recreate the average results over multiple runs that we use, run
+```bash
+cd group_agnostic_fairness
+for dataset in LSAC COMPAS Adult; do
+    for model in baseline ARL IPW; do
+        ./multiple_runs.sh "$dataset" "$model"
+    done
+done
+```
+(check our notebook at `/results.ipynb` to see how these results can be used)
