@@ -21,9 +21,14 @@ IDENTIFIABILITY_HEADER = """
 |---|---|---|---|
 """
 
-MAIN_RESULTS_KEYS = ['micro_avg_auc', 'macro_avg_auc', 'min_auc', 'minority_auc', 'accuracy']
+TF_HEADER = """
+|Dataset|Method|Micro-avg AUC|Minority AUC|Accuracy|
+|---|---|---|---|---|
+"""
 
+MAIN_RESULTS_KEYS = ['micro_avg_auc', 'macro_avg_auc', 'min_auc', 'minority_auc', 'accuracy']
 DEVIATION_KEYS = ['micro_avg_auc', 'macro_avg_auc', 'min_auc', 'minority_auc']
+TF_KEYS = ['micro_avg_auc', 'minority_auc', 'accuracy']
 
 
 def get_our_path(base_path, model, dataset, seed_run_version=0):
@@ -33,6 +38,11 @@ def get_our_path(base_path, model, dataset, seed_run_version=0):
 def get_their_path(base_path, model, dataset):
     path = os.path.join(base_path, f"{model}_{dataset}.json")
     return path
+
+def get_tf_path(base_path, model, dataset):
+    if model == "IPW(S)":
+        model = "IPW"
+    return os.path.join(base_path, f'{model}_{dataset}', 'mean_std.json')
 
 def subtract(dict1, dict2):
     if isinstance(dict1, dict):
@@ -176,12 +186,11 @@ def create_table(result_dict, keys, bold_dict, line_func):
         table += line_func(row_key, result_entry, keys, bold_mask)
     return table
 
-def run_models(seed, args, optimal_hparams, dataset_model_list, log_dir = 'training_logs/complete_runs'):
+def run_models(seed, args, optimal_hparams, dataset_model_list):
     result_dict = {}
     for dataset, model in dataset_model_list:
         # don't overwrite the defaults:
         temp_args = Namespace(**vars(args))
-        temp_args.log_dir = log_dir
         if model == 'IPW(S)':
             temp_args.model = 'IPW'
             temp_args.sensitive_label = False
@@ -194,8 +203,9 @@ def run_models(seed, args, optimal_hparams, dataset_model_list, log_dir = 'train
         temp_args.seed = seed
         temp_args.dataset_type = 'image' if temp_args.dataset in ['EMNIST_35', 'EMNIST_10'] else 'tabular'
         # set the optimal hyperparameters:
-        for k, v in optimal_hparams[dataset][model].items():
-            setattr(temp_args, k, v)
+        if optimal_hparams is not None:
+            for k, v in optimal_hparams[dataset][model].items():
+                setattr(temp_args, k, v)
 
         # train and evaluate the model:
         result_dict[(dataset, model)] = main.main(temp_args)
