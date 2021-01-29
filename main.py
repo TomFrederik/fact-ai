@@ -436,7 +436,7 @@ def train(config: Dict[str, Any],
                               pin_memory=True)
 
     callbacks: List[pl.callbacks.Callback] = []
-    callbacks.append(Logger(train_dataset, 'train', batch_size=args.eval_batch_size, save_scatter=(args.model == 'ARL')))
+    callbacks.append(Logger(train_dataset, 'train', batch_size=args.eval_batch_size, save_scatter=(args.model in ['ARL', 'ARL_strong', 'ARL_weak'])))
 
     if val_dataset is not None:
         callbacks.append(Logger(val_dataset, 'validation', batch_size=args.eval_batch_size))
@@ -450,7 +450,7 @@ def train(config: Dict[str, Any],
             ))
     
     if test_dataset is not None:
-        callbacks.append(Logger(test_dataset, 'test', batch_size=args.eval_batch_size, save_scatter=(args.model == 'ARL')))
+        callbacks.append(Logger(test_dataset, 'test', batch_size=args.eval_batch_size, save_scatter=(args.model in ['ARL', 'ARL_strong', 'ARL_weak'])))
 
     # Select model and instantiate
     model: pl.LightningModule = get_model(config, args, train_dataset)
