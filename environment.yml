@@ -16,3 +16,4 @@ dependencies:
   - jupyter=1.0.0
   - pip:
       - ray
+      - tabulate
