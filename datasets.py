@@ -481,3 +481,8 @@ class CustomSubset(FairnessDataset):
     @property
     def labels(self):
         return self.dataset.labels[self.indices]
+
+    @property
+    def sensitive_label(self):
+        """Whether the label should be included in IPW"""
+        return self.dataset.sensitive_label
