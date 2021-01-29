@@ -416,6 +416,7 @@ def train(config: Dict[str, Any],
 
     #callbacks = [Logger(train_dataset, 'training', batch_size=config['batch_size'])]
     callbacks: List[pl.callbacks.Callback] = []
+    callbacks.append(Logger(train_dataset, 'train', batch_size=args.eval_batch_size, save_scatter=True))
 
     if val_dataset is not None:
         callbacks.append(Logger(val_dataset, 'validation', batch_size=args.eval_batch_size))

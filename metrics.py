@@ -37,7 +37,7 @@ class Logger(Callback):
         self.dataloader = DataLoader(self.dataset, self.batch_size, pin_memory=True)
 
         if self.save_scatter:
-            self.scatter_dataloader = DataLoader(self.dataset, 2048, shuffle=True, pin_memory=True)
+            self.scatter_dataloader = DataLoader(self.dataset, 256, shuffle=True, pin_memory=True)
 
     def on_validation_epoch_end(self, trainer, pl_module):
         """Logs metrics. Function is called at the end of each validation epoch.
@@ -47,18 +47,18 @@ class Logger(Callback):
             pl_module: Model to evaluate the metrics on, e.g. an instance of 
                 baseline, ARL, DRO or IPW.    
         """
-        
-        super().on_validation_end(trainer, pl_module)
+        if self.name != 'train':
+            super().on_validation_end(trainer, pl_module)
 
-        results = get_all_auc_scores(pl_module, self.dataloader, self.dataset.minority)
+            results = get_all_auc_scores(pl_module, self.dataloader, self.dataset.minority)
+
+            for key in results:
+                pl_module.log(f'{self.name}/{key}', results[key])
 
         if self.save_scatter:
-            save_scatter(pl_module, self.scatter_dataloader)
+            save_scatter(pl_module, self.scatter_dataloader, self.name)
 
-        for key in results:
-            pl_module.log(f'{self.name}/{key}', results[key])
-            
-            
+
 def get_all_auc_scores(pl_module: LightningModule, dataloader: DataLoader, minority: int) -> Dict[str, float]:
     """Computes different AUC scores and the accuracy of the given module on
     the given dataset.
@@ -130,12 +130,13 @@ def group_aucs(predictions: torch.Tensor, targets: torch.Tensor, memberships: to
     return aucs
 
 
-def save_scatter(pl_module: LightningModule, dataloader: DataLoader):
+def save_scatter(pl_module: LightningModule, dataloader: DataLoader, name: str):
     """Calls the save_scatter method of the ARL module for a mini batch.
 
     Args:
         pl_module: LightningModule of the model.
         dataloader: Dataloader of the Logger instance dataset
+        name: Name that will be added to the plot name
     """
     x, y, s = next(iter(dataloader))
-    pl_module.save_scatter(x.to(pl_module.device), y.to(pl_module.device), s.to(pl_module.device))
+    pl_module.save_scatter(x.to(pl_module.device), y.to(pl_module.device), s.to(pl_module.device), name)

@@ -243,7 +243,7 @@ class ARL(pl.LightningModule):
 
         return self.learner(x)
 
-    def save_scatter(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor):
+    def save_scatter(self, x: torch.Tensor, y: torch.Tensor, s: torch.Tensor, name: str):
         """Creates a scatter plot of the BCE Loss vs. the lambda values of the adversary.
 
         Args:
@@ -261,8 +261,8 @@ class ARL(pl.LightningModule):
         plt.ylabel("BCE Loss Value")
         plt.title("Lambda vs. BCE Loss Values")
 
-        self.logger.experiment.add_histogram(tag="loss", values=bce, bins=15, global_step=self.global_step)
-        self.logger.experiment.add_figure(tag='bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
+        self.logger.experiment.add_histogram(tag=name+"/loss", values=bce, bins=15, global_step=self.global_step)
+        self.logger.experiment.add_figure(tag=name+'/bce_vs_lambdas_scatter', figure=fig, global_step=self.global_step)
 
     def get_lambda(self, dataloader: torch.utils.data.DataLoader) -> Tuple[torch.Tensor]:
         """
