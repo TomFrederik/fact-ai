@@ -251,7 +251,7 @@ class ARL(pl.LightningModule):
         lambdas = self.adversary(x, y, s)
 
         fig = plt.figure()
-        plt.scatter(lambdas.detach().numpy(), bce.detach().numpy(), s=5)
+        plt.scatter(lambdas.detach().cpu().numpy(), bce.detach().cpu().numpy(), s=5)
         plt.xlabel("Lambda Value")
         plt.ylabel("BCE Loss Value")
         plt.title("Lambda vs. BCE Loss Values")
