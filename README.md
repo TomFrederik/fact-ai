@@ -6,11 +6,8 @@ This repository re-implements `Fairness without Demographics through Adversarial
 ## Notebook
  To receive a guided end-to-end tour through our code, open `results.ipynb`. It contains the final results
  that we used for our report, you can also rerun parts of it or the entire notebook, and you can play around
- with many hyperparameters. The easiest way to run the notebook is to open it in Google Colab:
- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/TomFrederik/fact-ai/blob/main/results.ipynb)
- *Please note the instructions at the top of the notebook (you need to uncomment a cell if you're using Colab)*
-
- If you want to run the notebook locally, you need to install the right Python environment first (see below). The notebook can reproduce
+ with many hyperparameters.
+ If you want to run the notebook,  you need to install the right Python environment first (see below). The notebook can reproduce
  all of our results except for the grid search to find the optimal hyperparameters. If you want to run the grid search yourself,
  see below or the end of the notebook for instructions.
 
