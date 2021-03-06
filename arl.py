@@ -200,7 +200,7 @@ class ARL(pl.LightningModule):
         """
 
         optimizer_learn = self.hparams.optimizer(self.learner.parameters(), lr=self.hparams.config["lr"], **self.hparams.opt_kwargs)
-        optimizer_adv = self.hparams.optimizer(self.adversary.parameters(), lr=self.hparams.config["lr"], **self.hparams.opt_kwargs)
+        optimizer_adv = self.hparams.optimizer(self.adversary.parameters(), lr=self.hparams.config["sec_lr"], **self.hparams.opt_kwargs)
 
         return [optimizer_learn, optimizer_adv], []
 

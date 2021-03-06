@@ -184,6 +184,7 @@ def main(args: argparse.Namespace):
     else:
         # set hparams for single run
         config['lr'] = args.prim_lr
+        config['sec_lr'] = args.sec_lr if args.sec_lr is not None else args.prim_lr
         config['batch_size'] = args.batch_size
         config['eta'] = args.eta
         
@@ -536,6 +537,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--train_steps', default=5000, type=int)
     parser.add_argument('--prim_lr', default=0.1, type=float, help='Learning rate for primary network')
+    parser.add_argument('--sec_lr', default=None, type=float, help='Learning rate for adversary network')
     parser.add_argument('--seed', default=0, type=int)
     parser.add_argument('--seed_run', action='store_true', help='Whether this is part of a run with multiple seeds')
     parser.add_argument('--seed_run_version', default=0, type=int, help='Version of the run with multiple seeds')
