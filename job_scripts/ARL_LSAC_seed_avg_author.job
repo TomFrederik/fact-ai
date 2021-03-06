@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --partition=gpu_shared_course
+#SBATCH --partition=gpu_shared
 #SBATCH --gres=gpu:0
 #SBATCH --job-name=ARL_lsac_seed_avg
 #SBATCH --ntasks=1
@@ -8,7 +8,7 @@
 #SBATCH --array=1-10%2
 #SBATCH --time=04:30:00
 #SBATCH --mem=32000M
-#SBATCH --output=outputs/ARL_LSAC_avg_%a_%A.out
+#SBATCH --output=outputs/ARL_LSAC_avg_author_%a_%A.out
 
 module purge
 module load 2019
