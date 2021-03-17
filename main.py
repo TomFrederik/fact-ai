@@ -98,6 +98,7 @@ def main(args: argparse.Namespace):
         # configurations for hparam tuning
         config = {
             'lr': tune.grid_search(lr_list),
+            'sec_lr': tune.grid_search(lr_list),
             'batch_size': tune.grid_search(batch_size_list),
             'eta': tune.grid_search(eta_list)
             }
@@ -141,6 +142,7 @@ def main(args: argparse.Namespace):
         
         # set hparams for final run
         config['lr'] = analysis.best_config['lr']
+        config['sec_lr'] = analysis.best_config['sec_lr']
         config['batch_size'] = analysis.best_config['batch_size']
         config['eta'] = analysis.best_config['eta']
 
@@ -363,7 +365,7 @@ def run_folds(config: Dict[str, Any],
         sets of the models' corresponding folds.
     """
     
-    print(f'Starting run with seed {args.seed} - lr {config["lr"]} - bs {config["batch_size"]}')
+    print(f'Starting run with seed {args.seed} - lr {config["lr"]} - sec_lr {config["sec_lr"]} - bs {config["batch_size"]}')
     
     fold_nbr = 0
     aucs: List[float] = []
@@ -385,7 +387,8 @@ def run_folds(config: Dict[str, Any],
         aucs.append(auroc(scores, val_dataset.labels).item())
 
     mean_auc: float = np.mean(aucs)
-    print(f'Finished run with seed {args.seed} - lr {config["lr"]} - bs {config["batch_size"]} - mean val auc: {mean_auc}')
+    print(f'Finished run with seed {args.seed} - lr {config["lr"]} - sec_lr {config["sec_lr"]} - bs {config["batch_size"]} - mean val auc:'
+          f' {mean_auc}')
 
     tune.report(auc=mean_auc)
 
