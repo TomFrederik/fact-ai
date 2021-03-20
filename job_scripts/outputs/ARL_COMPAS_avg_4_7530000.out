@@ -1,0 +1,18 @@
+Cuda available? False
+creating dir ./training_logs/COMPAS/ARL/seed_run_version_0/seed_4
+GPU available: False, used: False
+TPU available: None, using: 0 TPU cores
+
+  | Name      | Type              | Params
+------------------------------------------------
+0 | learner   | Learner           | 30.8 K
+1 | adversary | Adversary         | 449   
+2 | loss_fct  | BCEWithLogitsLoss | 0     
+------------------------------------------------
+31.2 K    Trainable params
+0         Non-trainable params
+31.2 K    Total params
+/home/nolte/.conda/envs/fact-ai-lisa/lib/python3.7/site-packages/pytorch_lightning/utilities/distributed.py:49: UserWarning: training_step returned None if it was on purpose, ignore this warning...
+  warnings.warn(*args, **kwargs)
+time to fit was 4.263145685195923
+Results = {'min_auc': 0.6980469822883606, 'macro_avg_auc': 0.7297492623329163, 'micro_avg_auc': 0.7337232232093811, 'minority_auc': 0.7516269087791443, 'accuracy': 0.6790352463722229}
