@@ -485,7 +485,7 @@ def train(config: Dict[str, Any],
     # Create a PyTorch Lightning trainer
     trainer = pl.Trainer(logger=logger,
                          gpus=1 if torch.cuda.is_available() else 0,
-                         max_steps=int(args.train_steps / config['batch_size']) + args.pretrain_steps,
+                         max_steps=args.train_steps + args.pretrain_steps,
                          callbacks=callbacks,
                          gradient_clip_val=1 if args.model=='DRO' else 0,
                          progress_bar_refresh_rate=1 if args.p_bar else 0,
