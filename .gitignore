@@ -3,7 +3,6 @@
 *.pyc
 .ipynb_checkpoints
 __pycache__
-/training_logs
 /complete_run_logs
 /grid_search
 /grid_search_gpu_example
