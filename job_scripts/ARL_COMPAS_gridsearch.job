@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --partition=gpu_shared_course
+#SBATCH --partition=shared
 #SBATCH --gres=gpu:0
 #SBATCH --job-name=ARL_compas_gridsearch
 #SBATCH --ntasks=1
