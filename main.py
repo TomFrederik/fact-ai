@@ -131,7 +131,7 @@ def main(args: argparse.Namespace):
             metric='auc',
             mode='max',
             local_dir=os.getcwd(),
-            name=path 
+            name=path
             ) 
         
         print('Best hyperparameters found were: ', analysis.best_config)

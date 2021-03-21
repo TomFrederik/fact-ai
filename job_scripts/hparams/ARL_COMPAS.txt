@@ -1,10 +1,10 @@
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 1 --tf_mode
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 2 --tf_mode
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 3 --tf_mode
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 4 --tf_mode
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 5 --tf_mode
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 6 --tf_mode
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 7 --tf_mode
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 8 --tf_mode
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 9 --tf_mode
---model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 5.0 --batch_size 512 --train_steps 1280000 --seed_run --seed 10 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 1 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 2 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 3 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 4 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 5 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 6 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 7 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 8 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 9 --tf_mode
+--model ARL --dataset COMPAS --disable_warnings --num_workers 6 --no_grid_search --prim_lr 1.0 --sec_lr 0.001 --batch_size 128 --seed_run --seed 10 --tf_mode

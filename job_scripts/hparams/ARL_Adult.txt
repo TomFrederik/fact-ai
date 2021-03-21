@@ -1,11 +1,11 @@
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 1 --tf_mode --train_steps 1280000
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 2 --tf_mode --train_steps 1280000
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 3 --tf_mode --train_steps 1280000
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 4 --tf_mode --train_steps 1280000
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 5 --tf_mode --train_steps 1280000
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 6 --tf_mode --train_steps 1280000
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 7 --tf_mode --train_steps 1280000
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 8 --tf_mode --train_steps 1280000
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 9 --tf_mode --train_steps 1280000
---model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.001 --seed_run --seed 10 --tf_mode --train_steps 1280000
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 1 --tf_mode
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 2 --tf_mode
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 3 --tf_mode
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 4 --tf_mode
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 5 --tf_mode
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 6 --tf_mode
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 7 --tf_mode
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 8 --tf_mode
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 9 --tf_mode
+--model ARL --dataset Adult --disable_warnings --num_workers 6 --no_grid_search --batch_size 512 --prim_lr 1.0 --sec_lr 0.01 --seed_run --seed 10 --tf_mode
 
