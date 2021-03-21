@@ -47,6 +47,8 @@ def get_their_path(base_path, model, dataset):
 def get_tf_path(base_path, model, dataset):
     if model == "IPW(S)":
         model = "IPW"
+    elif model == "IPW(S+Y)":
+        model = "IPW_with_label"
     return os.path.join(base_path, f'{model}_{dataset}', 'mean_std.json')
 
 def subtract(dict1, dict2):
