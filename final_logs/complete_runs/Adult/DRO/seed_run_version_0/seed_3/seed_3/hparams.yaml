@@ -1,7 +1,7 @@
 config:
   batch_size: 128
   eta: 0.5
-  lr: 1
+  lr: 1.0
 hidden_units:
 - 64
 - 32

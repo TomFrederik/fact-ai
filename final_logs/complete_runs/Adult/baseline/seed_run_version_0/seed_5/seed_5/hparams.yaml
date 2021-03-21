@@ -1,8 +1,7 @@
 config:
   batch_size: 512
   eta: 0.5
-  lr: 2
-dataset_type: tabular
+  lr: 2.0
 hidden_units:
 - 64
 - 32
