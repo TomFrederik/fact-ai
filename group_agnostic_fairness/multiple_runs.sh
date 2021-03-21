@@ -6,14 +6,16 @@ mkdir -p results
 mkdir -p logs
 cd ..
 
-lr=0.1
-bs=128
 dataset="$1"
 model="$2"
-steps=100
+bs="$3"
+lr="$4"
+adv_lr="$5"
 
 echo "Dataset and model:"
 echo "$dataset $model"
+echo "Params:"
+echo "bs: $bs, primary lr: $lr, adversary lr: $adv_lr"
 
 run () {
     echo "Starting run with seed $1"
@@ -23,10 +25,8 @@ run () {
     mkdir -p "group_agnostic_fairness/logs/${model}_${dataset}"
     python &> "group_agnostic_fairness/logs/${model}_${dataset}/$1.txt" \
 	   -m group_agnostic_fairness.main_trainer \
-	   --train_steps "$steps" \
-	   --test_steps 100 \
 	   --primary_learning_rate "$lr" \
-	   --adversary_learning_rate "$lr" \
+	   --adversary_learning_rate "$adv_lr" \
 	   --batch_size "$bs" \
 	   --dataset "$dataset" \
 	   --model_name "$model" \

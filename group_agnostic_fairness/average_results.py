@@ -9,7 +9,7 @@ import math
 key_dict = {
     "accuracy": "accuracy",
     "micro_avg_auc": "auc",
-    "minority_auc": "auc subgroup 1"
+    "minority_auc": "auc subgroup 3"
 }
 
 parser = argparse.ArgumentParser()
@@ -25,6 +25,9 @@ for entry in os.scandir(args.directory):
         with open(entry.path, 'r') as file:
             data = json.load(file)
             renamed_data = {k: data[key_dict[k]] for k in key_dict}
+            subgroup_aucs = [data[f"auc subgroup {i}"] for i in range(4)]
+            renamed_data["macro_avg_auc"] = np.mean(subgroup_aucs)
+            renamed_data["min_auc"] = np.min(subgroup_aucs)
             results.append(renamed_data)
 
 mean_std_dict = {
