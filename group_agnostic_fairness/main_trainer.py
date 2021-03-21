@@ -65,9 +65,9 @@ flags.DEFINE_string("print_dir", None, "directory for tf.print output_stream.")
 flags.DEFINE_string("output_file_path", None, "path for output file. If set, overwrites output_file_name")
 
 # Flags for training and evaluation
-flags.DEFINE_integer("train_steps", 3000, "Number of training steps.")
-flags.DEFINE_integer("test_steps", 100, "Number of evaluation steps.")
-flags.DEFINE_integer("min_eval_frequency", 100,
+flags.DEFINE_integer("total_train_steps", 1280000, "Number of training steps.")
+flags.DEFINE_integer("test_steps", 1000, "Number of evaluation steps.")
+flags.DEFINE_integer("min_eval_frequency", 1000,
                      "How often (steps) to run evaluation.")
 
 # Flags for loading dataset
@@ -87,7 +87,7 @@ flags.DEFINE_bool("include_sensitive_columns", False,
 # Flags for setting common model parameters for all approaches
 flags.DEFINE_multi_integer("primary_hidden_units", [64, 32],
                            "Hidden layer sizes of main learner.")
-flags.DEFINE_integer("embedding_dimension", 0,
+flags.DEFINE_integer("embedding_dimension", 32,
                      "Embedding size; if 0, use one hot.")
 flags.DEFINE_integer("batch_size", 32, "Batch size.")
 flags.DEFINE_float("primary_learning_rate", 0.001,
@@ -116,7 +116,7 @@ flags.DEFINE_integer(
     "Number of steps to train primary before alternating with adversary.")
 
 # # Flags for inverse_propensity_weighting Model
-flags.DEFINE_string("reweighting_type", "IPS_without_label",
+flags.DEFINE_string("reweighting_type", "IPS_with_label",
                     "Type of reweighting to be performed. Takes values in [''IPS_with_label'', ''IPS_without_label'']")
 
 TENSORFLOW_BOARD_BINARY = "learning/brain/tensorboard/tensorboard.sh"
@@ -332,7 +332,7 @@ def run_model():
   # # For example, if the dataset has two (binary) protected_groups. The dataset has 2^2 = 4 subgroups, which we enumerate as [0, 1, 2, 3].
   # # If the  dataset has two protected features ["race","sex"] that are cast as binary features race=["White"(0), "Black"(1)], and sex=["Male"(0), "Female"(1)].
   # # We call their catesian product ["White Male" (00), "White Female" (01), "Black Male"(10), "Black Female"(11)] as subgroups  which are enumerated as [0, 1, 2, 3].
-  subgroups = np.arange(len(protected_groups))
+  subgroups = np.arange(2 * len(protected_groups))
 
   # Instantiates tf.estimator.Estimator object
   estimator = get_estimator(
@@ -352,8 +352,9 @@ def run_model():
   estimator = tf.estimator.add_metrics(estimator, eval_metrics_fn)
 
   # Creates training and evaluation specifications
+  train_steps = int(FLAGS.total_train_steps / FLAGS.batch_size)
   train_spec = tf.estimator.TrainSpec(
-      input_fn=train_input_fn, max_steps=FLAGS.train_steps)
+      input_fn=train_input_fn, max_steps=train_steps)
   eval_spec = tf.estimator.EvalSpec(
       input_fn=test_input_fn, steps=FLAGS.test_steps)
 
