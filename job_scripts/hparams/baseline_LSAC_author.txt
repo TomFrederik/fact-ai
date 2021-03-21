@@ -1,0 +1,10 @@
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 1 --seed_run --tf_mode
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 2 --seed_run --tf_mode
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 3 --seed_run --tf_mode
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 4 --seed_run --tf_mode
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 5 --seed_run --tf_mode
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 6 --seed_run --tf_mode
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 7 --seed_run --tf_mode
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 8 --seed_run --tf_mode
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 9 --seed_run --tf_mode
+--model baseline --dataset LSAC --disable_warnings --num_cpus 2 --num_workers 2 --no_grid_search --prim_lr 0.1 --batch_size 128 --seed 10  --seed_run --tf_mode
